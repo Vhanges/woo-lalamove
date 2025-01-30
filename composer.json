@@ -1,0 +1,14 @@
+{
+    "name": "sevhen/woocommerce-lalamove-extension",
+    "description": "A WooCommerce extension for managing shipment using Lalamove",
+    "type": "wordpress-plugin",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Sevhen\\WoocommerceLalamoveExtension\\": "includes/"
+        }
+    },
+    "require": {
+        "composer/installers": "^2.0"
+    }
+}

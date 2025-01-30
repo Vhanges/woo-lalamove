@@ -1,0 +1,9 @@
+# Ignore Composer dependencies
+vendor/
+composer.lock
+
+# Ignore Node.js dependencies
+node_modules/
+
+# Ignore build artifacts
+/dist/

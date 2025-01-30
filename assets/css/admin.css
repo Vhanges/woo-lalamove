@@ -1,0 +1,15 @@
+
+.wrap{
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+#lalamove-app {
+    height: 50px;
+    width: 100px;
+    border:  1px red;
+    background: red; /* Just to check */
+}
