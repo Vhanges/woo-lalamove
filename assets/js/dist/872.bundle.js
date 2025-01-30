@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkwoo_lalamove=self.webpackChunkwoo_lalamove||[]).push([[872],{872:(e,n,l)=>{l.r(n),l.d(n,{default:()=>a});var u=l(955);const t={name:"Settings"},a=(0,l(406).A)(t,[["render",function(e,n,l,t,a,o){return(0,u.uX)(),(0,u.CE)("div",null,n[0]||(n[0]=[(0,u.Lk)("h2",null,"Settings",-1),(0,u.Lk)("p",null,"Configure your Lalamove settings here.",-1)]))}]])}}]);
+//# sourceMappingURL=872.bundle.js.map

@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './vue/App.vue';
 import router from './vue/router';
+import 'material-symbols';
 
 console.log("Vue app is mounting...");
 

@@ -1,15 +1,24 @@
-
-.wrap{
-    height: 100vh;
-    display: flex;
+#lalamove-app{
+    flex: 1;
     justify-content: center;
-    align-items: center;
+    align-items: start;
     flex-direction: column;
 }
 
-#lalamove-app {
-    height: 50px;
-    width: 100px;
-    border:  1px red;
-    background: red; /* Just to check */
+
+/*
+Remove WordPress Footer
+*/
+#wpfooter {
+    display: none !important;
+}
+/*
+Remove WordPress Body padding and margin
+*/
+#wpbody{
+    margin: 0px;
+    padding: 0px !important;
+}
+#wpcontent {
+    padding: 0 0  !important;
 }

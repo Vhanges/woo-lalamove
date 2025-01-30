@@ -1,28 +1,147 @@
 <template>
-    <nav>
-      <ul>
-        <li><router-link to="/">Dashboard</router-link></li>
-        <li><router-link to="/Orders">Orders</router-link></li>
-        <li><router-link to="/settings">Settings</router-link></li>
-      </ul>
-    </nav>
-  </template>
+  <nav class="navbar">
+    <div class="navbar-logo" />
+
+    <router-link 
+      to="/place-order" 
+      class="nav-item nav-item--order"
+    >
+      <span class="nav-item__label">Place Order</span>
+    </router-link>
+
+    <router-link
+      to="/orders"
+      class="nav-item nav-item--woocommerce"
+    >
+      <span class="nav-item__label">WooCommerce Orders</span>
+    </router-link>
+
+    <router-link 
+      to="/records" 
+      class="nav-item nav-item--records"
+    >
+      <span class="nav-item__label">Records</span>
+    </router-link>
+
+    <router-link 
+      to="/dashboard" 
+      class="nav-item nav-item--dashboard"
+    >
+      <span class="nav-item__label">Dashboard</span>
+    </router-link>
+
+    <div class="nav-controls">
+      <router-link 
+        to="/settings" 
+        class="navbar-icon navbar-icon--settings"
+      >
+        <span class="material-symbols-outlined info-icon icon">info</span> <!-- Information Symbol -->
+      </router-link>
   
-  <script>
-  export default {
-    name: 'Navbar',
-  };
-  </script>
-  
-  <style>
-  nav ul {
-    list-style: none;
-    display: flex;
-    gap: 1rem;
-    padding: 0;
-  }
-  nav ul li {
-    display: inline;
-  }
-  </style>
-  
+      <router-link 
+        to="/info" 
+        class="navbar-icon navbar-icon--info"
+      >
+      <span class="material-symbols-outlined settings-icon icon">settings</span> <!-- Information Symbol -->
+      </router-link>
+    </div>
+
+  </nav>
+</template>
+
+<script>
+
+export default {
+  name: "Navbar",
+  data() {
+    return {
+    };
+  },
+};
+</script>
+
+<style scoped>
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.navbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #f16622;
+  height: 60px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.navbar-logo {
+  background: url('@images/logo.png') no-repeat center center;
+  background-size: contain;
+  height: 60px;
+  width: 80px;
+  flex-shrink: 0;
+  image-rendering: -webkit-optimize-contrast; /* For Chrome */
+}
+
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  margin: 0 20px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.nav-item__label {
+  color: #707070;
+  font-family: "Noto Sans", Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.navbar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-left: 20px;
+}
+
+
+.navbar-icon--settings {
+  margin-right: 20px;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' ;
+  outline: none;
+
+}
+
+.icon{
+  color:#f16622;
+}
+
+
+
+.nav-controls{
+  display: flex;
+  flex: 1;
+  width: auto;
+  flex-direction: row;
+  justify-content: end;
+}
+
+a{
+  text-decoration: none;
+}
+</style>

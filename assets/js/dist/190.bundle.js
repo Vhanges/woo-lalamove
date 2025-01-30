@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkwoo_lalamove=self.webpackChunkwoo_lalamove||[]).push([[190],{190:(e,n,a)=>{a.r(n),a.d(n,{default:()=>r});var l=a(955);const u={name:"Shipments"},r=(0,a(406).A)(u,[["render",function(e,n,a,u,r,s){return(0,l.uX)(),(0,l.CE)("div",null,n[0]||(n[0]=[(0,l.Lk)("h2",null,"Shipments",-1),(0,l.Lk)("p",null,"Manage and track your shipments here.",-1)]))}]])}}]);
+//# sourceMappingURL=190.bundle.js.map

@@ -1,8 +1,7 @@
 <template>
     <div id="app">
-      <h1>Testing</h1>
       <Navbar />
-      <router-view /> <!-- Render the current route's component -->
+      <router-view/>
     </div>
 </template>
   

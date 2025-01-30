@@ -6,7 +6,7 @@
   </template>
   <script>
   export default {
-    name: 'Shipments',
+    name: 'Orders',
   };
   </script>
   

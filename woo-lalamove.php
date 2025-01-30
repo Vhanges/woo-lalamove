@@ -69,11 +69,10 @@ function woo_lalamove_add_admin_page() {
 }
 add_action('admin_menu', 'woo_lalamove_add_admin_page');
 
+
 function woo_lalamove_render_admin_page() {
     ?>
-    <div class="wrap">
-        <h1>Lalamove WooCommerce Integration</h1>
-        
+
         <div id="lalamove-app">
 
         </div>
