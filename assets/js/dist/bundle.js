@@ -16,13 +16,17 @@ __webpack_require__.r(__webpack_exports__);
 
 const Dashboard = () => __webpack_require__.e(/*! import() */ "assets_js_vue_views_Dashboard_vue").then(__webpack_require__.bind(__webpack_require__, /*! @views/Dashboard.vue */ "./assets/js/vue/views/Dashboard.vue"));
 const Orders = () => __webpack_require__.e(/*! import() */ "assets_js_vue_views_Orders_vue").then(__webpack_require__.bind(__webpack_require__, /*! @views/Orders.vue */ "./assets/js/vue/views/Orders.vue"));
-const PlaceOrder = () => __webpack_require__.e(/*! import() */ "assets_js_vue_views_PlaceOrder_vue").then(__webpack_require__.bind(__webpack_require__, /*! @views/PlaceOrder.vue */ "./assets/js/vue/views/PlaceOrder.vue"));
+const PlaceOrder = () => Promise.all(/*! import() */[__webpack_require__.e("vendors-node_modules_leaflet_dist_leaflet-src_js-node_modules_leaflet_dist_leaflet_css"), __webpack_require__.e("assets_js_vue_views_PlaceOrder_vue")]).then(__webpack_require__.bind(__webpack_require__, /*! @views/PlaceOrder.vue */ "./assets/js/vue/views/PlaceOrder.vue"));
 const Settings = () => __webpack_require__.e(/*! import() */ "assets_js_vue_views_Settings_vue").then(__webpack_require__.bind(__webpack_require__, /*! @views/Settings.vue */ "./assets/js/vue/views/Settings.vue"));
 const Records = () => __webpack_require__.e(/*! import() */ "assets_js_vue_views_Records_vue").then(__webpack_require__.bind(__webpack_require__, /*! @views/Records.vue */ "./assets/js/vue/views/Records.vue"));
 const Info = () => __webpack_require__.e(/*! import() */ "assets_js_vue_views_Info_vue").then(__webpack_require__.bind(__webpack_require__, /*! @views/Info.vue */ "./assets/js/vue/views/Info.vue"));
 const router = (0,vue_router__WEBPACK_IMPORTED_MODULE_0__.createRouter)({
   history: (0,vue_router__WEBPACK_IMPORTED_MODULE_0__.createWebHashHistory)(),
   routes: [{
+    path: '/place-order',
+    component: PlaceOrder,
+    name: 'place-order'
+  }, {
     path: '/dashboard',
     component: Dashboard,
     name: 'dashboard'
@@ -30,10 +34,6 @@ const router = (0,vue_router__WEBPACK_IMPORTED_MODULE_0__.createRouter)({
     path: '/orders',
     component: Orders,
     name: 'orders'
-  }, {
-    path: '/place-order',
-    component: PlaceOrder,
-    name: 'place-order'
   }, {
     path: '/settings',
     component: Settings,
@@ -23894,7 +23894,7 @@ function useRoute(_name) {
 /******/ 		};
 /******/ 	
 /******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
 /******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;

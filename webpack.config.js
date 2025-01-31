@@ -63,6 +63,7 @@ module.exports = {
         alias: {
             vue$: 'vue/dist/vue.esm-bundler.js',
             '@': path.resolve(__dirname, 'assets/js'), 
+            '@component': path.resolve(__dirname, 'assets/js/vue/components'), 
             '@views': path.resolve(__dirname, 'assets/js/vue/views'), 
             '@images': path.resolve(__dirname, 'assets/images')
         },
