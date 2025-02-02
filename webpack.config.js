@@ -1,6 +1,7 @@
 const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader');
-const webpack = require('webpack'); // Add this line
+const webpack = require('webpack'); 
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');  
 
 module.exports = {
     entry: './assets/js/index.js',
@@ -39,6 +40,19 @@ module.exports = {
                         plugins: ['@babel/plugin-transform-runtime']
                     }
                 }
+            },
+            {
+                test: /\.scss$/,
+                use: [
+                    'vue-style-loader',
+                    'css-loader',
+                    {
+                      loader: 'sass-loader',
+                      options: {
+                        additionalData: '@import "~@/assets/css/scss/main.scss";'
+                      }
+                    }
+                ]
             },
             {
                 test: /\.css$/,
@@ -80,6 +94,12 @@ module.exports = {
     ],
     mode: 'production',
     devtool: 'source-map',
+    optimization: {
+        minimize: true,
+        minimizer: [
+            new CssMinimizerPlugin()
+        ],
+    },
     externals: {
         jquery: 'jQuery',
     }

@@ -1,5 +1,4 @@
 <template>
-  <h1>Hello</h1>
   <div class="map-container">
     <div id="map" ref="mapContainer"></div>
   </div>
@@ -48,8 +47,8 @@ export default {
 
 <style scoped>
 .map-container {
-  height: 500px;
-  width: 500px;
+  height: 100%;
+  width: 100%;
 }
 #map {
   height: 100%;

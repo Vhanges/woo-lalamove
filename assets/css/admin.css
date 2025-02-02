@@ -1,9 +1,15 @@
 #lalamove-app{
     flex: 1;
+    position: relative;
+    height: 100vh;
     justify-content: center;
     align-items: start;
     flex-direction: column;
+    overflow: scroll;
+    gap: 0;
 }
+
+
 
 
 /*
@@ -13,12 +19,22 @@ Remove WordPress Footer
     display: none !important;
 }
 /*
-Remove WordPress Body padding and margin
+Override wordpress style
 */
-#wpbody{
-    margin: 0px;
-    padding: 0px !important;
+#wpbody {
+    margin: 0;
+    padding: 0 !important;
 }
+
 #wpcontent {
-    padding: 0 0  !important;
+    padding: 0 0 !important;
+
 }
+
+#wpbody-content {
+    position: fixed; /* Fix the position */
+    width: 90%;
+    height: auto;
+    overflow: hidden; /* Prevent content from overflowing */
+}
+

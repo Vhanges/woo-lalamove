@@ -23,6 +23,10 @@ const Info = () => __webpack_require__.e(/*! import() */ "assets_js_vue_views_In
 const router = (0,vue_router__WEBPACK_IMPORTED_MODULE_0__.createRouter)({
   history: (0,vue_router__WEBPACK_IMPORTED_MODULE_0__.createWebHashHistory)(),
   routes: [{
+    path: '/',
+    component: PlaceOrder,
+    name: 'home'
+  }, {
     path: '/place-order',
     component: PlaceOrder,
     name: 'place-order'
@@ -19008,13 +19012,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
 
-const _hoisted_1 = {
-  id: "app"
-};
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_Navbar = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("Navbar");
   const _component_router_view = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("router-view");
-  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_1, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_Navbar), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_router_view)]);
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_Navbar), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_router_view, {
+    key: _ctx.$route.path
+  }))], 64 /* STABLE_FRAGMENT */);
 }
 
 /***/ }),
@@ -19389,9 +19392,9 @@ ${codeFrame}` : message);
 
 /***/ }),
 
-/***/ "./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/material-symbols/index.css":
+/***/ "./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/material-symbols/index.css":
 /*!*********************************************************************************************************************************************************!*\
-  !*** ./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/material-symbols/index.css ***!
+  !*** ./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/material-symbols/index.css ***!
   \*********************************************************************************************************************************************************/
 /***/ ((module, __webpack_exports__, __webpack_require__) => {
 
@@ -19499,9 +19502,9 @@ ___CSS_LOADER_EXPORT___.push([module.id, `@font-face {
 
 /***/ }),
 
-/***/ "./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css":
+/***/ "./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css":
 /*!*******************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css ***!
+  !*** ./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css ***!
   \*******************************************************************************************************************************************************************************************************************************************************************************************************************/
 /***/ ((module, __webpack_exports__, __webpack_require__) => {
 
@@ -19565,7 +19568,7 @@ ___CSS_LOADER_EXPORT___.push([module.id, `
 .navbar-icon[data-v-772715a8] {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   width: 30px;
   height: 30px;
   margin-left: 20px;
@@ -19586,11 +19589,12 @@ ___CSS_LOADER_EXPORT___.push([module.id, `
   width: auto;
   flex-direction: row;
   justify-content: end;
+  padding: 0 2%;
 }
 a[data-v-772715a8]{
   text-decoration: none;
 }
-`, "",{"version":3,"sources":["webpack://./assets/js/vue/components/Navbar.vue"],"names":[],"mappings":";AAgEA;EAGE,sBAAsB;AACxB;AAEA;EACE,yBAAyB;EACzB,gCAAgC;EAChC,YAAY;EACZ,WAAW;EACX,aAAa;EACb,mBAAmB;EACnB,eAAe;AACjB;AAEA;EACE,2EAA2D;EAC3D,wBAAwB;EACxB,YAAY;EACZ,WAAW;EACX,cAAc;EACd,0CAA0C,EAAE,eAAe;AAC7D;AAGA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,YAAY;EACZ,cAAc;EACd,qBAAqB;EACrB,sCAAsC;AACxC;AAEA;EACE,cAAc;EACd,+CAA+C;EAC/C,eAAe;EACf,gBAAgB;EAChB,iBAAiB;EACjB,mBAAmB;AACrB;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,WAAW;EACX,YAAY;EACZ,iBAAiB;AACnB;AAGA;EACE,kBAAkB;AACpB;AAEA;EACE,gEAAgE;EAChE,aAAa;AAEf;AAEA;EACE,aAAa;AACf;AAIA;EACE,aAAa;EACb,OAAO;EACP,WAAW;EACX,mBAAmB;EACnB,oBAAoB;AACtB;AAEA;EACE,qBAAqB;AACvB","sourcesContent":["<template>\r\n  <nav class=\"navbar\">\r\n    <div class=\"navbar-logo\" />\r\n\r\n    <router-link \r\n      to=\"/place-order\" \r\n      class=\"nav-item nav-item--order\"\r\n    >\r\n      <span class=\"nav-item__label\">Place Order</span>\r\n    </router-link>\r\n\r\n    <router-link\r\n      to=\"/orders\"\r\n      class=\"nav-item nav-item--woocommerce\"\r\n    >\r\n      <span class=\"nav-item__label\">WooCommerce Orders</span>\r\n    </router-link>\r\n\r\n    <router-link \r\n      to=\"/records\" \r\n      class=\"nav-item nav-item--records\"\r\n    >\r\n      <span class=\"nav-item__label\">Records</span>\r\n    </router-link>\r\n\r\n    <router-link \r\n      to=\"/dashboard\" \r\n      class=\"nav-item nav-item--dashboard\"\r\n    >\r\n      <span class=\"nav-item__label\">Dashboard</span>\r\n    </router-link>\r\n\r\n    <div class=\"nav-controls\">\r\n      <router-link \r\n        to=\"/settings\" \r\n        class=\"navbar-icon navbar-icon--settings\"\r\n      >\r\n        <span class=\"material-symbols-outlined info-icon icon\">info</span> <!-- Information Symbol -->\r\n      </router-link>\r\n  \r\n      <router-link \r\n        to=\"/info\" \r\n        class=\"navbar-icon navbar-icon--info\"\r\n      >\r\n      <span class=\"material-symbols-outlined settings-icon icon\">settings</span> <!-- Information Symbol -->\r\n      </router-link>\r\n    </div>\r\n\r\n  </nav>\r\n</template>\r\n\r\n<script>\r\n\r\nexport default {\r\n  name: \"Navbar\",\r\n  data() {\r\n    return {\r\n    };\r\n  },\r\n};\r\n</script>\r\n\r\n<style scoped>\r\n\r\n*,\r\n*::before,\r\n*::after {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.navbar {\r\n  background-color: #ffffff;\r\n  border-bottom: 1px solid #f16622;\r\n  height: 60px;\r\n  width: 100%;\r\n  display: flex;\r\n  align-items: center;\r\n  padding: 0 10px;\r\n}\r\n\r\n.navbar-logo {\r\n  background: url('@images/logo.png') no-repeat center center;\r\n  background-size: contain;\r\n  height: 60px;\r\n  width: 80px;\r\n  flex-shrink: 0;\r\n  image-rendering: -webkit-optimize-contrast; /* For Chrome */\r\n}\r\n\r\n\r\n.nav-item {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  height: 100%;\r\n  margin: 0 20px;\r\n  text-decoration: none;\r\n  transition: background-color 0.3s ease;\r\n}\r\n\r\n.nav-item__label {\r\n  color: #707070;\r\n  font-family: \"Noto Sans\", Helvetica, sans-serif;\r\n  font-size: 14px;\r\n  font-weight: 500;\r\n  letter-spacing: 0;\r\n  white-space: nowrap;\r\n}\r\n\r\n.navbar-icon {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 30px;\r\n  height: 30px;\r\n  margin-left: 20px;\r\n}\r\n\r\n\r\n.navbar-icon--settings {\r\n  margin-right: 20px;\r\n}\r\n\r\n.material-symbols-outlined {\r\n  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' ;\r\n  outline: none;\r\n\r\n}\r\n\r\n.icon{\r\n  color:#f16622;\r\n}\r\n\r\n\r\n\r\n.nav-controls{\r\n  display: flex;\r\n  flex: 1;\r\n  width: auto;\r\n  flex-direction: row;\r\n  justify-content: end;\r\n}\r\n\r\na{\r\n  text-decoration: none;\r\n}\r\n</style>"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./assets/js/vue/components/Navbar.vue"],"names":[],"mappings":";AAgEA;EAGE,sBAAsB;AACxB;AAEA;EACE,yBAAyB;EACzB,gCAAgC;EAChC,YAAY;EACZ,WAAW;EACX,aAAa;EACb,mBAAmB;EACnB,eAAe;AACjB;AAEA;EACE,2EAA2D;EAC3D,wBAAwB;EACxB,YAAY;EACZ,WAAW;EACX,cAAc;EACd,0CAA0C,EAAE,eAAe;AAC7D;AAGA;EACE,aAAa;EACb,mBAAmB;EACnB,uBAAuB;EACvB,YAAY;EACZ,cAAc;EACd,qBAAqB;EACrB,sCAAsC;AACxC;AAEA;EACE,cAAc;EACd,+CAA+C;EAC/C,eAAe;EACf,gBAAgB;EAChB,iBAAiB;EACjB,mBAAmB;AACrB;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,sBAAsB;EACtB,WAAW;EACX,YAAY;EACZ,iBAAiB;AACnB;AAGA;EACE,kBAAkB;AACpB;AAEA;EACE,gEAAgE;EAChE,aAAa;AAEf;AAEA;EACE,aAAa;AACf;AAIA;EACE,aAAa;EACb,OAAO;EACP,WAAW;EACX,mBAAmB;EACnB,oBAAoB;EACpB,aAAa;AACf;AAEA;EACE,qBAAqB;AACvB","sourcesContent":["<template>\r\n  <nav class=\"navbar\">\r\n    <div class=\"navbar-logo\" />\r\n\r\n    <router-link \r\n      to=\"/place-order\" \r\n      class=\"nav-item nav-item--order\"\r\n    >\r\n      <span class=\"nav-item__label\">Place Order</span>\r\n    </router-link>\r\n\r\n    <router-link\r\n      to=\"/orders\"\r\n      class=\"nav-item nav-item--woocommerce\"\r\n    >\r\n      <span class=\"nav-item__label\">WooCommerce Orders</span>\r\n    </router-link>\r\n\r\n    <router-link \r\n      to=\"/records\" \r\n      class=\"nav-item nav-item--records\"\r\n    >\r\n      <span class=\"nav-item__label\">Records</span>\r\n    </router-link>\r\n\r\n    <router-link \r\n      to=\"/dashboard\" \r\n      class=\"nav-item nav-item--dashboard\"\r\n    >\r\n      <span class=\"nav-item__label\">Dashboard</span>\r\n    </router-link>\r\n\r\n    <div class=\"nav-controls\">\r\n      <router-link \r\n        to=\"/settings\" \r\n        class=\"navbar-icon navbar-icon--settings\"\r\n      >\r\n        <span class=\"material-symbols-outlined info-icon icon\">info</span> <!-- Information Symbol -->\r\n      </router-link>\r\n  \r\n      <router-link \r\n        to=\"/info\" \r\n        class=\"navbar-icon navbar-icon--info\"\r\n      >\r\n      <span class=\"material-symbols-outlined settings-icon icon\">settings</span> <!-- Information Symbol -->\r\n      </router-link>\r\n    </div>\r\n\r\n  </nav>\r\n</template>\r\n\r\n<script>\r\n\r\nexport default {\r\n  name: \"Navbar\",\r\n  data() {\r\n    return {\r\n    };\r\n  },\r\n};\r\n</script>\r\n\r\n<style scoped>\r\n\r\n*,\r\n*::before,\r\n*::after {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.navbar {\r\n  background-color: #ffffff;\r\n  border-bottom: 1px solid #f16622;\r\n  height: 60px;\r\n  width: 100%;\r\n  display: flex;\r\n  align-items: center;\r\n  padding: 0 10px;\r\n}\r\n\r\n.navbar-logo {\r\n  background: url('@images/logo.png') no-repeat center center;\r\n  background-size: contain;\r\n  height: 60px;\r\n  width: 80px;\r\n  flex-shrink: 0;\r\n  image-rendering: -webkit-optimize-contrast; /* For Chrome */\r\n}\r\n\r\n\r\n.nav-item {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  height: 100%;\r\n  margin: 0 20px;\r\n  text-decoration: none;\r\n  transition: background-color 0.3s ease;\r\n}\r\n\r\n.nav-item__label {\r\n  color: #707070;\r\n  font-family: \"Noto Sans\", Helvetica, sans-serif;\r\n  font-size: 14px;\r\n  font-weight: 500;\r\n  letter-spacing: 0;\r\n  white-space: nowrap;\r\n}\r\n\r\n.navbar-icon {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: start;\r\n  width: 30px;\r\n  height: 30px;\r\n  margin-left: 20px;\r\n}\r\n\r\n\r\n.navbar-icon--settings {\r\n  margin-right: 20px;\r\n}\r\n\r\n.material-symbols-outlined {\r\n  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' ;\r\n  outline: none;\r\n\r\n}\r\n\r\n.icon{\r\n  color:#f16622;\r\n}\r\n\r\n\r\n\r\n.nav-controls{\r\n  display: flex;\r\n  flex: 1;\r\n  width: auto;\r\n  flex-direction: row;\r\n  justify-content: end;\r\n  padding: 0 2%;\r\n}\r\n\r\na{\r\n  text-decoration: none;\r\n}\r\n</style>"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -19728,10 +19732,10 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_3_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/vue-style-loader/index.js!../../../../node_modules/css-loader/dist/cjs.js!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css */ "./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css");
-/* harmony import */ var _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_3_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_3_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_4_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/vue-style-loader/index.js!../../../../node_modules/css-loader/dist/cjs.js!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css */ "./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css");
+/* harmony import */ var _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_4_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_4_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony reexport (unknown) */ var __WEBPACK_REEXPORT_OBJECT__ = {};
-/* harmony reexport (unknown) */ for(const __WEBPACK_IMPORT_KEY__ in _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_3_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__) if(__WEBPACK_IMPORT_KEY__ !== "default") __WEBPACK_REEXPORT_OBJECT__[__WEBPACK_IMPORT_KEY__] = () => _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_3_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__[__WEBPACK_IMPORT_KEY__]
+/* harmony reexport (unknown) */ for(const __WEBPACK_IMPORT_KEY__ in _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_4_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__) if(__WEBPACK_IMPORT_KEY__ !== "default") __WEBPACK_REEXPORT_OBJECT__[__WEBPACK_IMPORT_KEY__] = () => _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_4_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_Navbar_vue_vue_type_style_index_0_id_772715a8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__[__WEBPACK_IMPORT_KEY__]
 /* harmony reexport (unknown) */ __webpack_require__.d(__webpack_exports__, __WEBPACK_REEXPORT_OBJECT__);
 
 
@@ -19746,34 +19750,34 @@ __webpack_require__.r(__webpack_exports__);
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(/*! !!../css-loader/dist/cjs.js!../postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./index.css */ "./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/material-symbols/index.css");
+var content = __webpack_require__(/*! !!../css-loader/dist/cjs.js!../postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./index.css */ "./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/material-symbols/index.css");
 if(content.__esModule) content = content.default;
 if(typeof content === 'string') content = [[module.id, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
 var add = (__webpack_require__(/*! !../vue-style-loader/lib/addStylesClient.js */ "./node_modules/vue-style-loader/lib/addStylesClient.js")["default"])
-var update = add("54f74248", content, false, {});
+var update = add("71a3f60a", content, false, {});
 // Hot Module Replacement
 if(false) {}
 
 /***/ }),
 
-/***/ "./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css":
+/***/ "./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css":
 /*!************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css ***!
+  !*** ./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css ***!
   \************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(/*! !!../../../../node_modules/css-loader/dist/cjs.js!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css */ "./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-3.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css");
+var content = __webpack_require__(/*! !!../../../../node_modules/css-loader/dist/cjs.js!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css */ "./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/components/Navbar.vue?vue&type=style&index=0&id=772715a8&scoped=true&lang=css");
 if(content.__esModule) content = content.default;
 if(typeof content === 'string') content = [[module.id, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
 var add = (__webpack_require__(/*! !../../../../node_modules/vue-style-loader/lib/addStylesClient.js */ "./node_modules/vue-style-loader/lib/addStylesClient.js")["default"])
-var update = add("763b5770", content, false, {});
+var update = add("2a9cf8f1", content, false, {});
 // Hot Module Replacement
 if(false) {}
 

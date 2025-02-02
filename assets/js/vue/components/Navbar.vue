@@ -110,7 +110,7 @@ export default {
 .navbar-icon {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   width: 30px;
   height: 30px;
   margin-left: 20px;
@@ -139,6 +139,7 @@ export default {
   width: auto;
   flex-direction: row;
   justify-content: end;
+  padding: 0 2%;
 }
 
 a{

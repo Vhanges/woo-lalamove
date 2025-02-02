@@ -1,8 +1,6 @@
 <template>
-    <div id="app">
       <Navbar />
-      <router-view/>
-    </div>
+      <router-view :key="$route.path"/>
 </template>
   
   <script>

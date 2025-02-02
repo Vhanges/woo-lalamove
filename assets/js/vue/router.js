@@ -11,6 +11,11 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { 
+      path: '/',
+      component: PlaceOrder,
+      name: 'home'
+    },
+    { 
       path: '/place-order',
       component: PlaceOrder,
       name: 'place-order'
