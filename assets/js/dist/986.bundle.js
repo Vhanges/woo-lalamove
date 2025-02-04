@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunkwoo_lalamove=self.webpackChunkwoo_lalamove||[]).push([[986],{986:(e,l,a)=>{a.r(l),a.d(l,{default:()=>u});var r=a(955);const n={name:"PlaceOrder"},u=(0,a(406).A)(n,[["render",function(e,l,a,n,u,o){return(0,r.uX)(),(0,r.CE)("div",null,l[0]||(l[0]=[(0,r.Lk)("h2",null,"Place Order",-1),(0,r.Lk)("p",null,"Use this page to place a new order.",-1)]))}]])}}]);
-//# sourceMappingURL=986.bundle.js.map

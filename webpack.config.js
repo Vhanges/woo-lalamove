@@ -1,7 +1,9 @@
 const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader');
 const webpack = require('webpack'); 
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');  
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin'); 
+const TerserPlugin = require('terser-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin; 
 
 module.exports = {
     entry: './assets/js/index.js',
@@ -49,7 +51,7 @@ module.exports = {
                     {
                       loader: 'sass-loader',
                       options: {
-                        additionalData: '@import "~@/assets/css/scss/main.scss";'
+                        additionalData: '@use "@/css/scss/main.scss";'
                       }
                     }
                 ]
@@ -76,7 +78,7 @@ module.exports = {
     resolve: {
         alias: {
             vue$: 'vue/dist/vue.esm-bundler.js',
-            '@': path.resolve(__dirname, 'assets/js'), 
+            '@': path.resolve(__dirname, 'assets'), 
             '@component': path.resolve(__dirname, 'assets/js/vue/components'), 
             '@views': path.resolve(__dirname, 'assets/js/vue/views'), 
             '@images': path.resolve(__dirname, 'assets/images')
@@ -90,14 +92,16 @@ module.exports = {
             __VUE_OPTIONS_API__: JSON.stringify(false), // Disable Options API
             __VUE_PROD_DEVTOOLS__: JSON.stringify(true),
             __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false)
-        })
+        }),
+        new BundleAnalyzerPlugin()
     ],
     mode: 'production',
     devtool: 'source-map',
     optimization: {
         minimize: true,
         minimizer: [
-            new CssMinimizerPlugin()
+            new CssMinimizerPlugin(),
+            new TerserPlugin()
         ],
     },
     externals: {

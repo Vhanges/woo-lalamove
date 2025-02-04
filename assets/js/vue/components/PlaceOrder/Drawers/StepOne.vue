@@ -1,7 +1,14 @@
 <template>
     <div class="wrapper">
         <div class="address-wrapper">
-
+            <form action="">
+                <div class="text-container">
+                    <input type="text" name="" id="pickup" class="text-box" placeholder="Add Pick up addresss">
+                </div>
+                <div class="text-container">
+                    <input type="text" name="" id="drop-off" class="text-box" placeholder="Add Drop off address">
+                </div>
+            </form>
         </div>
     </div>
 </template>
@@ -15,7 +22,7 @@
     }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .wrapper{
     display: flex !important;
     flex-direction: column;
