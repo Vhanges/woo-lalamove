@@ -72,9 +72,9 @@
 
 /*! leaflet/dist/leaflet.css */
 
-/*! vue */
+/*! sortablejs-vue3 */
 
-/*! vue-draggable-plus */
+/*! vue */
 
 /*!********************************************!*\
   !*** ./assets/js/vue/views/PlaceOrder.vue ***!

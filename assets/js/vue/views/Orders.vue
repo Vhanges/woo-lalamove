@@ -25,13 +25,14 @@ onMounted(() => {
   // Use the sortableList ref instead of querySelector
   new Sortable(sortableList.value, {
     animation: 300,
-    onEnd: (evt) => {
-      // Use Vue's reactivity system properly
-      const newItems = [...shipments.value];
-      const [movedItem] = newItems.splice(evt.oldIndex, 1);
-      newItems.splice(evt.newIndex, 0, movedItem);
-      shipments.value = newItems;
-    }
+    ghostClass: 'blue-background-class',
+
   });
 });
 </script>
+
+<style scoped>
+.blue-background-class {
+  background-color: blue;
+}
+</style>

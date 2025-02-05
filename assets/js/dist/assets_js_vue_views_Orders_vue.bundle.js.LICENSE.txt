@@ -1,12 +1,24 @@
+/*! !!../../../../node_modules/css-loader/dist/cjs.js!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Orders.vue?vue&type=style&index=0&id=811fc292&scoped=true&lang=css */
+
+/*! !../../../../node_modules/vue-style-loader/lib/addStylesClient.js */
+
 /*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-2.use!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Orders.vue?vue&type=script&setup=true&lang=js */
 
-/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-2.use!../../../../node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Orders.vue?vue&type=template&id=811fc292 */
+/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-2.use!../../../../node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Orders.vue?vue&type=template&id=811fc292&scoped=true */
+
+/*! -!../../../../node_modules/vue-style-loader/index.js!../../../../node_modules/css-loader/dist/cjs.js!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0]!./Orders.vue?vue&type=style&index=0&id=811fc292&scoped=true&lang=css */
+
+/*! ../../../../node_modules/css-loader/dist/runtime/api.js */
+
+/*! ../../../../node_modules/css-loader/dist/runtime/sourceMaps.js */
 
 /*! ../../../../node_modules/vue-loader/dist/exportHelper.js */
 
 /*! ./Orders.vue?vue&type=script&setup=true&lang=js */
 
-/*! ./Orders.vue?vue&type=template&id=811fc292 */
+/*! ./Orders.vue?vue&type=style&index=0&id=811fc292&scoped=true&lang=css */
+
+/*! ./Orders.vue?vue&type=template&id=811fc292&scoped=true */
 
 /*! sortablejs */
 
@@ -16,18 +28,30 @@
   !*** ./assets/js/vue/views/Orders.vue ***!
   \****************************************/
 
-/*!**********************************************************************!*\
-  !*** ./assets/js/vue/views/Orders.vue?vue&type=template&id=811fc292 ***!
-  \**********************************************************************/
-
 /*!***************************************************************************!*\
   !*** ./assets/js/vue/views/Orders.vue?vue&type=script&setup=true&lang=js ***!
   \***************************************************************************/
+
+/*!**********************************************************************************!*\
+  !*** ./assets/js/vue/views/Orders.vue?vue&type=template&id=811fc292&scoped=true ***!
+  \**********************************************************************************/
+
+/*!************************************************************************************************!*\
+  !*** ./assets/js/vue/views/Orders.vue?vue&type=style&index=0&id=811fc292&scoped=true&lang=css ***!
+  \************************************************************************************************/
 
 /*!*********************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-2.use!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/views/Orders.vue?vue&type=script&setup=true&lang=js ***!
   \*********************************************************************************************************************************************************************************************/
 
-/*!**************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-2.use!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/views/Orders.vue?vue&type=template&id=811fc292 ***!
-  \**************************************************************************************************************************************************************************************************************************************************************/
+/*!**************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-2.use!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/views/Orders.vue?vue&type=template&id=811fc292&scoped=true ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************/
+
+/*!**************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/views/Orders.vue?vue&type=style&index=0&id=811fc292&scoped=true&lang=css ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************************************************/
+
+/*!*******************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-4.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0]!./assets/js/vue/views/Orders.vue?vue&type=style&index=0&id=811fc292&scoped=true&lang=css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
