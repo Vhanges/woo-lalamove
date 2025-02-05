@@ -39,6 +39,8 @@ function enqueue_vue_assets($hook) {
         true
     );
     
+    // Enqueue Material Symbols font
+    wp_enqueue_style('material-symbols', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
 
     // Critical security nonce - MUST stay in
     wp_localize_script('woo-lalamove', 'wooLalamoveData', [

@@ -17,7 +17,7 @@ $font-weight-regular: 400;
 $font-weight-medium: 500;
 $font-weight-bold: 700;
 
-// Colors
+/* Colors */
 
 //Background Color
 $bg-primary:  #f16622;
@@ -27,15 +27,33 @@ $bg-light: #FFFFFF;
 $bg-success: #DBFFE3;
 $bg-error: #FFEEEF;
 
-// Color
+
+// Header Color
+$header: #4C4C4C;
+$header-active: #f16622;
+
+// Text Color
 $txt-primary: #4C4C4C;
 $txt-secondary: #232323;
 
-// Color State
-$sucess: #05B32B;
-$error: #CB3F49;
+// Text Color State
+$txt-success: #05B32B;
+$txt-error: #CB3F49;
+$txt-awaiting: #5578B1;
+$txt-in-progress: #FF7937;
+$txt-processing: #4C4C4C;
+$txt-picked: #005353;
+$txt-expired: #232323;
 
+// Background Color State
+$bg-success: #DBFFE3;
+$bg-error: #FFEEEF;
+$bg-awaiting: #E0F0FD;
+$bg-in-progress: #FFEEEF;
+$bg-processing: #FEF9E1;
+$bg-picked: #93DFDF;
+$bg-expired: #D9D9D9;
 
-$header: #4C4C4C;
-$header-active: #f16622;
+// Border Color  
+$border-color: #EDEDED;
 

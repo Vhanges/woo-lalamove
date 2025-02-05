@@ -4,6 +4,7 @@
 </template>
   
   <script>
+  
   import Navbar from './components/Navbar.vue';
   
   export default {
@@ -13,5 +14,9 @@
     },
   };
   </script>
+
+<style lang="scss">
+  @use '@/css/scss/_variables.scss' as *;
+</style>
 
   

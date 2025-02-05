@@ -35,14 +35,14 @@
         to="/settings" 
         class="navbar-icon navbar-icon--settings"
       >
-        <span class="icon">info</span> <!-- Information Symbol -->
+        <span class="material-symbols-outlined icon">info</span> <!-- Information Symbol -->
       </router-link>
   
       <router-link 
         to="/info" 
         class="navbar-icon navbar-icon--info"
       >
-      <span class="icon">settings</span> <!-- Information Symbol -->
+      <span class="material-symbols-outlined icon">settings</span> <!-- Information Symbol -->
       </router-link>
     </div>
 
