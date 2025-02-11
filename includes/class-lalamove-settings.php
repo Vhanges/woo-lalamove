@@ -1,8 +1,6 @@
-<?php 
-
+<?php
 namespace Sevhen\WooLalamove;
 
-class Class_lalamove_Api
-{
+class Class_lalamove_settings{
     
 }
