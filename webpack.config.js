@@ -11,6 +11,7 @@ module.exports = {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'assets/js/dist'),
         publicPath: '/wp-content/plugins/woo-lalamove/assets/js/dist/',
+        clean: true,
     },
     module: {
         rules: [
@@ -84,11 +85,11 @@ module.exports = {
         new VueLoaderPlugin(),
         ,
         new webpack.DefinePlugin({
-            __VUE_OPTIONS_API__: JSON.stringify(false), // Disable Options API
+            __VUE_OPTIONS_API__: JSON.stringify(false), // Disabled Options API
             __VUE_PROD_DEVTOOLS__: JSON.stringify(true),
             __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false)
         }),
-        // new BundleAnalyzerPlugin()
+        //new BundleAnalyzerPlugin()
     ],
     mode: 'production',
     devtool: 'source-map',
@@ -97,7 +98,7 @@ module.exports = {
         minimizer: [
             new CssMinimizerPlugin(),
             new TerserPlugin()
-        ],
+        ]
     },
     externals: {
         jquery: 'jQuery',

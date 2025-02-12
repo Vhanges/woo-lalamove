@@ -75,15 +75,14 @@ add_action('admin_menu', 'woo_lalamove_add_admin_page');
 function woo_lalamove_render_admin_page() {
     ?>
 
-        <div id="lalamove-app">
+    <div id="lalamove-app">
 
-        </div>
         
-        <!-- Add this hidden nonce field -->
-        <input type="hidden" 
-               id="woo_lalamove_form_nonce" 
-               value="<?php echo wp_create_nonce('woo_lalamove_form_action'); ?>">
     </div>
+    <!-- Add this hidden nonce field -->
+    <input type="hidden" 
+           id="woo_lalamove_form_nonce" 
+           value="<?php echo wp_create_nonce('woo_lalamove_form_action'); ?>">
     <?php
 }
 

@@ -1,4 +1,5 @@
 #lalamove-app{
+    padding: 0 !important;
     flex: 1;
     position: relative;
     height: 100vh;
@@ -22,7 +23,7 @@ Remove WordPress Footer
 Override wordpress style
 */
 #wpbody {
-    margin: 0;
+    margin: 0 !important;
     padding: 0 !important;
 }
 

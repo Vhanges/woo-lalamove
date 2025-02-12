@@ -9,6 +9,9 @@ console.log("Vue app is mounting...");
 const app = createApp(App);
 app.use(Vue3Toastify, {
     autoClose: 3000,
+    style: {
+      top: '5%',
+    },
   });
 app.use(router);
 app.mount('#lalamove-app');

@@ -7,14 +7,15 @@
     <button @click="notifyDefault">Show Default Toast</button>
     <button @click="notifyCustom">Show Custom Toast</button>
   </div>
+
 </template>
 
 <script setup>
-import { toast } from 'vue3-toastify';
+import { toast, ToastifyContainer } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
 const notifySuccess = () => {
-  toast.success('This is a success message!', { autoClose: 2000 });
+  toast.success('This is a success message!', { autoClose: 2000, });
 };
 
 const notifyError = () => {
@@ -37,7 +38,7 @@ const notifyCustom = () => {
   toast('This is a custom toast!', {
     autoClose: 3000,
     style: {
-      backgroundColor: 'purple',
+      top: '5%',
       color: 'white',
       fontSize: '16px',
       fontFamily: 'Arial, sans-serif'

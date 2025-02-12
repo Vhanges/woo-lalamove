@@ -1,18 +1,13 @@
 <template>
+      <div id="toast-target"></div>
       <Navbar />
       <router-view :key="$route.path"/>
 </template>
-  
-  <script>
-  
-  import Navbar from './components/Navbar.vue';
-  
-  export default {
-    name: 'App',
-    components: {
-      Navbar,
-    },
-  };
+
+<script setup>
+import Navbar from './components/Navbar.vue';
+
+
   </script>
 
 <style lang="scss">
