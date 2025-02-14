@@ -9,6 +9,15 @@ if (!defined('ABSPATH')) exit;
 
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
+
+use Sevhen\WooLalamove\Class_Lalamove_Settings;
+use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
+use Sevhen\WooLalamove\Class_Lalamove_Api;
+
+    new Class_Lalamove_Settings();
+    new Class_Lalamove_Endpoints();
+    new Class_Lalamove_Api();
+
 function enqueue_vue_assets($hook) {
     if ($hook !== 'toplevel_page_woo-lalamove') {
         return;
@@ -85,8 +94,5 @@ function woo_lalamove_render_admin_page() {
            value="<?php echo wp_create_nonce('woo_lalamove_form_action'); ?>">
     <?php
 }
-
-
-
 
 

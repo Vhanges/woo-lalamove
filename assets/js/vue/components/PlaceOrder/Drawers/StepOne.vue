@@ -28,25 +28,88 @@
       </form>
     </div>
 
+    <div>
+    <label for="locodeSelect">Select Location:</label>
+    <select id="locodeSelect" v-model="selectedLocode">
+      <option 
+        v-for="loc in locations" 
+        :key="loc.locode" 
+        :value="loc.locode">
+        {{ loc.locode }} - {{ loc.name }}
+      </option>
+    </select>
+
+    <div v-if="selectedLocation">
+      <h3>Details for {{ selectedLocation.name }}</h3>
+      <ul>
+        <li v-for="service in selectedLocation.services" :key="service.key">
+          <strong>{{ service.description }}</strong>
+          <div>
+            Dimensions: 
+            {{ service.dimensions.length.value }} {{ service.dimensions.length.unit }}, 
+            {{ service.dimensions.width.value }} {{ service.dimensions.width.unit }}, 
+            {{ service.dimensions.height.value }} {{ service.dimensions.height.unit }}
+          </div>
+          <div>Load: {{ service.load.value }} {{ service.load.unit }}</div>
+          <!-- Optionally, list special requests -->
+        </li>
+      </ul>
+    </div>
+  </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Sortable } from 'sortablejs-vue3';
+import axios from 'axios';
 
 const addresses = ref([
   { id: 'pickup', placeholder: 'Add Pick up address', value: '' },
   { id: 'drop-off', placeholder: 'Add Drop off address', value: '' },
 ]);
 
-
 //Sortable JS Configuration
 const sortableOptions = {
   animation: 100,
   ghostClass: 'text-container-bg'
 };
+
+const locations = ref([]);
+const selectedLocode = ref('');
+
+// Compute the currently selected location based on the selectedLocode
+const selectedLocation = computed(() => {
+  return locations.value.find(loc => loc.locode === selectedLocode.value);
+});
+
+const fetchLocations = async () => {
+  try {
+    const response = await axios.get(
+      `${wpApiSettings.root}woo-lalamove/v1/get-city`,
+      { headers: { 'X-WP-Nonce': wpApiSettings.nonce } }
+    );
+    // Assuming the API returns data in { data: [ ... ] }
+    locations.value = response.data.data;
+    
+    console.log('Locations:', locations.value);
+    // Set a default selection if available
+    if (locations.value.length > 0) {
+      selectedLocode.value = locations.value[0].locode;
+    }
+  } catch (error) {
+    console.error('Error fetching locations:', error);
+  }
+};
+
+onMounted(() => {
+  fetchLocations();
+});
 </script>
+
+
+
 
 <style scoped lang="scss">
 @use '@/css/scss/_variables.scss' as *;
