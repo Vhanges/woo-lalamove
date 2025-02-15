@@ -42,7 +42,7 @@ const fetchCities = async () => {
     };
 
     const response = await axios.request(config);
-    cities.value = response.data.data;
+    cities.value = response.data;
     console.log('Cities:', cities.value); 
   } catch (error) {
     console.error('Error fetching cities:', error);

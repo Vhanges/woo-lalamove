@@ -8,15 +8,21 @@
 if (!defined('ABSPATH')) exit;
 
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
+require_once plugin_dir_path(__FILE__) . 'cors.php';
 
 
 use Sevhen\WooLalamove\Class_Lalamove_Settings;
 use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 
-    new Class_Lalamove_Settings();
-    new Class_Lalamove_Endpoints();
-    new Class_Lalamove_Api();
+new Class_Lalamove_Settings();
+new Class_Lalamove_Endpoints();
+new Class_Lalamove_Api();
+
+// Enable CORS for all requests
+add_action('rest_api_init', function () {
+    enableCORS();
+});
 
 function enqueue_vue_assets($hook) {
     if ($hook !== 'toplevel_page_woo-lalamove') {

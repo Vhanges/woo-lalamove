@@ -91,7 +91,7 @@ const fetchLocations = async () => {
       { headers: { 'X-WP-Nonce': wpApiSettings.nonce } }
     );
     // Assuming the API returns data in { data: [ ... ] }
-    locations.value = response.data.data;
+    locations.value = response.data;
     
     console.log('Locations:', locations.value);
     // Set a default selection if available

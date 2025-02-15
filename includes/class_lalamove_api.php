@@ -46,15 +46,13 @@ class Class_Lalamove_Api
         // **Prepare the raw signature string**
         $rawSignature = "{$timestamp}\r\nGET\r\n/v3/cities\r\n\r\n";
 
-        // **Define your API credentials**
-        $apiSecret = 'sk_test_ry3Koh7+wYmbKy3ADj03QT7MWszG1tjRYjDtHfadM9KD0IydKKO9ceQ5dfDqHYKT';
-        $apiKey    = 'pk_test_7e46272f5929b740c3be63781e31c2d9';
+
 
         // **Generate the HMAC-SHA256 signature in hexadecimal**
-        $signature = hash_hmac('sha256', $rawSignature, $apiSecret);
+        $signature = hash_hmac('sha256', $rawSignature, $this->api_secret);
 
         // **Build the token string**
-        $token = "{$apiKey}:{$timestamp}:{$signature}";
+        $token = "{$this->api_key}:{$timestamp}:{$signature}";
 
         // **Set up the cURL options using curl_setopt_array**
         $curl = curl_init();
@@ -84,6 +82,6 @@ class Class_Lalamove_Api
         }
 
         curl_close($curl);
-        return $data;
+        return $data['data'];
     }
 }
