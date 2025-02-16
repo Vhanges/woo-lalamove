@@ -12,6 +12,8 @@ import Navbar from './components/Navbar.vue';
 
 <style lang="scss">
   @use '@/css/scss/_variables.scss' as *;
+
+
 </style>
 
   

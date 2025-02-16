@@ -1,5 +1,5 @@
 // Font Variables
-$font-primary: 'Noto Sans', sans-serif;
+$font-primary: 'Noto Sans', sans-serif !important;
 
 // Font Size Variables
 $font-size-xs: 12px;
@@ -22,6 +22,7 @@ $font-weight-bold: 700;
 //Background Color
 $bg-primary:  #f16622;
 $bg-light: #FFFFFF;
+$bg-hovered: #EDEDED;
 
 //Background Color State
 $bg-success: #DBFFE3;

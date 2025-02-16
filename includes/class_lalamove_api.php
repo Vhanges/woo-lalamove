@@ -13,7 +13,6 @@ class Class_Lalamove_Api
     private $getMethod = 'GET';
     private $postMethod = 'POST';
 
-    private $region = 'PH';
 
     public function __construct() 
     {
@@ -36,6 +35,7 @@ class Class_Lalamove_Api
 
     /** 
      * Get City 
+     * @return $market return list of available market 
      */
     public function get_city()
     {
@@ -69,12 +69,12 @@ class Class_Lalamove_Api
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
             "Authorization: hmac {$token}",
-            'Market: PH'
+            'Market: '. get_option('lalamove_market', '')
         ),
         ));
 
         $response = curl_exec($curl);
-        $data = json_decode($response, true);
+        $market = json_decode($response, true);
 
         // **Handle any potential cURL errors**
         if(curl_errno($curl)) {
@@ -82,6 +82,6 @@ class Class_Lalamove_Api
         }
 
         curl_close($curl);
-        return $data['data'];
+        return $market['data'];
     }
 }

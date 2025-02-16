@@ -28,7 +28,9 @@
       </form>
     </div>
 
-    <div>
+    
+
+    <!-- <div>
     <label for="locodeSelect">Select Location:</label>
     <select id="locodeSelect" v-model="selectedLocode">
       <option 
@@ -51,11 +53,10 @@
             {{ service.dimensions.height.value }} {{ service.dimensions.height.unit }}
           </div>
           <div>Load: {{ service.load.value }} {{ service.load.unit }}</div>
-          <!-- Optionally, list special requests -->
         </li>
       </ul>
     </div>
-  </div>
+  </div> -->
 
   </div>
 </template>
@@ -104,7 +105,7 @@ const fetchLocations = async () => {
 };
 
 onMounted(() => {
-  fetchLocations();
+  //fetchLocations();
 });
 </script>
 

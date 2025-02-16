@@ -1,4 +1,5 @@
-#lalamove-app{
+
+#lalamove-app {
     padding: 0 !important;
     flex: 1;
     position: relative;
@@ -8,8 +9,8 @@
     flex-direction: column;
     overflow: scroll;
     gap: 0;
+    font-family:  'Noto Sans', sans-serif !important;
 }
-
 
 
 

@@ -32,18 +32,19 @@
 
     <div class="nav-controls">
       <router-link 
-        to="/settings" 
-        class="navbar-icon navbar-icon--settings"
-      >
-        <span class="material-symbols-outlined icon">info</span> <!-- Information Symbol -->
-      </router-link>
-  
-      <router-link 
         to="/info" 
         class="navbar-icon navbar-icon--info"
       >
-      <span class="material-symbols-outlined icon">settings</span> <!-- Information Symbol -->
+      <span class="material-symbols-outlined icon">info</span> <!-- Information Symbol -->
       </router-link>
+
+      <router-link 
+        to="/settings" 
+        class="navbar-icon navbar-icon--settings"
+      >
+        <span class="material-symbols-outlined icon">settings</span> <!-- Information Symbol -->
+      </router-link>
+  
     </div>
 
   </nav>
@@ -60,7 +61,8 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use '@/css/scss/_variables.scss' as *;
 
 *,
 *::before,
@@ -70,7 +72,7 @@ export default {
 
 .navbar {
   background-color: #ffffff;
-  border-bottom: 1px solid #f16622;
+  border-bottom: 1px solid $bg-primary;
   height: 60px;
   width: 100%;
   display: flex;
@@ -99,9 +101,8 @@ export default {
 }
 
 .nav-item__label {
-  color: #707070;
-  font-family: "Noto Sans", Helvetica, sans-serif;
-  font-size: 14px;
+  color: $txt-primary;
+  font-size: $font-size-sm;
   font-weight: 500;
   letter-spacing: 0;
   white-space: nowrap;
