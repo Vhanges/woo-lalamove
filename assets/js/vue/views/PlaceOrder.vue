@@ -1,43 +1,35 @@
 <template>
   <div class="wrapper">
-    <StepOne class="StepOne"/>
     <PlaceOrderMap class="PlaceOrderMap"/>
-    <MarketSelection class="MarketSelection"/>
+    <StepsContainer class="StepsContainer"/>
   </div>
+
 </template>
 
 <script setup>
-import StepOne from '../components/PlaceOrder/Drawers/StepOne.vue';
-import PlaceOrderMap from '../components/PlaceOrder/PlaceOrderMap.vue';
-import MarketSelection from '../components/Controls/MarketSelection.vue';
-
+import PlaceOrderMap from '../components/PlaceOrder/Map/PlaceOrderMap.vue';
+import StepsContainer from '../components/PlaceOrder/OrderForm/StepsContainer.vue';
 
 </script>
 
 <style scoped>
 .wrapper{
-  flex: 1;
   display: grid;
-  grid-template-columns: 40% 60%;
+  grid-template-columns: 50% 50%;
   grid-template-rows: 1fr;
-  grid-template-areas: 'drawer map';
+  grid-template-areas: 'form map';
   height: 100%;
   width: 100%;
-  margin: 0;
+}
+
+.StepsContainer {
+  grid-area: form;
 }
 
 .PlaceOrderMap {
   grid-area: map;
 }
 
-.StepOne {
-  grid-area: drawer;
-}
 
-.MarketSelection {
-  grid-area: map ;
-  justify-self: flex-end;
-  align-self: flex-start;
-  z-index: 1000;
-}
+
 </style>

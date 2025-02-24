@@ -1,13 +1,13 @@
 <template>
     <div @click="toggleDropdown" class="market-dropdown" >
-      <span class="dropdown-trigger">{{selectMarketText}}</span>
+      <span class="dropdown-trigger">{{selectedMarketLabel}}</span>
       <div v-if="isOpen" class="markets">
         <span
             v-for="market in markets"
             :key="market.locode"
             :data-value="market.locode"
             :class="['market', { active: selectedMarket === market.name }]"
-            @click="selectMarket(market.name)" 
+            @click="selectMarket(market.name, market.services)" 
           >
           {{market.name}}
         </span>
@@ -17,28 +17,41 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { eventBus } from '../../../../utils/eventBus.js';
 import axios from 'axios';
 
 const markets = ref(null);
 const isOpen = ref(false);
 const selectedMarket = ref(null);
-const emit = defineEmits(['market-selected']);
 
 
 
-const selectMarketText = computed(() => 
-  selectedMarket.value ? selectedMarket.value : 'Select a Market'
+const selectedMarketLabel = computed(() => 
+  selectedMarket.value ? selectedMarket.value : 'Choose your Market'
 );
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
 };
 
-const selectMarket = (market) => {
-  selectedMarket.value = market;
+const selectMarket = (name, services) => {
+  selectedMarket.value = name;
   isOpen.value = false;
-  emit('market-selected', market);
+  marketSerivces(services);
 };
+
+
+// Send the services data to placeorder component
+const marketSerivces = (services) => {
+ // Sort the services by load value in ascending order
+  const sortedServices = services.sort((a, b) => a.load.value - b.load.value);
+
+  // Emit the sorted services
+  eventBus.emit('market-services', sortedServices);
+
+  // Log the sorted services
+  console.log('Market Services:', sortedServices);
+}
 
 const fetchMarkets = async () => {
   try {
@@ -47,7 +60,6 @@ const fetchMarkets = async () => {
       {headers: { 'X-WP-Nonce': wpApiSettings.nonce }}
     );
     markets.value = response.data;
-
     console.log('Markets: ', markets.value);
   } catch(error) {
     console.error('Error fetching markets:', error);
@@ -55,7 +67,7 @@ const fetchMarkets = async () => {
 }
 
 onMounted(() => {
-  fetchMarkets();
+   fetchMarkets();
 });
 
 
@@ -70,10 +82,10 @@ onMounted(() => {
 .market-dropdown {
   display: flex;
   flex-direction: column;
-  height: 600px;
+  height: 300px;
   gap: .5rem;
   cursor: pointer;
-  margin: 3%;
+  margin: 1%;
   width: 15rem;
   user-select: none;
 }

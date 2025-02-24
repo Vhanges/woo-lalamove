@@ -76,7 +76,8 @@ module.exports = {
             vue$: 'vue/dist/vue.esm-bundler.js',
             '@': path.resolve(__dirname, 'assets'), 
             '@component': path.resolve(__dirname, 'assets/js/vue/components'), 
-            '@views': path.resolve(__dirname, 'assets/js/vue/views'), 
+            '@views': path.resolve(__dirname, 'assets/js/vue/views'),
+            '@eventBus': path.resolve(__dirname, 'assets/js/utils'), 
             '@images': path.resolve(__dirname, 'assets/images')
         },
         extensions: ['.js', '.vue', '.json']
