@@ -3,7 +3,8 @@ namespace Sevhen\WooLalamove;
 
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 
-class Class_Lalamove_Settings {
+class Class_Lalamove_Settings 
+{
     public function __construct() {
         add_action('admin_menu', [$this, 'add_settings_page']);
         add_action('admin_init', [$this, 'register_settings']);

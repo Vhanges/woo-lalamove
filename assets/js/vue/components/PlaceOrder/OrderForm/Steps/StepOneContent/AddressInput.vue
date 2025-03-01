@@ -29,12 +29,15 @@ const handleDelete = () => {
   box-sizing: border-box;
 }
 
+.text-container *{
+  font-size: $font-size-sm;
+}
+
 .text-box {
   width: 100%;
   height: 3rem;
   border: none;
   border-bottom: 1px solid $border-color;
-  font-size: $font-size-xs;
 }
 
 .text-box:focus {
@@ -58,6 +61,7 @@ const handleDelete = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  
 
   &:hover {
     color: $txt-primary; 

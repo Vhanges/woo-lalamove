@@ -33,7 +33,7 @@ const toggleDropdown = () => {
       </div>
       <div>
         <ul>
-          <li v-for="request in additionalServices.withoutParentType" :key="request.name">
+          <li v-for="request in additionalServices.withoutParentType" :key="request.name" class="single-service">
             <input type="checkbox" :id="request.name" :value="request.name">
             <label :for="request.name" class="services">{{ request.description}}</label>
           </li>
@@ -50,8 +50,13 @@ const toggleDropdown = () => {
 }
 
 .child-type {
-    margin-left: 3rem;
-  }
+  margin-left: 3rem;
+}
+
+.single-service{
+  display: flex;
+  align-items: center;
+}
 
 
 p {

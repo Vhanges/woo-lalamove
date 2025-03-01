@@ -85,7 +85,7 @@ onMounted(() => {
 
 
 <template>
-  <div class="wrapper">
+  <div class="stepone-wrapper">
     <div class="address-wrapper">
       <p class="header">ROUTE (Max. 20 STOPS)</p>
       <form class="address-content">
@@ -150,7 +150,7 @@ onMounted(() => {
 * {
   box-sizing: border-box;
 }
-.wrapper {
+.stepone-wrapper {
   display: flex !important;
   flex-direction: column;
   justify-content: flex-start;
@@ -159,7 +159,7 @@ onMounted(() => {
   padding: 3%;
   height: 100%;
   width: 100%;
-  margin-bottom: 100px;
+  margin-bottom: 300px;
 
 
   .address-wrapper {
@@ -178,7 +178,7 @@ onMounted(() => {
         outline: none;
         background-color: inherit;
         height: 3rem;
-        font-size: $font-size-xs;
+        font-size: $font-size-sm;
         color: $header-active;
         display: flex;
         align-items: center;
@@ -243,7 +243,7 @@ onMounted(() => {
 
 
 
-  .simple-list {
+.simple-list {
   list-style-type: none;
   padding: 0;
 }

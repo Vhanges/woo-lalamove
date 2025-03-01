@@ -43,6 +43,8 @@ const vehicle = defineProps({
     align-items: center;
     padding: 1rem;
     width: 150px;
+    max-width: 150px;
+    min-width: 150px;
     border-radius: 5px;
     height: 180px;
     border: 2px solid $border-color;
