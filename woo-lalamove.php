@@ -181,4 +181,36 @@ if ( ! class_exists('Woo_Lalamove') ) {
     }
     
     new Woo_Lalamove();
+
+    //Fetch checkout prduct data for lalamove modal order detail reference
+    function get_checkout_product_data() {
+
+    
+        $cart_items = WC()->cart->get_cart();
+        $products = array();
+    
+        foreach ( $cart_items as $cart_item_key => $cart_item ) {
+            $product = $cart_item['data'];
+            $products[] = array(
+                'name' => $product->get_name(),
+                'quantity' => $cart_item['quantity'],
+                'weight' => $product->get_weight(),
+            );
+        }
+    
+        wp_send_json_success( $products );
+    }
+    add_action( 'wp_ajax_get_checkout_product_data', 'get_checkout_product_data' );
+    add_action( 'wp_ajax_nopriv_get_checkout_product_data', 'get_checkout_product_data' );
+
+    function enqueue_custom_scripts() {
+        // Localize script to pass AJAX URL and nonce to JavaScript
+        wp_localize_script('custom-plugin-script', 'pluginAjax', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('custom_plugin_nonce'),
+            'image_url' => plugins_url('assets/images/',   __FILE__),
+        ));
+    }
+    add_action( 'wp_enqueue_scripts', 'enqueue_custom_scripts' );
+    
 }
