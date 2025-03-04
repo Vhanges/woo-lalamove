@@ -152,31 +152,56 @@ $("head").append(customModalCss);
             });
     
             $("#customModal .modal-body").html(`
-                <div id="map"></div>
-                <form id="deliveryForm" class="d-flex flex-column justify-content-center align-items-start delivery mb-6">
-                    <p class="header">VEHICLE TYPE</p>
-                    <div class="vehicle-wrapper w-100 d-flex flex-row justify-content-around"></div>
-                    <p class="header">DATE & TIME</p>
-                      <div class="d-flex flex-row input-group input-daterange">
-                          <label class="">Select Date and Time Range :</label>
-                          <input type="text" name="daterange" readonly />
-                      </div>
-                    </div>
-                    <p class="header">ADDITIONAL SERVICES</p>
-                    <div class="add-services-wrapper w-100 d-flex flex-column align-content-around"></div>
-                </form>
+              <div id="map" class="mb-4" style="height: 300px;"></div>
+              <form id="deliveryForm" class="d-flex flex-column justify-content-center align-items-start delivery mb-6">
+           
+              <p class="header">VEHICLE TYPE</p>
+              <div class="vehicle-wrapper w-100 d-flex flex-row justify-content-around mb-4"></div>
+
+              <p class="header">DATE & TIME</p>
+              <div id="schedule-date" class="form-control d-flex flex-row align-items-center" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%;" readonly>
+               <i class="fa fa-calendar"> </i>
+              </div>
+
+              <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="basic-addon2">
+                <span class="input-group-text" id="basic-addon2">@example.com</span>
+              </div>
+
+              <p class="header">ADDITIONAL SERVICES</p>
+              <div class="add-services-wrapper w-100 d-flex flex-column align-content-around"></div>
+              </form>
             `);
     
             // Initialize the Leaflet map with enhanced geolocation accuracy
             initMap();
     
-            var startDate = moment();
+            var startDate = moment().startOf('month');
             var endDate = moment().add(30, 'days');
-            jQuery('input[name="daterange"]').daterangepicker({
+
+            function cb(start, end) {
+              console.log('start:', start.format('MMMM D, YYYY HH:mm:ss'));
+              $('#customModal #schedule-date').empty();
+              $('#customModal #schedule-date').append(`
+                  <p>${start.format('MMMM D, YYYY HH:mm:ss')} - ${end.format('MMMM D, YYYY HH:mm:ss')}</p>
+              `);
+          }
+          
+            var date = jQuery.noConflict();
+
+            date('#schedule-date').daterangepicker({
               "startDate": startDate,
               "endDate": endDate,
+              ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+             },
               minDate: moment().subtract(1, 'days'), // Minimum selectable date
-              maxDate: moment().add(1, 'year'), // Maximum selectable date
+              maxDate: moment().add(30, 'days'), // Maximum selectable date
               singleDatePicker: true, // Set to true for single date selection
               timePicker: true,
               timePicker24Hour: false,
@@ -191,7 +216,9 @@ $("head").append(customModalCss);
                 applyLabel: 'Apply', // Custom label for apply button
                 cancelLabel: 'Cancel' // Custom label for cancel button
               },
-            });
+            }, cb);
+
+            cb(startDate, endDate);
     
         } catch (error) {
             console.error("AJAX request failed:", error);

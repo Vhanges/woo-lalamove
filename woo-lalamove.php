@@ -164,7 +164,10 @@ if ( ! class_exists('Woo_Lalamove') ) {
             
                 // Enqueue Bootstrap CSS
                 wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css', array(), null);
-            
+               
+                // Enqueue Bootstrap Icons CSS
+                wp_enqueue_style('bootstrap-icons', 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css', array(), null);
+               
                 // Localize script to pass AJAX URL and nonce to JavaScript
                 wp_localize_script('custom-plugin-script', 'lalamoveAjax', array(
                     'ajax_url' => admin_url('admin-ajax.php'),
