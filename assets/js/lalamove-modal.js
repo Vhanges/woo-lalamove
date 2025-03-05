@@ -118,11 +118,11 @@ $("head").append(customModalCss);
       $("#customModal").on("shown.bs.modal", async function () {
         $(this).removeAttr("aria-hidden");
     
-        var siteUrl = window.location.origin;
+        window.siteUrl = window.location.origin;
         try {
             // Fetch city data via AJAX
             let get_city = await $.ajax({
-                url: siteUrl + "/wp-json/woo-lalamove/v1/get-city",
+                url: window.siteUrl + "/wp-json/woo-lalamove/v1/get-city",
                 method: "GET",
                 data: { shipping_method: selectedValue },
             });
@@ -155,52 +155,34 @@ $("head").append(customModalCss);
               <p class="header">VEHICLE TYPE</p>
               <div class="vehicle-wrapper w-100 d-flex flex-row justify-content-around mb-4"></div>
 
-              <p class="header">DATE & TIME</p>
+              <p class="header">Delivery Date & Contact Information</p>
               <div id="schedule-date" class="form-control d-flex flex-row align-items-center mb-4" style="background: #fff; cursor: pointer; border: 1px solid #ccc; width: 100%;" >
               </div>
 
               <p class="header">ADDITIONAL NOTES</p>
               <textarea class="form-control mb-4" id="additionalNotes" rows="3" placeholder="Enter any additional notes here..."></textarea>
 
-
               <div class="form-group d-flex justify-content-between align-items-center w-100">
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
-                    
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
-                    
-                    <div class="custom-control custom-switch">
-                      <input type="checkbox" class="custom-control-input" id="customSwitch1">
-                      <label class="custom-control-label" for="customSwitch1"></label>
-                    </div>
+                <p class="m-0 align-self-center justify-self-center">Optimize Route</p>  
+                <p class="m-0 align-self-center justify-self-center">Find the most efficient route</p>  
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="customSwitch1">
+                  <label class="custom-control-label" for="customSwitch1"></label>
+                </div>
               </div>
 
               <div class="form-group d-flex justify-content-between align-items-center w-100">
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
-                    
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
-                    
-                    <div class="custom-control custom-switch">
-                      <input type="checkbox" class="custom-control-input" id="customSwitch1">
-                      <label class="custom-control-label" for="customSwitch1"></label>
-                    </div>
+                <p class="m-0 align-self-center justify-self-center">Proof of Delivery(POD)</p>  
+                <p class="m-0 align-self-center justify-self-center">POD for picked up and received product</p>  
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="customSwitch2">
+                  <label class="custom-control-label" for="customSwitch2"></label>
+                </div>
               </div>
 
-              <p class="header">ADDITIONAL NOTES</p>
+              <div class="pricing-details d-flex.flex-column.justify-content-center.align-items-start .mb-6 w-100">
 
-              <div class="form-group d-flex justify-content-between align-items-center w-100">
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
-                    
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
               </div>
-
-              
-              <div class="form-group d-flex justify-content-between align-items-center w-100">
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
-                    
-                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
-              </div>
-
-              
 
               </form>
             `);
@@ -539,54 +521,130 @@ $("head").append(customModalCss);
       );
     });
 
-    // $(document).on("click", ".vehicle", function () {
-    //   var index = $(this).data("index");
-    //   var selectedService = manilaServices[index].specialRequests;
-    //   var addServices = groupAddServices(selectedService)
-    //   console.log('Selected service:', addServices);
+    $(document).on("click", ".vehicle", function () {
+      console.log("CLLICKED");
+      let body = {
+        "data": {
+            // "scheduleAt": "2022-04-01T14:30:00.00Z", // optional
+            "serviceType": "MOTORCYCLE",
+            "specialRequests": ["CASH_ON_DELIVERY"], // optional
+            "language": "en_PH",
+            "stops": [
+              {
+                  "coordinates": {
+                      "lat": "14.555566",
+                      "lng": "121.130056"
+                  },
+                  "address": "GFT Textile Main Office, Unit E, Sitio Malabon, Barangay San Juan, Hwy 2000, Taytay, 1920 Rizal"
+              },
+              {
+                  "coordinates": {
+                      "lat": "14.557909",
+                      "lng": "121.137259"
+                  },
+                  "address": "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines"
+              }
+            ],
+            "isRouteOptimized": false, // optional only for quotations
+            "item": {
+                "quantity": "12",
+                "weight": "LESS_THAN_3_KG",
+                "categories": ["FOOD_DELIVERY", "OFFICE_ITEM"],
+                "handlingInstructions": ["KEEP_UPRIGHT"]
+            }
+        }
+      };
 
-    //   $("#customModal .add-services-wrapper").empty();
+      window.quotationId = null;
+      window.currency = null; 
+      window.total = null;    
 
-    //   Object.keys(addServices.withParentType).forEach(function(parentType) {
-    //     var services = addServices.withParentType[parentType];
-    //     var withParentHTML = `
-    //       <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-    //         ${parentType}  
-    //       </a>
-            
-    //        <div class="collapse" id="collapseExample">
+  
+      let quotation = $.ajax({
+        url: `${wpApiSettings.root}woo-lalamove/v1/get-quotation`,
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(body),
+        headers: { 'X-WP-Nonce': wpApiSettings.nonce },
+        success: function(response) {
+          
+            console.log("Response received:", response);
 
-    //         ${services.map(service => {
-    //         var description = service.description.replace(/.*·\s*/, '');
-    //         return `
-    //         <div class="form-check ml-3">
-    //           <input class="form-check-input" type="checkbox" value="${service.name}" id="flexCheckDefault" value>
-    //           <label class="form-check-label" for="flexCheckDefault">
-    //           ${description}
-    //           </label>
-    //         </div>
-    //         `;
-    //         }).join(' ')}
+            window.quotationId = response.data.quotationId? response.data.quotationId : null;
+            window.currency = response.data.priceBreakdown.currency? response.data.priceBreakdown.currency : null; ; 
+            window.total = response.data.priceBreakdown.total? response.data.priceBreakdown.total : null;   
+            var base   = response.data.priceBreakdown.base? response.data.priceBreakdown.base : null;  ;    
+            var extraMileage = response.data.priceBreakdown.extraMileage? response.data.priceBreakdown.extraMileage : null; ; 
+            var surcharge = response.data.priceBreakdown.surcharge? response.data.priceBreakdown.surcharge : null; ;    
 
-    //       </div>
-    //     `;
-    //     $("#customModal .add-services-wrapper").append(withParentHTML);
-    //   });
+            var total= window.total;
+            var currency = window.currency;
 
-    //   // Add services without parent type
-    //   addServices.withoutParentType.forEach(function(service) {
-    //     var serviceHtml = `
-    //       <div class="form-check">
-    //         <input class="form-check-input" type="checkbox" value="${service.name}" id="${service.name}">
-    //         <label class="form-check-label" for="${service.name}">
-    //           ${service.description}
-    //         </label>
-    //       </div>
-    //     `;
-    //     $("#customModal .add-services-wrapper").append(serviceHtml);
-    //   });
+            $('#customModal .modal-footer').empty();
 
-    // });
+            $('#customModal .modal-footer').prepend(`
+                <div class="total-wrapper w-100 d-inline-flex flex-column justify-content-end align-items-start gap-2 p-3" style="width: auto; height: 80px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #EDEDED;">
+                  <div class="text-dark" style="font-size: 14px; font-weight: 400;">TOTAL: </div>
+                  <div class="text-dark" style="font-size: 20px; font-weight: 600;">${currency + " " + total}</div>
+                </div>  
+                
+                <button type="button" class="btn btn-primary w-100" id="saveLocation">Save</button>
+
+            `);
+
+            $('#customModal .pricing-details').empty();  
+
+            let baseContent = `
+              <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                    <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
+                    <p class="m-0 align-self-center justify-self-center">${currency + " "+base}</p>  
+              </div>
+            `;
+            let extraMileageContent = `
+              <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                    <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
+                    <p class="m-0 align-self-center justify-self-center">${currency + " "+ extraMileage}</p>  
+              </div>
+            `;
+            let surchargeContent = `
+              <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                    <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
+                    <p class="m-0 align-self-center justify-self-center">${currency + " "+surcharge}</p>  
+              </div>
+            `;
+              
+            $('#customModal .pricing-details').prepend(`              
+              <p class="header">Pricing Details</p>
+            `);
+
+            if(base !== null){
+              $('#customModal .pricing-details').append(baseContent);
+            }
+            if(extraMileage !== null){
+              $('#customModal .pricing-details').append(extraMileageContent);
+            }
+            if(surcharge !== null){
+              $('#customModal .pricing-details').append(surchargeContent);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Error occurred:", status, error);
+        }
+      });
+
+      
+
+
+
+
+
+      }); 
+
+    
+
+
+  
+ 
   }
   function northCentralLuzonBlock(){
     $("#customModal .vehicle-wrapper").empty();

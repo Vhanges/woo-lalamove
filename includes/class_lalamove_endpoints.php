@@ -2,6 +2,7 @@
 namespace Sevhen\WooLalamove;
 
 use WP_REST_Request;
+use WP_REST_Response;
 
 class Class_Lalamove_Endpoints
 {
@@ -27,8 +28,8 @@ class Class_Lalamove_Endpoints
 
         // Get Quotation
         register_rest_route('woo-lalamove/v1', '/get-quotation', [
-            'methods' => 'POST',
-            'callback' => [$this, 'quotation'],
+            'methods' => ['GET', 'POST'],
+            'callback' => [$this, 'get_quotation'],
             'permission_callback' => '__return_true'
         ]);
 
@@ -56,9 +57,11 @@ class Class_Lalamove_Endpoints
      * 
      * @return $res
      */
-    public function get_quotation()
-    {
-        $response = $this->lalamove_api->get_city();
+    public function get_quotation(WP_REST_Request $request)
+    {   
+        $body = $request->get_json_params();
+
+        $response = $this->lalamove_api->get_quotation($body);
         return rest_ensure_response($response);
     }
 
