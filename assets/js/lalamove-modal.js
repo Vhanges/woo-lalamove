@@ -1,4 +1,6 @@
-jQuery(document).ready(function ($) {
+jq = jQuery.noConflict(); 
+
+jq(document).ready(function ($) {
   // Add custom CSS styles for the modal and Leaflet map
   var customModalCss = `
   <style>
@@ -62,17 +64,12 @@ jQuery(document).ready(function ($) {
           align-items: center;
       }
 
+      
+
 
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
-
 `;
 $("head").append(customModalCss);
 
@@ -154,22 +151,57 @@ $("head").append(customModalCss);
             $("#customModal .modal-body").html(`
               <div id="map" class="mb-4" style="height: 300px;"></div>
               <form id="deliveryForm" class="d-flex flex-column justify-content-center align-items-start delivery mb-6">
-           
+             
               <p class="header">VEHICLE TYPE</p>
               <div class="vehicle-wrapper w-100 d-flex flex-row justify-content-around mb-4"></div>
 
               <p class="header">DATE & TIME</p>
-              <div id="schedule-date" class="form-control d-flex flex-row align-items-center" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%;" readonly>
-               <i class="fa fa-calendar"> </i>
+              <div id="schedule-date" class="form-control d-flex flex-row align-items-center mb-4" style="background: #fff; cursor: pointer; border: 1px solid #ccc; width: 100%;" >
               </div>
 
-              <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="basic-addon2">
-                <span class="input-group-text" id="basic-addon2">@example.com</span>
+              <p class="header">ADDITIONAL NOTES</p>
+              <textarea class="form-control mb-4" id="additionalNotes" rows="3" placeholder="Enter any additional notes here..."></textarea>
+
+
+              <div class="form-group d-flex justify-content-between align-items-center w-100">
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+                    
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+                    
+                    <div class="custom-control custom-switch">
+                      <input type="checkbox" class="custom-control-input" id="customSwitch1">
+                      <label class="custom-control-label" for="customSwitch1"></label>
+                    </div>
               </div>
 
-              <p class="header">ADDITIONAL SERVICES</p>
-              <div class="add-services-wrapper w-100 d-flex flex-column align-content-around"></div>
+              <div class="form-group d-flex justify-content-between align-items-center w-100">
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+                    
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+                    
+                    <div class="custom-control custom-switch">
+                      <input type="checkbox" class="custom-control-input" id="customSwitch1">
+                      <label class="custom-control-label" for="customSwitch1"></label>
+                    </div>
+              </div>
+
+              <p class="header">ADDITIONAL NOTES</p>
+
+              <div class="form-group d-flex justify-content-between align-items-center w-100">
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+                    
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+              </div>
+
+              
+              <div class="form-group d-flex justify-content-between align-items-center w-100">
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+                    
+                    <p class="m-0 align-self-center justify-self-center">Control 2</p>  
+              </div>
+
+              
+
               </form>
             `);
     
@@ -183,9 +215,10 @@ $("head").append(customModalCss);
               console.log('start:', start.format('MMMM D, YYYY HH:mm:ss'));
               $('#customModal #schedule-date').empty();
               $('#customModal #schedule-date').append(`
-                  <p>${start.format('MMMM D, YYYY HH:mm:ss')} - ${end.format('MMMM D, YYYY HH:mm:ss')}</p>
+                  <p style="margin: 0;">${start.format('MMMM D, YYYY HH:mm:ss')} - ${end.format('MMMM D, YYYY HH:mm:ss')}</p>
+                  <i class="bi bi-calendar" style="margin-left: auto;"></i>
               `);
-          }
+            }
           
             var date = jQuery.noConflict();
 
@@ -205,7 +238,7 @@ $("head").append(customModalCss);
               singleDatePicker: true, // Set to true for single date selection
               timePicker: true,
               timePicker24Hour: false,
-              timePickerSeconds: true,
+              timePickerSeconds: false,
               timePickerIncrement: 15, // Time picker increment in minutes
               autoApply: true,
               opens: 'right',
@@ -438,54 +471,54 @@ $("head").append(customModalCss);
       );
     });
 
-    $(document).on("click", ".vehicle", function () {
-      var index = $(this).data("index");
-      var selectedService = cebuServices[index].specialRequests;
-      var addServices = groupAddServices(selectedService)
-      console.log('Selected service:', addServices);
+    // $(document).on("click", ".vehicle", function () {
+    //   var index = $(this).data("index");
+    //   var selectedService = cebuServices[index].specialRequests;
+    //   var addServices = groupAddServices(selectedService)
+    //   console.log('Selected service:', addServices);
 
-      $("#customModal .add-services-wrapper").empty();
+    //   $("#customModal .add-services-wrapper").empty();
 
-      Object.keys(addServices.withParentType).forEach(function(parentType) {
-        var services = addServices.withParentType[parentType];
-        var withParentHTML = `
-          <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-            ${parentType}  
-          </a>
+    //   Object.keys(addServices.withParentType).forEach(function(parentType) {
+    //     var services = addServices.withParentType[parentType];
+    //     var withParentHTML = `
+    //       <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+    //         ${parentType}  
+    //       </a>
             
-           <div class="collapse" id="collapseExample">
+    //        <div class="collapse" id="collapseExample">
 
-            ${services.map(service => {
-            var description = service.description.replace(/.*·\s*/, '');
-            return `
-            <div class="form-check ml-3">
-              <input class="form-check-input" type="checkbox" value="${service.name}" id="flexCheckDefault" value>
-              <label class="form-check-label" for="flexCheckDefault">
-              ${description}
-              </label>
-            </div>
-            `;
-            }).join(' ')}
+    //         ${services.map(service => {
+    //         var description = service.description.replace(/.*·\s*/, '');
+    //         return `
+    //         <div class="form-check ml-3">
+    //           <input class="form-check-input" type="checkbox" value="${service.name}" id="flexCheckDefault" value>
+    //           <label class="form-check-label" for="flexCheckDefault">
+    //           ${description}
+    //           </label>
+    //         </div>
+    //         `;
+    //         }).join(' ')}
 
-          </div>
-        `;
-        $("#customModal .add-services-wrapper").append(withParentHTML);
-      });
+    //       </div>
+    //     `;
+    //     $("#customModal .add-services-wrapper").append(withParentHTML);
+    //   });
 
-      // Add services without parent type
-      addServices.withoutParentType.forEach(function(service) {
-        var serviceHtml = `
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="${service.name}" id="${service.name}">
-            <label class="form-check-label" for="${service.name}">
-              ${service.description}
-            </label>
-          </div>
-        `;
-        $("#customModal .add-services-wrapper").append(serviceHtml);
-      });
+    //   // Add services without parent type
+    //   addServices.withoutParentType.forEach(function(service) {
+    //     var serviceHtml = `
+    //       <div class="form-check">
+    //         <input class="form-check-input" type="checkbox" value="${service.name}" id="${service.name}">
+    //         <label class="form-check-label" for="${service.name}">
+    //           ${service.description}
+    //         </label>
+    //       </div>
+    //     `;
+    //     $("#customModal .add-services-wrapper").append(serviceHtml);
+    //   });
 
-    });
+    // });
   }
   function manilaNCRSouthLuzonBlock(){
     $("#customModal .vehicle-wrapper").empty();
@@ -506,54 +539,54 @@ $("head").append(customModalCss);
       );
     });
 
-    $(document).on("click", ".vehicle", function () {
-      var index = $(this).data("index");
-      var selectedService = manilaServices[index].specialRequests;
-      var addServices = groupAddServices(selectedService)
-      console.log('Selected service:', addServices);
+    // $(document).on("click", ".vehicle", function () {
+    //   var index = $(this).data("index");
+    //   var selectedService = manilaServices[index].specialRequests;
+    //   var addServices = groupAddServices(selectedService)
+    //   console.log('Selected service:', addServices);
 
-      $("#customModal .add-services-wrapper").empty();
+    //   $("#customModal .add-services-wrapper").empty();
 
-      Object.keys(addServices.withParentType).forEach(function(parentType) {
-        var services = addServices.withParentType[parentType];
-        var withParentHTML = `
-          <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-            ${parentType}  
-          </a>
+    //   Object.keys(addServices.withParentType).forEach(function(parentType) {
+    //     var services = addServices.withParentType[parentType];
+    //     var withParentHTML = `
+    //       <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+    //         ${parentType}  
+    //       </a>
             
-           <div class="collapse" id="collapseExample">
+    //        <div class="collapse" id="collapseExample">
 
-            ${services.map(service => {
-            var description = service.description.replace(/.*·\s*/, '');
-            return `
-            <div class="form-check ml-3">
-              <input class="form-check-input" type="checkbox" value="${service.name}" id="flexCheckDefault" value>
-              <label class="form-check-label" for="flexCheckDefault">
-              ${description}
-              </label>
-            </div>
-            `;
-            }).join(' ')}
+    //         ${services.map(service => {
+    //         var description = service.description.replace(/.*·\s*/, '');
+    //         return `
+    //         <div class="form-check ml-3">
+    //           <input class="form-check-input" type="checkbox" value="${service.name}" id="flexCheckDefault" value>
+    //           <label class="form-check-label" for="flexCheckDefault">
+    //           ${description}
+    //           </label>
+    //         </div>
+    //         `;
+    //         }).join(' ')}
 
-          </div>
-        `;
-        $("#customModal .add-services-wrapper").append(withParentHTML);
-      });
+    //       </div>
+    //     `;
+    //     $("#customModal .add-services-wrapper").append(withParentHTML);
+    //   });
 
-      // Add services without parent type
-      addServices.withoutParentType.forEach(function(service) {
-        var serviceHtml = `
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="${service.name}" id="${service.name}">
-            <label class="form-check-label" for="${service.name}">
-              ${service.description}
-            </label>
-          </div>
-        `;
-        $("#customModal .add-services-wrapper").append(serviceHtml);
-      });
+    //   // Add services without parent type
+    //   addServices.withoutParentType.forEach(function(service) {
+    //     var serviceHtml = `
+    //       <div class="form-check">
+    //         <input class="form-check-input" type="checkbox" value="${service.name}" id="${service.name}">
+    //         <label class="form-check-label" for="${service.name}">
+    //           ${service.description}
+    //         </label>
+    //       </div>
+    //     `;
+    //     $("#customModal .add-services-wrapper").append(serviceHtml);
+    //   });
 
-    });
+    // });
   }
   function northCentralLuzonBlock(){
     $("#customModal .vehicle-wrapper").empty();

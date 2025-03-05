@@ -153,7 +153,6 @@ if ( ! class_exists('Woo_Lalamove') ) {
         }
 
         public function enqueue_custom_plugin_scripts() {
-
             if (is_checkout()) {
                 wp_enqueue_script('jquery'); // Enqueue jQuery
                 // Enqueue your custom script that depends on jQuery
@@ -164,10 +163,19 @@ if ( ! class_exists('Woo_Lalamove') ) {
             
                 // Enqueue Bootstrap CSS
                 wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css', array(), null);
-               
+        
                 // Enqueue Bootstrap Icons CSS
                 wp_enqueue_style('bootstrap-icons', 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css', array(), null);
-               
+        
+                // Enqueue Moment.js
+                wp_enqueue_script('moment-js', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js', array('jquery'), null, true);
+        
+                // Enqueue Date Range Picker JS
+                wp_enqueue_script('daterangepicker-js', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js', array('jquery', 'moment-js'), null, true);
+        
+                // Enqueue Date Range Picker CSS
+                wp_enqueue_style('daterangepicker-css', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css', array(), null);
+            
                 // Localize script to pass AJAX URL and nonce to JavaScript
                 wp_localize_script('custom-plugin-script', 'lalamoveAjax', array(
                     'ajax_url' => admin_url('admin-ajax.php'),
@@ -177,6 +185,10 @@ if ( ! class_exists('Woo_Lalamove') ) {
                 // Dequeue Bootstrap JS and CSS if not on the checkout page
                 wp_dequeue_script('bootstrap-js');
                 wp_dequeue_style('bootstrap-css');
+                wp_dequeue_style('bootstrap-icons');
+                wp_dequeue_script('moment-js');
+                wp_dequeue_script('daterangepicker-js');
+                wp_dequeue_style('daterangepicker-css');
             }
         }
         
