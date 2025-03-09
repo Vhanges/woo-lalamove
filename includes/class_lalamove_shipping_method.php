@@ -42,55 +42,21 @@
 				 * @return void
 				 */
 				public function calculate_shipping( $package = array() ) {
-
-					// if ( empty( $package['destination']['country'] ) ) {
-					// 	return;
-					// }
-
-					$quotation_cost = WC()->session->get('sevhen_lalamove_quotation_price');
-					// Prepare user details
-					$user = wp_get_current_user();
-					$user_details = array(
-						'name' => $user->display_name,
-						'email' => $user->user_email,
-						'package' => $package
-					);
-
-					// Send user details to the endpoint
-					$response = wp_remote_post( 'https://your-endpoint-url.com/api', array(
-						'method'    => 'POST',
-						'body'      => json_encode( $user_details ),
-						'headers'   => array(
-							'Content-Type' => 'application/json',
-						),
-					) );
-
-					// Check for errors in the response
-					if ( is_wp_error( $response ) ) {
-						$error_message = $response->get_error_message();
-						error_log( "Something went wrong: $error_message" );
-					}
-					// Fallback Price if the session is empty
-					$final_price = !empty($quotation_cost) ? $quotation_cost : 0;
-					
+					$quotation_cost = WC()->session->get('shipment_cost');
+					$final_price = !empty($quotation_cost) ? $quotation_cost : 0; // Fallback to 0
+				
 					$rate = array(
-						'id' 		=> $this->id,
-						'label' 	=> __('Lalamove Shipping', 'sevhen') . '<span class="sevhen-lalamove-trigger" style="display:none;"></span>',
-						'cost' 		=> $final_price,
-						'calc_tax'	=> 'per_item'
+						'id'       => $this->id,
+						'label'    => __('Lalamove Shipping', 'sevhen'),
+						'cost'     => $final_price,
+						'calc_tax' => 'per_item',
 					);
-
-
-					// Register the rate
-					$this->add_rate( $rate );
-
-
-					// var_dump(get_site_url());
-
-					// foreach($package as $packages){
-					// 	var_dump($packages) ;
-					// }
+				
+					// Add the calculated rate
+					$this->add_rate($rate);
+					
 				}
+				
 			}
 		}
 	}

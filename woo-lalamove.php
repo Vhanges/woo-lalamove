@@ -197,13 +197,12 @@ if ( ! class_exists('Woo_Lalamove') ) {
     
     new Woo_Lalamove();
 
-    //Fetch checkout prduct data for lalamove modal order detail reference
+    // Fetch checkout product data for Lalamove modal order detail reference
     function get_checkout_product_data() {
-
-    
+        // Get cart items
         $cart_items = WC()->cart->get_cart();
         $products = array();
-    
+
         foreach ( $cart_items as $cart_item_key => $cart_item ) {
             $product = $cart_item['data'];
             $products[] = array(
@@ -212,20 +211,117 @@ if ( ! class_exists('Woo_Lalamove') ) {
                 'weight' => $product->get_weight(),
             );
         }
-    
-        wp_send_json_success( $products );
+
+        // Get user address
+        if ( is_user_logged_in() ) {
+            $user_id = get_current_user_id();
+            $shipping_address = array(
+                'address_1' => get_user_meta( $user_id, 'shipping_address_1', true ),
+                'address_2' => get_user_meta( $user_id, 'shipping_address_2', true ),
+                'city'      => get_user_meta( $user_id, 'shipping_city', true ),
+                'state'     => get_user_meta( $user_id, 'shipping_state', true ),
+                'postcode'  => get_user_meta( $user_id, 'shipping_postcode', true ),
+                'country'   => get_user_meta( $user_id, 'shipping_country', true ),
+            );
+        } else {
+            $shipping_address = array(
+                'address_1' => WC()->session->get( 'shipping_address_1' ),
+                'address_2' => WC()->session->get( 'shipping_address_2' ),
+                'city'      => WC()->session->get( 'shipping_city' ),
+                'state'     => WC()->session->get( 'shipping_state' ),
+                'postcode'  => WC()->session->get( 'shipping_postcode' ),
+                'country'   => WC()->session->get( 'shipping_country' ),
+            );
+        }
+
+        // Get store address and contact
+        $store_address = array(
+            'address_1' => get_option( 'woocommerce_store_address' ),
+            'address_2' => get_option( 'woocommerce_store_address_2' ),
+            'city'      => get_option( 'woocommerce_store_city' ),
+            'state'     => get_option( 'woocommerce_store_state' ),
+            'postcode'  => get_option( 'woocommerce_store_postcode' ),
+            'country'   => get_option( 'woocommerce_default_country' ),
+        );
+
+        $store_contact = array(
+            'email' => get_option( 'woocommerce_email_from_address' ),
+            'phone' => get_option( 'woocommerce_store_phone' ), // Custom field if defined in Woo settings
+        );
+
+        // Add the shipping address and store details to the response
+        $response = array(
+            'products' => $products,
+            'shipping_address' => $shipping_address,
+            'store_address' => $store_address,
+            'store_contact' => $store_contact,
+        );
+
+        wp_send_json_success( $response );
     }
     add_action( 'wp_ajax_get_checkout_product_data', 'get_checkout_product_data' );
     add_action( 'wp_ajax_nopriv_get_checkout_product_data', 'get_checkout_product_data' );
 
+    // Enqueue custom scripts for AJAX
     function enqueue_custom_scripts() {
+        wp_enqueue_script('custom-plugin-script', get_template_directory_uri() . '/assets/js/custom.js', array('jquery'), null, true);
+
         // Localize script to pass AJAX URL and nonce to JavaScript
         wp_localize_script('custom-plugin-script', 'pluginAjax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('custom_plugin_nonce'),
-            'image_url' => plugins_url('assets/images/',   __FILE__),
         ));
     }
     add_action( 'wp_enqueue_scripts', 'enqueue_custom_scripts' );
+
+    // Update shipping rate dynamically
+    function update_shipping_rate() {
+        if (isset($_POST['shipping_cost'])) {
+            $shipping_cost = sanitize_text_field($_POST['shipping_cost']);
+
+            // Save the shipping cost in a WooCommerce session
+            WC()->session->set('shipment_cost', floatval($shipping_cost));
+            error_log('Shipping cost session value updated: ' . WC()->session->get('shipment_cost'));
+
+            wp_send_json_success(array('message' => 'Shipping rate updated.'));
+        } else {
+            wp_send_json_error(array('message' => 'Shipping cost is missing.'));
+        }
+        wp_die();
+    }
+    add_action('wp_ajax_update_shipping_rate', 'update_shipping_rate');
+    add_action('wp_ajax_nopriv_update_shipping_rate', 'update_shipping_rate');
+
+    // Refresh cached shipping methods
+    add_filter( 'woocommerce_package_rates', 'custom_modify_shipping_costs', 10, 2 );
+    function custom_modify_shipping_costs( $rates, $package ) {
+        $shipment_cost = WC()->session->get('shipment_cost');
+        if ( !empty( $shipment_cost ) ) {
+            foreach ( $rates as $rate_key => $rate ) {
+                if ( 'your_shipping_method' === $rate->method_id ) {
+                    $rates[ $rate_key ]->cost = $shipment_cost;
+                    // Optionally, update taxes if needed.
+                }
+            }
+        }
+        return $rates;
+    }
     
+
+    // Reset shipping session variable after checkout
+    add_action('wp_footer', 'reset_wc_session_variable');
+    function reset_wc_session_variable() {
+        if (is_checkout() && WC()->session->get('shipment_cost')) {
+            error_log('Resetting shipping cost session value...');
+            WC()->session->__unset('shipment_cost');
+        }
+    }
+
+
+
+    
+    
+
+
+
 }

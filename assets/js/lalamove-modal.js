@@ -1,6 +1,7 @@
 jq = jQuery.noConflict(); 
 
 jq(document).ready(function ($) {
+  window.isVehicleSelected = false;
   // Add custom CSS styles for the modal and Leaflet map
   var customModalCss = `
   <style>
@@ -137,16 +138,31 @@ $("head").append(customModalCss);
                     image: pluginAjax.image_url,
                 },
             });
+
+
     
             const [Cebu, NCR_South, North_Central] = get_city;
             window.cebu = Cebu.services;
             window.ncr_south = NCR_South.services;
             window.north_central = North_Central.services;
+
             window.totalWeight = 0;
+            window.quantity = 0;
+
+            productData.data.products.forEach(product => {
+              window.totalWeight = product.quantity * product.weight;
+              window.quantity += product.quantity;
+          });
+
+            window.shipping_address = productData.data.shipping_address;  
+
+            console.log("Product data:", productData.data.products);
+            console.log("Product data:", productData.data.shipping_address);
+
+
+
     
-            productData.data.forEach(product => {
-                window.totalWeight = product.quantity * product.weight;
-            });
+      
     
             $("#customModal .modal-body").html(`
               <div id="map" class="mb-4" style="height: 300px;"></div>
@@ -248,36 +264,12 @@ $("head").append(customModalCss);
         $(this).remove();
       });
 
+
     }
   });
 
   // Flag to prevent multiple location fetches
   let locationFetched = false;
-
-  function groupAddServices(specialRequests) {
-    if (!Array.isArray(specialRequests)) {
-      console.error('Invalid state parameter:', specialRequests);
-      return [];
-  }
-    // Group the specialRequests by parent_type
-    const groupedSpecialRequests = specialRequests.reduce((acc, request) => {
-      if (request.parent_type) {
-        // If the parent_type group does not exist in the accumulator, create it
-        if (!acc.withParentType[request.parent_type]) {
-          acc.withParentType[request.parent_type] = [];
-        }
-        // Add the current request to the appropriate group
-        acc.withParentType[request.parent_type].push(request);
-      } else {
-        // Add to the group without parent_type
-        acc.withoutParentType.push(request);
-      }
-      return acc;
-    }, { withParentType: {}, withoutParentType: [] });
-
-  
-    return groupedSpecialRequests;
-  };
 
   // Initialize the Leaflet map and continuously update user's position
   function initMap() {
@@ -290,19 +282,12 @@ $("head").append(customModalCss);
 
     var marker = L.marker([12.8797, 121.774], { draggable: true }).addTo(map);
 
-    marker.on("dragend", function (e) {
+      marker.on("dragend", function (e) {
       var latlng = marker.getLatLng();
-      console.log(
-        "Marker dragged to: Latitude: " +
-          latlng.lat +
-          ", Longitude: " +
-          latlng.lng
-      );
-      window.markerLat = latlng.lat;
-      window.markerLng = latlng.lng;
-
+      
       // Perform reverse geocoding when the marker is dragged
       reverseGeocode(latlng.lat, latlng.lng);
+
     }); 
 
     // Geolocation options for high accuracy
@@ -317,12 +302,12 @@ $("head").append(customModalCss);
 
       var lat = position.coords.latitude;
       var lon = position.coords.longitude;
+      
 
       map.setView([lat, lon], 15); // Zoom to user's location
       marker.setLatLng([lat, lon]); // Update marker position
       // console.log("User Location - Latitude: " + lat + ", Longitude: " + lon);
-      window.markerLat = lat;
-      window.markerLng = lon;
+
 
       // Perform reverse geocoding when the location is fetched
       reverseGeocode(lat, lon);
@@ -408,19 +393,100 @@ $("head").append(customModalCss);
       function (data) {
         if (data && data.address) {
           var state = data.address.state;
+          console.log("lat: " + lat + "lon: " + lon); 
           console.log("User is in: " + state);  
+
+          var isRouteOptimized = document.getElementById("customSwitch1").checked;
+          var proofOfDelivery = document.getElementById("customSwitch2").checked;
+
+          window.body = {
+            "data": {
+                // "scheduleAt": "2022-04-01T14:30:00.00Z", // optional
+                "serviceType": window.serviceType,
+                "language": "en_PH",
+                "stops": [
+                  {
+                      "coordinates": {
+                          "lat": "14.555566",
+                          "lng": "121.130056"
+                      },
+                      "address": "GFT Textile Main Office, Unit E, Sitio Malabon, Barangay San Juan, Hwy 2000, Taytay, 1920 Rizal"
+                  },
+                  {
+                      "coordinates": {
+                          "lat": lat.toString(),                      
+                          "lng": lon.toString()
+                      },
+                      "address": "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines"
+                  }
+                ],
+                "isRouteOptimized": isRouteOptimized,
+                "item": {
+                    "quantity": window.quantity.toString(),
+                    "weight": window.totalWeight.toString(),
+                }
+            }
+          };
+
+          console.log("Body", window.body); 
+
 
           if (cebuIslandwide.includes(state)) {
 
             centralIslandWideBlock()
+            getQuotation(lat, lon);
 
           } else if (manilaNCRSouthLuzon.includes(state)) {
 
-            manilaNCRSouthLuzonBlock()
+            manilaNCRSouthLuzonBlock();
+            $("#customSwitch1").on("click", function () {
+              if(window.isVehicleSelected){
+
+                if ($(this).is(":checked")) {
+                  window.body.data.serviceType = window.serviceType;
+    
+                  quotationAjax(window.body);
+                } 
+
+              }
+            });
+
+            $("#customSwitch2").on("click", function () {
+              if(window.isVehicleSelected){
+
+                if ($(this).is(":checked")) {
+                  window.body.data.serviceType = window.serviceType;
+    
+                  quotationAjax(window.body);
+                } 
+
+              }
+            });
+            
+            if(window.isVehicleSelected){
+
+
+              $(document).on("click", ".vehicle", function () {
+                window.serviceType = $(this).get(0).getAttribute("data-index");
+  
+                window.body.data.serviceType = window.serviceType;
+                console.log("CLLICKED", window.serviceType);
+  
+                quotationAjax(window.body);
+  
+                return;
+              });
+            } else {
+              getQuotation();
+            }
+          
+
+
 
           } else if (northCentralLuzon.includes(state)) {
 
             northCentralLuzonBlock()
+            getQuotation(lat, lon);
 
           } else {
             $("#customModal .vehicle-wrapper").empty();
@@ -452,65 +518,16 @@ $("head").append(customModalCss);
       `
       );
     });
-
-    // $(document).on("click", ".vehicle", function () {
-    //   var index = $(this).data("index");
-    //   var selectedService = cebuServices[index].specialRequests;
-    //   var addServices = groupAddServices(selectedService)
-    //   console.log('Selected service:', addServices);
-
-    //   $("#customModal .add-services-wrapper").empty();
-
-    //   Object.keys(addServices.withParentType).forEach(function(parentType) {
-    //     var services = addServices.withParentType[parentType];
-    //     var withParentHTML = `
-    //       <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-    //         ${parentType}  
-    //       </a>
-            
-    //        <div class="collapse" id="collapseExample">
-
-    //         ${services.map(service => {
-    //         var description = service.description.replace(/.*·\s*/, '');
-    //         return `
-    //         <div class="form-check ml-3">
-    //           <input class="form-check-input" type="checkbox" value="${service.name}" id="flexCheckDefault" value>
-    //           <label class="form-check-label" for="flexCheckDefault">
-    //           ${description}
-    //           </label>
-    //         </div>
-    //         `;
-    //         }).join(' ')}
-
-    //       </div>
-    //     `;
-    //     $("#customModal .add-services-wrapper").append(withParentHTML);
-    //   });
-
-    //   // Add services without parent type
-    //   addServices.withoutParentType.forEach(function(service) {
-    //     var serviceHtml = `
-    //       <div class="form-check">
-    //         <input class="form-check-input" type="checkbox" value="${service.name}" id="${service.name}">
-    //         <label class="form-check-label" for="${service.name}">
-    //           ${service.description}
-    //         </label>
-    //       </div>
-    //     `;
-    //     $("#customModal .add-services-wrapper").append(serviceHtml);
-    //   });
-
-    // });
   }
   function manilaNCRSouthLuzonBlock(){
     $("#customModal .vehicle-wrapper").empty();
 
     var manilaServices = filterServices(window.ncr_south).reverse();
-    manilaServices.forEach(function(value, index) {
+    manilaServices.forEach(function(value) {
       $("#customModal .vehicle-wrapper").prepend(
       `
       <div class="d-flex flex-column vehicle-content" >
-        <div class="vehicle" data-index="${index}">
+        <div class="vehicle" data-index="${value.key}">
           <div class="content">
             <img src="/wp-content/plugins/woo-lalamove/assets/images/motorcycle.png" alt="motor" style="height: 60px; width: auto;">
             <span id="vehicle-type" class="vehicle-type">${value.key}</span>
@@ -520,130 +537,6 @@ $("head").append(customModalCss);
       `
       );
     });
-
-    $(document).on("click", ".vehicle", function () {
-      console.log("CLLICKED");
-      let body = {
-        "data": {
-            // "scheduleAt": "2022-04-01T14:30:00.00Z", // optional
-            "serviceType": "MOTORCYCLE",
-            "specialRequests": ["CASH_ON_DELIVERY"], // optional
-            "language": "en_PH",
-            "stops": [
-              {
-                  "coordinates": {
-                      "lat": "14.555566",
-                      "lng": "121.130056"
-                  },
-                  "address": "GFT Textile Main Office, Unit E, Sitio Malabon, Barangay San Juan, Hwy 2000, Taytay, 1920 Rizal"
-              },
-              {
-                  "coordinates": {
-                      "lat": "14.557909",
-                      "lng": "121.137259"
-                  },
-                  "address": "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines"
-              }
-            ],
-            "isRouteOptimized": false, // optional only for quotations
-            "item": {
-                "quantity": "12",
-                "weight": "LESS_THAN_3_KG",
-                "categories": ["FOOD_DELIVERY", "OFFICE_ITEM"],
-                "handlingInstructions": ["KEEP_UPRIGHT"]
-            }
-        }
-      };
-
-      window.quotationId = null;
-      window.currency = null; 
-      window.total = null;    
-
-  
-      let quotation = $.ajax({
-        url: `${wpApiSettings.root}woo-lalamove/v1/get-quotation`,
-        method: "POST",
-        contentType: "application/json",
-        data: JSON.stringify(body),
-        headers: { 'X-WP-Nonce': wpApiSettings.nonce },
-        success: function(response) {
-          
-            console.log("Response received:", response);
-
-            window.quotationId = response.data.quotationId? response.data.quotationId : null;
-            window.currency = response.data.priceBreakdown.currency? response.data.priceBreakdown.currency : null; ; 
-            window.total = response.data.priceBreakdown.total? response.data.priceBreakdown.total : null;   
-            var base   = response.data.priceBreakdown.base? response.data.priceBreakdown.base : null;  ;    
-            var extraMileage = response.data.priceBreakdown.extraMileage? response.data.priceBreakdown.extraMileage : null; ; 
-            var surcharge = response.data.priceBreakdown.surcharge? response.data.priceBreakdown.surcharge : null; ;    
-
-            var total= window.total;
-            var currency = window.currency;
-
-            $('#customModal .modal-footer').empty();
-
-            $('#customModal .modal-footer').prepend(`
-                <div class="total-wrapper w-100 d-inline-flex flex-column justify-content-end align-items-start gap-2 p-3" style="width: auto; height: 80px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #EDEDED;">
-                  <div class="text-dark" style="font-size: 14px; font-weight: 400;">TOTAL: </div>
-                  <div class="text-dark" style="font-size: 20px; font-weight: 600;">${currency + " " + total}</div>
-                </div>  
-                
-                <button type="button" class="btn btn-primary w-100" id="saveLocation">Save</button>
-
-            `);
-
-            $('#customModal .pricing-details').empty();  
-
-            let baseContent = `
-              <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
-                    <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
-                    <p class="m-0 align-self-center justify-self-center">${currency + " "+base}</p>  
-              </div>
-            `;
-            let extraMileageContent = `
-              <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
-                    <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
-                    <p class="m-0 align-self-center justify-self-center">${currency + " "+ extraMileage}</p>  
-              </div>
-            `;
-            let surchargeContent = `
-              <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
-                    <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
-                    <p class="m-0 align-self-center justify-self-center">${currency + " "+surcharge}</p>  
-              </div>
-            `;
-              
-            $('#customModal .pricing-details').prepend(`              
-              <p class="header">Pricing Details</p>
-            `);
-
-            if(base !== null){
-              $('#customModal .pricing-details').append(baseContent);
-            }
-            if(extraMileage !== null){
-              $('#customModal .pricing-details').append(extraMileageContent);
-            }
-            if(surcharge !== null){
-              $('#customModal .pricing-details').append(surchargeContent);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error("Error occurred:", status, error);
-        }
-      });
-
-      
-
-
-
-
-
-      }); 
-
-    
-
-
-  
  
   }
   function northCentralLuzonBlock(){
@@ -664,54 +557,150 @@ $("head").append(customModalCss);
       `
       );
     });
-
+  }
+  function getQuotation(){
     $(document).on("click", ".vehicle", function () {
-      var index = $(this).data("index");
-      var selectedService = NclServices[index].specialRequests;
-      var addServices = groupAddServices(selectedService)
-      console.log('Selected service:', addServices);
+      window.isVehicleSelected = true;
+      window.serviceType = $(this).get(0).getAttribute("data-index");
 
-      $("#customModal .add-services-wrapper").empty();
 
-      Object.keys(addServices.withParentType).forEach(function(parentType) {
-        var services = addServices.withParentType[parentType];
-        var withParentHTML = `
-          <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-            ${parentType}  
-          </a>
-            
-           <div class="collapse" id="collapseExample">
+      window.body.data.serviceType = window.serviceType;
+      console.log("CLLICKED", window.serviceType);
 
-            ${services.map(service => {
-            var description = service.description.replace(/.*·\s*/, '');
-            return `
-            <div class="form-check ml-3">
-              <input class="form-check-input" type="checkbox" value="${service.name}" id="flexCheckDefault" value>
-              <label class="form-check-label" for="flexCheckDefault">
-              ${description}
-              </label>
+      quotationAjax(window.body);
+
+      return
+    });
+
+  }
+
+  function quotationAjax(body){
+    let quotation = $.ajax({
+      url: `${wpApiSettings.root}woo-lalamove/v1/get-quotation`,
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(body),
+      headers: { 'X-WP-Nonce': wpApiSettings.nonce },
+      success: function(response) {
+
+          
+          const additionalNotes = document.getElementById("additionalNotes").value;
+
+          // Get the state of the checkboxes
+          const optimizeRoute = document.getElementById("customSwitch1").checked;
+          const proofOfDelivery = document.getElementById("customSwitch2").checked;
+
+          console.log("Additional Notes:", additionalNotes);
+          console.log("Optimize Route:", optimizeRoute);
+          console.log("Proof of Delivery:", proofOfDelivery);
+        
+          console.log("Response received:", response);
+
+          window.quotationId = response.data.quotationId;
+          window.currency = response.data.priceBreakdown.currency? response.data.priceBreakdown.currency : null; ; 
+          window.total = response.data.priceBreakdown.total? response.data.priceBreakdown.total : null;   
+          var base   = response.data.priceBreakdown.base? response.data.priceBreakdown.base : null;  ;    
+          var extraMileage = response.data.priceBreakdown.extraMileage? response.data.priceBreakdown.extraMileage : null; ; 
+          var surcharge = response.data.priceBreakdown.surcharge? response.data.priceBreakdown.surcharge : null; ;    
+
+          var total= window.total;
+          var currency = window.currency;
+
+          $('#customModal .modal-footer').empty();
+
+          $('#customModal .modal-footer').prepend(`
+              <div class="total-wrapper w-100 d-inline-flex flex-column justify-content-end align-items-start gap-2 p-3" style="width: auto; height: 80px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #EDEDED;">
+                <div class="text-dark" style="font-size: 14px; font-weight: 400;">TOTAL: </div>
+                <div class="text-dark" style="font-size: 20px; font-weight: 600;">${currency + " " + total}</div>
+              </div>  
+              
+              <button type="button" class="btn btn-primary w-100" id="saveLocation">Save</button>
+
+          `);
+
+          $('#customModal .pricing-details').empty();  
+
+          let baseContent = `
+            <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                  <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
+                  <p class="m-0 align-self-center justify-self-center">${currency + " "+base}</p>  
             </div>
-            `;
-            }).join(' ')}
+          `;
+          let extraMileageContent = `
+            <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                  <p class="m-0 align-self-center justify-self-center">Additional Distance Fee</p>  
+                  <p class="m-0 align-self-center justify-self-center">${currency + " "+ extraMileage}</p>  
+            </div>
+          `;
+          let surchargeContent = `
+            <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                  <p class="m-0 align-self-center justify-self-center">Surcharge</p>  
+                  <p class="m-0 align-self-center justify-self-center">${currency + " "+surcharge}</p>  
+            </div>
+          `;
+            
+          $('#customModal .pricing-details').prepend(`              
+            <p class="header">Pricing Details</p>
+          `);
 
-          </div>
-        `;
-        $("#customModal .add-services-wrapper").append(withParentHTML);
-      });
+          if(base !== null){
+            $('#customModal .pricing-details').append(baseContent);
+          }
+          if(extraMileage !== null){
+            $('#customModal .pricing-details').append(extraMileageContent);
+          }
+          if(surcharge !== null){
+            $('#customModal .pricing-details').append(surchargeContent);
+          }
 
-      // Add services without parent type
-      addServices.withoutParentType.forEach(function(service) {
-        var serviceHtml = `
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="${service.name}" id="${service.name}">
-            <label class="form-check-label" for="${service.name}">
-              ${service.description}
-            </label>
-          </div>
-        `;
-        $("#customModal .add-services-wrapper").append(serviceHtml);
-      });
+          // Add event listener for saveLocation button
+          $('#saveLocation').on('click', function() {
+            // Collect data from the form
+            const additionalNotes = $('#additionalNotes').val();
+            const optimizeRoute = $('#customSwitch1').is(':checked');
+            const proofOfDelivery = $('#customSwitch2').is(':checked');
 
+
+            // Log the collected data
+            console.log('Saving data...');
+            console.log('Additional Notes:', additionalNotes);
+            console.log('Optimize Route:', optimizeRoute);
+            console.log('Proof of Delivery:', proofOfDelivery);
+            console.log('Quotation ID', window.quotationId);
+            console.log('Currency', currency);
+            console.log('Total', total);
+
+
+            // Send the shipping cost to the server via AJAX
+            $.ajax({
+                url: pluginAjax.ajax_url, // Replace `ajax_object` with your localized object name
+                method: 'POST',
+                data: {
+                    action: 'update_shipping_rate', // Custom AJAX action
+                    shipping_cost: total // Cost from modal
+                },
+                success: function (response) {
+                    if (response.success) {
+                        console.log('Shipping rate updated successfully.');
+    
+                        // Trigger checkout refresh to update the totals
+                        $('body').trigger('update_checkout');
+                    } else {
+                        console.error(response.data.message);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error updating shipping rate:', error);
+                }
+            });
+
+            $('#customModal').modal('hide');
+          });
+
+      },
+      error: function(xhr, status, error) {
+          console.error("Error occurred:", status, error);
+      }
     });
   }
 });
