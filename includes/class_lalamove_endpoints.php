@@ -34,9 +34,9 @@ class Class_Lalamove_Endpoints
         ]);
 
         // Checkout Package
-        register_rest_route('woo-lalamove/v1', '/checkout-package', [
+        register_rest_route('woo-lalamove/v1', '/lalamove-webhook', [
             'methods' => ['GET', 'POST'],
-            'callback' => [$this, 'checkout_package'],
+            'callback' => [$this, 'lalamove_webhook'],
             'permission_callback' => '__return_true'
         ]);
     }
@@ -65,10 +65,19 @@ class Class_Lalamove_Endpoints
         return rest_ensure_response($response);
     }
 
-    public function checkout_package()
+    public function lalamove_webhook(WP_REST_Request $request)
     {
-
-        // Return the data as a JSON response
-        // return new \WP_REST_Response($packages, 200);
+        $payload = $request->get_body();
+        $data = json_decode( $payload, true );
+    
+        if ( json_last_error() !== JSON_ERROR_NONE ) {
+            return new WP_REST_Response( array( 'message' => 'Invalid JSON' ), 400 );
+        }
+        
+        // Optionally verify a signature or token here for security.
+        error_log( 'Lalamove webhook data: ' . print_r( $data, true ) );
+    
+        return new WP_REST_Response( array( 'message' => 'Webhook received successfully' ), 200 );
     }
+
 }

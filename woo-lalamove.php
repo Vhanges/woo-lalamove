@@ -1,6 +1,8 @@
 <?php 
 /**
  * Plugin Name: WooCommerce Lalamove Extension
+ * Text Domain: woocommerce-lalamove-extension
+ * Description: A WooCommerce extension that integrates Lalamove delivery services.
  * Version: 1.0
  * Author: Angelo Sevhen
  */
@@ -44,10 +46,54 @@ if ( ! class_exists('Woo_Lalamove') ) {
                 add_action('woocommerce_shipping_init','your_shipping_method_init');
                 add_filter('woocommerce_shipping_methods', [$this, 'add_your_shipping_method']);
 
-                
+                add_filter( 'woocommerce_my_account_my_orders_actions', [$this ,'my_custom_order_button'], 10, 2 );
+
+                register_activation_hook( __FILE__, [$this, 'my_plugin_create_custom_table']);
+
             }   
         }
+
+        function my_plugin_create_custom_table() {
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'wc_lalamove_orders';
+            $charset_collate = $wpdb->get_charset_collate();
         
+            // Check if the table already exists
+            if($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") != $table_name) {
+                $sql = "CREATE TABLE {$wpdb->prefix}wc_lalamove_orders (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    lalamove_order_id VARCHAR(100) NOT NULL,
+                    wc_order_id INT UNSIGNED NOT NULL,  
+                    lalamove_order_status VARCHAR(100) NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY unique_lalamove_order (lalamove_order_id)
+                ) {$charset_collate};
+                ";
+        
+                require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+                $result = dbDelta( $sql );
+
+                // If table creation returns any SQL statements, set a transient for admin notice
+                if ( ! empty( $result ) ) {
+                    set_transient( 'wc_lalamove_table_created', true, 5 );
+                }
+            }
+
+        }
+        
+        
+        function my_custom_order_button( $actions, $order ) {
+            $order_id = $order->get_id();
+            // Build URL to a custom order details page, e.g. with the slug "order-details"
+            $url = add_query_arg( 'order_id', $order_id, site_url( '/delivery-details/' ) );
+            
+            $actions['custom_button'] = array(
+                'url'  => $url,
+                'name' => __( 'Track Order', 'woocommerce-lalamove-extension' ),
+            );
+            return $actions;
+        }
 
 
         public function add_your_shipping_method($methods) {
@@ -264,7 +310,6 @@ if ( ! class_exists('Woo_Lalamove') ) {
 
     // Enqueue custom scripts for AJAX
     function enqueue_custom_scripts() {
-        wp_enqueue_script('custom-plugin-script', get_template_directory_uri() . '/assets/js/custom.js', array('jquery'), null, true);
 
         // Localize script to pass AJAX URL and nonce to JavaScript
         wp_localize_script('custom-plugin-script', 'pluginAjax', array(
@@ -292,30 +337,36 @@ if ( ! class_exists('Woo_Lalamove') ) {
     add_action('wp_ajax_update_shipping_rate', 'update_shipping_rate');
     add_action('wp_ajax_nopriv_update_shipping_rate', 'update_shipping_rate');
 
-    // Refresh cached shipping methods
-    add_filter( 'woocommerce_package_rates', 'custom_modify_shipping_costs', 10, 2 );
-    function custom_modify_shipping_costs( $rates, $package ) {
-        $shipment_cost = WC()->session->get('shipment_cost');
-        if ( !empty( $shipment_cost ) ) {
-            foreach ( $rates as $rate_key => $rate ) {
-                if ( 'your_shipping_method' === $rate->method_id ) {
-                    $rates[ $rate_key ]->cost = $shipment_cost;
-                    // Optionally, update taxes if needed.
-                }
-            }
-        }
-        return $rates;
-    }
     
+    add_action('woocommerce_cart_calculate_fees', 'woo_change_cart_fee');
+    function woo_change_cart_fee() {
+        $shipment_cost = WC()->session->get('shipment_cost');
 
-    // Reset shipping session variable after checkout
-    add_action('wp_footer', 'reset_wc_session_variable');
-    function reset_wc_session_variable() {
-        if (is_checkout() && WC()->session->get('shipment_cost')) {
-            error_log('Resetting shipping cost session value...');
+        if ( $shipment_cost ) {
+            WC()->cart->add_fee('Shipping Cost', $shipment_cost, false, '');
+        }
+    }
+
+    // Reset shipping session variable after order is completed
+    add_action('woocommerce_thankyou', 'reset_wc_session_variable_after_order');
+    function reset_wc_session_variable_after_order( $order_id ) {
+        if ( WC()->session->get('shipment_cost') ) {
+            error_log('Resetting shipping cost session value after order ' . $order_id);
             WC()->session->__unset('shipment_cost');
         }
     }
+
+
+    add_action( 'admin_notices', 'wc_lalamove_admin_notice' );
+    function wc_lalamove_admin_notice() {
+        if ( get_transient( 'wc_lalamove_table_created' ) ) {
+            echo '<div class="notice notice-success is-dismissible">
+                    <p>WooCommerce Lalamove table was successfully created.</p>
+                </div>';
+            delete_transient( 'wc_lalamove_table_created' );
+        }
+    }
+
 
 
 

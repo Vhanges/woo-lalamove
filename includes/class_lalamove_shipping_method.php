@@ -42,13 +42,10 @@
 				 * @return void
 				 */
 				public function calculate_shipping( $package = array() ) {
-					$quotation_cost = WC()->session->get('shipment_cost');
-					$final_price = !empty($quotation_cost) ? $quotation_cost : 0; // Fallback to 0
 				
 					$rate = array(
 						'id'       => $this->id,
 						'label'    => __('Lalamove Shipping', 'sevhen'),
-						'cost'     => $final_price,
 						'calc_tax' => 'per_item',
 					);
 				
