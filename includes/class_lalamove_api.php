@@ -87,6 +87,62 @@ class Class_Lalamove_Api
         return $market['data'];
     }
     
+    /**
+     * Get Order Details
+     * @param string $orderID The ID of the order to retrieve details for.
+     * @return array The order details.
+     */
+    public function get_order_details($orderID)
+    {
+        // Calculate the current timestamp in milliseconds
+        $timestamp = round(microtime(true) * 1000);
+
+        // Prepare the raw signature string for HMAC-SHA256
+        $rawSignature = "{$timestamp}\r\nGET\r\n/v3/orders/{$orderID}\r\n\r\n";
+
+        // Generate the HMAC-SHA256 signature using the API secret
+        $signature = hash_hmac('sha256', $rawSignature, $this->api_secret);
+
+        // Build the authorization token
+        $token = "{$this->api_key}:{$timestamp}:{$signature}";
+
+        // Initialize cURL session
+        $curl = curl_init();
+
+        // Set cURL options
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://{$this->base_url}/v3/orders/{$orderID}",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                "Authorization: hmac {$token}",
+                'Market: ' . get_option('lalamove_market', '')
+            ),
+        ));
+
+        // Execute the cURL request and get the response
+        $response = curl_exec($curl);
+        $order_details = json_decode($response, true);
+
+        // Handle any potential cURL errors
+        if (curl_errno($curl)) {
+            echo 'Error:' . curl_error($curl);
+            echo $orderID;
+        }
+
+        // Close the cURL session
+        curl_close($curl);
+
+        // Return order details of given order ID
+        return $order_details;
+    }
+    
     /** 
      * Get Quotation
      * Returns an estimated value of the given quote of the order.
@@ -99,36 +155,7 @@ class Class_Lalamove_Api
         // Calculate the current timestamp in milliseconds
         $timestamp = round(microtime(true) * 1000);
 
-        $requestData = array(
-            "data" => array(
-                "serviceType" => "MOTORCYCLE",
-                "specialRequests" => array("CASH_ON_DELIVERY"),
-                "language" => "en_PH",
-                "stops" => array(
-                    array(
-                        "coordinates" => array(
-                            "lat" => "14.555566",
-                            "lng" => "121.130056"
-                        ),
-                        "address" => "GFT Textile Main Office, Unit E, Sitio Malabon, Barangay San Juan, Hwy 2000, Taytay, 1920 Rizal"
-                    ),
-                    array(
-                        "coordinates" => array(
-                            "lat" => "14.557909",
-                            "lng" => "121.137259"
-                        ),
-                        "address" => "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines"
-                    )
-                ),
-                "isRouteOptimized" => false,
-                "item" => array(
-                    "quantity" => "12",
-                    "weight" => "LESS_THAN_3_KG",
-                    "categories" => array("FOOD_DELIVERY", "OFFICE_ITEM"),
-                    "handlingInstructions" => array("KEEP_UPRIGHT")
-                )
-            )
-        );
+
 
         $requestDataJson = json_encode($body);
         // Prepare the raw signature string for HMAC-SHA256
@@ -157,7 +184,7 @@ class Class_Lalamove_Api
             CURLOPT_HTTPHEADER => array(
                 'Content-Type: application/json',
                 "Authorization: hmac {$token}",
-                'Market: ' . get_option('lalamove_market', '')
+                'Market: ' . get_option('lalamove_market', 'PH')
             ),
         ));
     
@@ -177,4 +204,127 @@ class Class_Lalamove_Api
         return $quotation;
     }
 
+
+    /** 
+     * Place Order
+     * Set quotation on order.
+     * @return array of order details.
+     *
+     **/
+    public function place_order(
+        $quotationID,
+        $stopId0,
+        $stopId1,
+        $senderName,
+        $senderPhone,
+        $recipientName,
+        $recipientPhone,
+        $remarks,
+        $isPODEnabled
+    )
+    {
+        $timestamp = round(microtime(true) * 1000);
+    
+        $order_payload = [
+            "data" => [
+                "quotationId" => $quotationID,
+                "sender" => [
+                    "stopId" => $stopId0,
+                    "name"    => $senderName,     // e.g. "Malopit ako"
+                    "phone"   => "+634315873"     // e.g. "+634315873"
+                ],
+                "recipients" => [
+                    [
+                        "stopId"  => $stopId1,
+                        "name"    => $recipientName,   // e.g. "MasMalopit"
+                        "phone"   => "+6307457184",  // e.g. "+639171234567"
+                        "remarks" => $remarks          // e.g. "YYYYYY"
+                    ]
+                ],
+                "isPODEnabled" => $isPODEnabled,        // boolean true/false
+                "partner"      => "Lalamove Partner 1"   // as per guide
+            ]
+        ];
+    
+        $order_body = json_encode($order_payload, JSON_UNESCAPED_SLASHES);
+    
+        $rawSignature = "{$timestamp}\r\nPOST\r\n/v3/orders\r\n\r\n{$order_body}";
+    
+        $signature = hash_hmac("sha256", $rawSignature, $this->api_secret);
+    
+        $token = "{$this->api_key}:{$timestamp}:{$signature}";
+    
+        $curl = curl_init();
+    
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://{$this->base_url}/v3/orders", // e.g. rest.sandbox.lalamove.com
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => $order_body,
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: application/json",
+                "Authorization: hmac {$token}",
+                "Accept: application/json",
+                "Market:". get_option('lalamove_market', '')
+            ],
+        ]);
+    
+        $response = curl_exec($curl);
+    
+        if (curl_errno($curl)) {
+            echo "Error: " . curl_error($curl);
+        }
+    
+        curl_close($curl);
+    
+        return json_decode($response, true);
+    }
+
+
+   public function get_driver_details($orderId, $driverId)
+{
+    $timestamp = round(microtime(true) * 1000);
+
+    $rawSignature = "{$timestamp}\r\nGET\r\n/v3/orders/{$orderId}/drivers/{$driverId}\r\n\r\n";
+
+    $signature = hash_hmac("sha256", $rawSignature, $this->api_secret);
+
+    $token = "{$this->api_key}:{$timestamp}:{$signature}";
+
+    $curl = curl_init();
+
+    curl_setopt_array($curl, [
+        CURLOPT_URL => "https://{$this->base_url}/v3/orders/{$orderId}/drivers/{$driverId}",
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "GET",
+        CURLOPT_HTTPHEADER => [
+            "Content-Type: application/json",
+            "Authorization: hmac {$token}",
+            "Accept: application/json",
+            "Market:" . get_option('lalamove_market', '')
+        ],
+    ]);
+
+    $response = curl_exec($curl);
+
+    if (curl_errno($curl)) {
+        echo "Error: " . curl_error($curl);
+    }
+
+    curl_close($curl);
+
+    return json_decode($response, true);
+}
+
+    
 }

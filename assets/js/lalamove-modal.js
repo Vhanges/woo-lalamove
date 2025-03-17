@@ -69,8 +69,7 @@ jq(document).ready(function ($) {
 
 
   </style>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 `;
 $("head").append(customModalCss);
 
@@ -206,14 +205,16 @@ $("head").append(customModalCss);
             // Initialize the Leaflet map with enhanced geolocation accuracy
             initMap();
     
-            var startDate = moment().startOf('month');
+            var startDate = moment();
             var endDate = moment().add(30, 'days');
 
             function cb(start, end) {
               console.log('start:', start.format('MMMM D, YYYY HH:mm:ss'));
+                window.scheduleDate = end.toISOString();
+                console.log('Selected schedule date:', window.scheduleDate);
               $('#customModal #schedule-date').empty();
               $('#customModal #schedule-date').append(`
-                  <p style="margin: 0;">${start.format('MMMM D, YYYY HH:mm:ss')} - ${end.format('MMMM D, YYYY HH:mm:ss')}</p>
+                  <p style="margin: 0;">${start.format('MMMM D, YYYY HH:mm:ss')}</p>
                   <i class="bi bi-calendar" style="margin-left: auto;"></i>
               `);
             }
@@ -231,7 +232,7 @@ $("head").append(customModalCss);
                 'This Month': [moment().startOf('month'), moment().endOf('month')],
                 'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
              },
-              minDate: moment().subtract(1, 'days'), // Minimum selectable date
+              minDate: moment().add(1, 'days'), // Minimum selectable date
               maxDate: moment().add(30, 'days'), // Maximum selectable date
               singleDatePicker: true, // Set to true for single date selection
               timePicker: true,
@@ -273,6 +274,8 @@ $("head").append(customModalCss);
 
   // Initialize the Leaflet map and continuously update user's position
   function initMap() {
+    
+
     var map = L.map("map").setView([12.8797, 121.774], 6); // Default center on the Philippines
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -401,7 +404,7 @@ $("head").append(customModalCss);
 
           window.body = {
             "data": {
-                // "scheduleAt": "2022-04-01T14:30:00.00Z", // optional
+                "scheduleAt": window.scheduleDate, 
                 "serviceType": window.serviceType,
                 "language": "en_PH",
                 "stops": [
@@ -584,6 +587,9 @@ $("head").append(customModalCss);
       success: function(response) {
 
           
+          const customerFName = document.getElementById("shipping-first_name").value;
+          const customerLName = document.getElementById("shipping-last_name").value;
+          const customerPhoneNo = document.getElementById("shipping-phone").value;
           const additionalNotes = document.getElementById("additionalNotes").value;
 
           // Get the state of the checkboxes
@@ -597,6 +603,8 @@ $("head").append(customModalCss);
           console.log("Response received:", response);
 
           window.quotationId = response.data.quotationId;
+
+          
           window.currency = response.data.priceBreakdown.currency? response.data.priceBreakdown.currency : null; ; 
           window.total = response.data.priceBreakdown.total? response.data.priceBreakdown.total : null;   
           var base   = response.data.priceBreakdown.base? response.data.priceBreakdown.base : null;  ;    
@@ -667,6 +675,34 @@ $("head").append(customModalCss);
             console.log('Optimize Route:', optimizeRoute);
             console.log('Proof of Delivery:', proofOfDelivery);
             console.log('Quotation ID', window.quotationId);
+            console.log('Quotation Body', body);
+            // Set the quotation ID as a session variable
+            $.ajax({
+              url: pluginAjax.ajax_url,
+              method: 'POST',
+              data: {
+                action: 'set_quotation_data_session',
+                quotationID: window.quotationId,
+                quotationBody: JSON.stringify(body),
+                stopId0: response.data.stops[0].stopId,
+                stopId1: response.data.stops[1].stopId,
+                customerFName: customerFName,
+                customerLName: customerLName,
+                customerPhoneNo: customerPhoneNo,
+                additionalNotes: additionalNotes,
+               proofOfDelivery:proofOfDelivery,
+              },
+              success: function(response) {
+                if (response.success) {
+                  console.log('Quotation ID set in session successfully.');
+                } else {
+                  console.error('Failed to set Quotation ID in session:', response.data.message);
+                }
+              },
+              error: function(error) {
+                console.error('Error setting Quotation ID in session:', error);
+              }
+            });
             console.log('Currency', currency);
             console.log('Total', total);
 

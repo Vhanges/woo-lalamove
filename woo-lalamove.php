@@ -19,10 +19,10 @@ use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 use Sevhen\WooLalamove\Class_Lalamove_Shortcode;
 
-new Class_Lalamove_Settings();
-new Class_Lalamove_Endpoints();
-new Class_Lalamove_Api();
-new Class_Lalamove_Shortcode();
+New Class_Lalamove_Settings();
+New Class_Lalamove_Endpoints();
+New Class_Lalamove_Api();
+New Class_Lalamove_Shortcode();
 
 
 
@@ -48,9 +48,14 @@ if ( ! class_exists('Woo_Lalamove') ) {
 
                 add_filter( 'woocommerce_my_account_my_orders_actions', [$this ,'my_custom_order_button'], 10, 2 );
 
-                register_activation_hook( __FILE__, [$this, 'my_plugin_create_custom_table']);
+                register_activation_hook( __FILE__, callback: [$this, 'my_plugin_create_custom_table']);
 
+                add_filter( 'woocommerce_billing_fields', [$this, 'make_phone_field_required'], 10, 2 );
             }   
+        }
+        function make_phone_field_required( $fields ) {
+            $fields['billing_phone']['required'] = true; // Set to true to make it mandatory
+            return $fields;
         }
 
         function my_plugin_create_custom_table() {
@@ -156,6 +161,7 @@ if ( ! class_exists('Woo_Lalamove') ) {
                 [],
                 filemtime(plugin_dir_path(__FILE__) . 'assets/css/admin.css')
             );
+
         }
 
         public function woo_lalamove_add_admin_page() {
@@ -212,7 +218,12 @@ if ( ! class_exists('Woo_Lalamove') ) {
         
                 // Enqueue Bootstrap Icons CSS
                 wp_enqueue_style('bootstrap-icons', 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css', array(), null);
-        
+    
+                // Enqueue Leaflet CSS
+                wp_enqueue_style('leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), null);
+
+                // Enqueue Leaflet JS
+                wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), null, true);
                 // Enqueue Moment.js
                 wp_enqueue_script('moment-js', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js', array('jquery'), null, true);
         
@@ -227,6 +238,10 @@ if ( ! class_exists('Woo_Lalamove') ) {
                     'ajax_url' => admin_url('admin-ajax.php'),
                     'nonce' => wp_create_nonce('load_modal_content_nonce')
                 ));
+
+            
+
+
             } else {
                 // Dequeue Bootstrap JS and CSS if not on the checkout page
                 wp_dequeue_script('bootstrap-js');
@@ -235,6 +250,8 @@ if ( ! class_exists('Woo_Lalamove') ) {
                 wp_dequeue_script('moment-js');
                 wp_dequeue_script('daterangepicker-js');
                 wp_dequeue_style('daterangepicker-css');
+                wp_dequeue_style('leaflet-js');
+                wp_dequeue_style('leaflet-css');
             }
         }
         
@@ -367,12 +384,155 @@ if ( ! class_exists('Woo_Lalamove') ) {
         }
     }
 
+    add_action( 'woocommerce_thankyou', 'set_lalamove_order', 10, 1 );
+    function set_lalamove_order( $order_id ) {
+        // Custom code to run after the order is fully processed.
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'wc_lalamove_orders';
+
+        // Get the data from WooCommerce session
+        $quotationID = WC()->session->get('quotationID');
+        echo '<pre>Quotation ID: ' . $quotationID . '</pre>';
+
+        $quotationBody = WC()->session->get('quotationBody');
+        echo '<pre>Quotation Body: ' . print_r($quotationBody, true) . '</pre>';
+
+        $stopId0 = WC()->session->get('stopId0');
+        echo '<pre>Stop ID 0: ' . $stopId0 . '</pre>';
+
+        $stopId1 = WC()->session->get('stopId1');
+        echo '<pre>Stop ID 1: ' . $stopId1 . '</pre>';
+
+        $customerFName = WC()->session->get('customerFName');
+        echo '<pre>Customer First Name: ' . $customerFName . '</pre>';
+
+        $customerLName = WC()->session->get('customerLName');
+        echo '<pre>Customer Last Name: ' . $customerLName . '</pre>';
+
+        $customerPhoneNo = WC()->session->get('customerPhoneNo');
+        echo '<pre>Customer Phone Number: ' . $customerPhoneNo . '</pre>';
+
+        $additionalNotes = WC()->session->get('additionalNotes');
+        echo '<pre>Additional Notes: ' . $additionalNotes . '</pre>';
+
+        $proofOfDelivery = WC()->session->get('proofOfDelivery');
+        echo '<pre>Optimize Route: ' . $proofOfDelivery . '</pre>';
+
+        $customerFullName = $customerFName. " " .$customerLName; 
+        
+        $lalamove_api = New Class_Lalamove_Api();
+        
+        $lalamove_orderId = $lalamove_api->place_order(
+            $quotationID,
+            $stopId0,
+            $stopId1,
+            'babowm',
+            "+634315873",
+            $customerFullName,
+            "+6307457184",
+            "UWOWERs",
+            true
+        );
+
+
+        echo '<pre>Lalamove Order ID: ' . var_dump($lalamove_orderId) . '</pre>';
+        $lalamove_orderId = $lalamove_orderId['data']['orderId'];
+
+
+        
+      
+
+        $data = array(
+            'lalamove_order_id'    => $lalamove_orderId,     // For example, a string
+            'wc_order_id'          => $order_id,          // An integer value
+            'lalamove_order_status'=> 'pending',    // A string status
+            'created_at'           => current_time( 'mysql' ) // Current timestamp in MySQL format
+        );
+
+        // Specify the data types for each field (optional but recommended)
+        $format = array('%s', '%d', '%s', '%s');
+
+        // Insert the data into the table
+        // Check if the lalamove_order_id already exists
+        $existing_order = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM $table_name WHERE lalamove_order_id = %s",
+            $data['lalamove_order_id']
+        ));
+
+        if ( $existing_order == 0 ) {
+            $inserted = $wpdb->insert( $table_name, $data, $format );
+
+            if ( false === $inserted ) {
+            // There was an error inserting the data
+            error_log( 'Insert error: ' . $wpdb->last_error );
+            } else {
+            // The insert was successful, and $wpdb->insert_id contains the new record's ID.
+            echo 'Record inserted with ID: ' . $wpdb->insert_id;
+            }
+        } else {
+            // The lalamove_order_id already exists
+            error_log( 'Lalamove order ID already exists: ' . $data['lalamove_order_id'] );
+        }
+
+        if ( false === $inserted ) {
+            // There was an error inserting the data
+            error_log( 'Insert error: ' . $wpdb->last_error );
+        } else {
+            // The insert was successful, and $wpdb->insert_id contains the new record's ID.
+            echo 'Record inserted with ID: ' . $wpdb->insert_id;
+
+        }
+
+        
+        // var_dump($lalamove_orderId);
+        // var_dump($body);
 
 
 
+        // print_r(json_encode($quotationBody));
+        var_dump($lalamove_orderId, JSON_PRETTY_PRINT);
+
+        // error_log('Quotation Body' . )
+        error_log( 'Order completed: ' . $order_id );
+    }
+
+
+    add_action('wp_ajax_set_quotation_data_session', 'set_quotation_data_session');
+    add_action('wp_ajax_nopriv_set_quotation_data_session', 'set_quotation_data_session');
+    function set_quotation_data_session() {
+        if (isset($_POST['quotationID'])) {
+            $quotationID = sanitize_text_field($_POST['quotationID']);
+            $quotationBody = $_POST['quotationBody'];
+            $stopId0 = sanitize_text_field($_POST['stopId0']);
+            $stopId1 = sanitize_text_field($_POST['stopId1']);
+            $customerFName = sanitize_text_field($_POST['customerFName']);
+            $customerLName = sanitize_text_field($_POST['customerLName']);
+            $customerPhoneNo = sanitize_text_field($_POST['customerPhoneNo']);
+            $additionalNotes = sanitize_text_field($_POST['additionalNotes']);
+            $proofOfDelivery = sanitize_text_field($_POST['proofOfDelivery']);
+
+            // Save the data in WooCommerce session
+            WC()->session->set('quotationID', $quotationID);
+            WC()->session->set('quotationBody', $quotationBody);
+            WC()->session->set('stopId0', $stopId0);
+            WC()->session->set('stopId1', $stopId1);
+            WC()->session->set('customerFName', $customerFName);
+            WC()->session->set('customerLName', $customerLName);
+            WC()->session->set('customerPhoneNo', $customerPhoneNo);
+            WC()->session->set('additionalNotes', $additionalNotes);
+            WC()->session->set('proofOfDelivery', $proofOfDelivery);
+
+            error_log('Quotation data session values updated: ' . print_r($_POST, true));
+
+
+            error_log('Quotation body session value updated: ' . var_dump(WC()->session->get('quotationBody')));
+
+            wp_send_json_success(array('message' => 'Quotation ID updated.'));
+        } else {
+            wp_send_json_error(array('message' => 'Quotation ID is missing.'));
+        }
+        wp_die();
+    }
     
-    
-
-
-
 }
