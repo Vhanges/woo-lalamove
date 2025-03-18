@@ -1,4 +1,14 @@
 
+.wc-order-status-wc-custom-status {
+    background: #d7f8a7 !important;
+    color: #0c942b !important;
+    font-weight: bold !important;
+    padding: 3px 8px !important;
+    border-radius: 5px !important;
+    text-transform: uppercase !important;
+}
+
+
 #lalamove-app {
     padding: 0 !important;
     box-sizing: border-box;
@@ -15,6 +25,7 @@
 #lalamove-app * {
     letter-spacing: 0.5px;
 }
+
 
 /*
 Remove WordPress Footer

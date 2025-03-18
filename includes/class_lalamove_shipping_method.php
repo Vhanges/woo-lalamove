@@ -42,17 +42,27 @@
 				 * @return void
 				 */
 				public function calculate_shipping( $package = array() ) {
+
+					$shipping_cost = WC()->session->get('shipment_cost');
+					// Check if the total is posted
+					if ( isset( $shipping_cost ) ) {
+						$total = floatval( sanitize_text_field(  WC()->session->get('shipment_cost')) ); // Fetch the posted total
+					} else {
+						$total = 1000; // Default to 0 if no total is posted
+					}
 				
+					// Calculate the shipping rate using the total
 					$rate = array(
 						'id'       => $this->id,
 						'label'    => __('Lalamove Shipping', 'sevhen'),
+						'cost'     => $total, // Use the fetched total as the shipping cost
 						'calc_tax' => 'per_item',
 					);
 				
 					// Add the calculated rate
-					$this->add_rate($rate);
-					
+					$this->add_rate( $rate );
 				}
+				
 				
 			}
 		}

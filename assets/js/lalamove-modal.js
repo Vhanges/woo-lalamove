@@ -1,6 +1,13 @@
 jq = jQuery.noConflict(); 
 
 jq(document).ready(function ($) {
+
+  var extensionCartUpdate = wc.blocksCheckout;
+  extensionCartUpdate.extensionCartUpdate({
+      namespace: 'your_custom_namespace',
+      data: { testData: 'testing'}
+  });
+  
   window.isVehicleSelected = false;
   // Add custom CSS styles for the modal and Leaflet map
   var customModalCss = `
@@ -399,9 +406,7 @@ $("head").append(customModalCss);
           console.log("lat: " + lat + "lon: " + lon); 
           console.log("User is in: " + state);  
 
-          var isRouteOptimized = document.getElementById("customSwitch1").checked;
-          var proofOfDelivery = document.getElementById("customSwitch2").checked;
-
+          
           window.body = {
             "data": {
                 "scheduleAt": window.scheduleDate, 
@@ -423,7 +428,7 @@ $("head").append(customModalCss);
                       "address": "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines"
                   }
                 ],
-                "isRouteOptimized": isRouteOptimized,
+                "isRouteOptimized": false,
                 "item": {
                     "quantity": window.quantity.toString(),
                     "weight": window.totalWeight.toString(),
@@ -442,6 +447,7 @@ $("head").append(customModalCss);
           } else if (manilaNCRSouthLuzon.includes(state)) {
 
             manilaNCRSouthLuzonBlock();
+            
             $("#customSwitch1").on("click", function () {
               if(window.isVehicleSelected){
 
@@ -454,17 +460,6 @@ $("head").append(customModalCss);
               }
             });
 
-            $("#customSwitch2").on("click", function () {
-              if(window.isVehicleSelected){
-
-                if ($(this).is(":checked")) {
-                  window.body.data.serviceType = window.serviceType;
-    
-                  quotationAjax(window.body);
-                } 
-
-              }
-            });
             
             if(window.isVehicleSelected){
 
@@ -578,6 +573,9 @@ $("head").append(customModalCss);
   }
 
   function quotationAjax(body){
+    
+    body.data.isRouteOptimized = document.getElementById("customSwitch1").checked;
+
     let quotation = $.ajax({
       url: `${wpApiSettings.root}woo-lalamove/v1/get-quotation`,
       method: "POST",
@@ -592,17 +590,10 @@ $("head").append(customModalCss);
           const customerPhoneNo = document.getElementById("shipping-phone").value;
           const additionalNotes = document.getElementById("additionalNotes").value;
 
-          // Get the state of the checkboxes
-          const optimizeRoute = document.getElementById("customSwitch1").checked;
-          const proofOfDelivery = document.getElementById("customSwitch2").checked;
-
           console.log("Additional Notes:", additionalNotes);
-          console.log("Optimize Route:", optimizeRoute);
-          console.log("Proof of Delivery:", proofOfDelivery);
-        
           console.log("Response received:", response);
 
-          window.quotationId = response.data.quotationId;
+        
 
           
           window.currency = response.data.priceBreakdown.currency? response.data.priceBreakdown.currency : null; ; 
@@ -676,14 +667,15 @@ $("head").append(customModalCss);
             console.log('Proof of Delivery:', proofOfDelivery);
             console.log('Quotation ID', window.quotationId);
             console.log('Quotation Body', body);
+
+            quotationID = window.quotationId;
             // Set the quotation ID as a session variable
-            $.ajax({
+            jQuery.ajax({
               url: pluginAjax.ajax_url,
               method: 'POST',
               data: {
                 action: 'set_quotation_data_session',
-                quotationID: window.quotationId,
-                quotationBody: JSON.stringify(body),
+                quotationID: response.data.quotationId,
                 stopId0: response.data.stops[0].stopId,
                 stopId1: response.data.stops[1].stopId,
                 customerFName: customerFName,
@@ -699,16 +691,22 @@ $("head").append(customModalCss);
                   console.error('Failed to set Quotation ID in session:', response.data.message);
                 }
               },
-              error: function(error) {
+              error: function(error, xhr) {
                 console.error('Error setting Quotation ID in session:', error);
+                console.error('XHR Response Text:', xhr.responseText);
               }
             });
             console.log('Currency', currency);
             console.log('Total', total);
 
+            
+            
+            let ajaxTimer;
+            clearTimeout(ajaxTimer);
 
-            // Send the shipping cost to the server via AJAX
-            $.ajax({
+            ajaxTimer = setTimeout(function(){
+                // Send the shipping cost to the server via AJAX
+              jQuery.ajax({
                 url: pluginAjax.ajax_url, // Replace `ajax_object` with your localized object name
                 method: 'POST',
                 data: {
@@ -716,21 +714,32 @@ $("head").append(customModalCss);
                     shipping_cost: total // Cost from modal
                 },
                 success: function (response) {
-                    if (response.success) {
-                        console.log('Shipping rate updated successfully.');
-    
-                        // Trigger checkout refresh to update the totals
-                        $('body').trigger('update_checkout');
-                    } else {
-                        console.error(response.data.message);
-                    }
+                  
+                  // Solution One
+                  // if ( typeof wp !== 'undefined' && typeof wp.data !== 'undefined' ) {
+                  //   wp.data.dispatch('wc/store/cart').invalidateResolutionForStore();
+                  // }
+
+                  if ( typeof wc !== 'undefined' && typeof wc.blocksCheckout !== 'undefined' ) {
+                    var extensionCartUpdate = wc.blocksCheckout;
+                    extensionCartUpdate.extensionCartUpdate({
+                        namespace: 'your_custom_namespace',
+                        data: { testData: 'testing'}
+                    });
+                }
+                
+                 
+                  console.log('Shipping rate updated successfully.');
                 },
                 error: function (error) {
                     console.error('Error updating shipping rate:', error);
                 }
-            });
+              });
+            }), 500;
+            
 
             $('#customModal').modal('hide');
+
           });
 
       },

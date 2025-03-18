@@ -51,6 +51,8 @@ if ( ! class_exists('Woo_Lalamove') ) {
                 register_activation_hook( __FILE__, callback: [$this, 'my_plugin_create_custom_table']);
 
                 add_filter( 'woocommerce_billing_fields', [$this, 'make_phone_field_required'], 10, 2 );
+           
+
             }   
         }
         function make_phone_field_required( $fields ) {
@@ -208,7 +210,7 @@ if ( ! class_exists('Woo_Lalamove') ) {
             if (is_checkout()) {
                 wp_enqueue_script('jquery'); // Enqueue jQuery
                 // Enqueue your custom script that depends on jQuery
-                wp_enqueue_script('custom-plugin-script', plugin_dir_url(__FILE__) . 'assets/js/lalamove-modal.js', array('jquery'), null, true);
+                wp_enqueue_script('custom-plugin-script', plugin_dir_url(__FILE__) . 'assets/js/lalamove-modal.js', array('jquery'), 1.0, true);
             
                 // Enqueue Bootstrap JS
                 wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js', array('jquery'), null, true);
@@ -259,8 +261,10 @@ if ( ! class_exists('Woo_Lalamove') ) {
     }
     
     new Woo_Lalamove();
-
+    
     // Fetch checkout product data for Lalamove modal order detail reference
+    add_action( 'wp_ajax_get_checkout_product_data', 'get_checkout_product_data' );
+    add_action( 'wp_ajax_nopriv_get_checkout_product_data', 'get_checkout_product_data' );
     function get_checkout_product_data() {
         // Get cart items
         $cart_items = WC()->cart->get_cart();
@@ -322,10 +326,9 @@ if ( ! class_exists('Woo_Lalamove') ) {
 
         wp_send_json_success( $response );
     }
-    add_action( 'wp_ajax_get_checkout_product_data', 'get_checkout_product_data' );
-    add_action( 'wp_ajax_nopriv_get_checkout_product_data', 'get_checkout_product_data' );
 
     // Enqueue custom scripts for AJAX
+    add_action( 'wp_enqueue_scripts', 'enqueue_custom_scripts' );
     function enqueue_custom_scripts() {
 
         // Localize script to pass AJAX URL and nonce to JavaScript
@@ -333,46 +336,54 @@ if ( ! class_exists('Woo_Lalamove') ) {
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('custom_plugin_nonce'),
         ));
+
     }
-    add_action( 'wp_enqueue_scripts', 'enqueue_custom_scripts' );
 
     // Update shipping rate dynamically
+    add_action('wp_ajax_update_shipping_rate', 'update_shipping_rate');
+    add_action('wp_ajax_nopriv_update_shipping_rate', 'update_shipping_rate');
     function update_shipping_rate() {
+            
         if (isset($_POST['shipping_cost'])) {
             $shipping_cost = sanitize_text_field($_POST['shipping_cost']);
 
             // Save the shipping cost in a WooCommerce session
             WC()->session->set('shipment_cost', floatval($shipping_cost));
             error_log('Shipping cost session value updated: ' . WC()->session->get('shipment_cost'));
-
             wp_send_json_success(array('message' => 'Shipping rate updated.'));
         } else {
+            error_log('It did not work');
             wp_send_json_error(array('message' => 'Shipping cost is missing.'));
         }
-        wp_die();
     }
-    add_action('wp_ajax_update_shipping_rate', 'update_shipping_rate');
-    add_action('wp_ajax_nopriv_update_shipping_rate', 'update_shipping_rate');
+
+    add_action('woocommerce_blocks_loaded', 'register_custom_cart_update_callback');
+
+    function register_custom_cart_update_callback() {
+        woocommerce_store_api_register_update_callback(
+            array(
+                'namespace' => 'your_custom_namespace',
+                'callback'  => 'handle_custom_cart_update',
+            )
+        );
+    }
+
+    function handle_custom_cart_update( $data ) {
+        error_log('BOOOOOOOOOOOM');
+    }
+
 
     
-    add_action('woocommerce_cart_calculate_fees', 'woo_change_cart_fee');
-    function woo_change_cart_fee() {
-        $shipment_cost = WC()->session->get('shipment_cost');
+    add_filter('woocommerce_cart_shipping_packages', 'disable_shipping_rate_cache', 100);
 
-        if ( $shipment_cost ) {
-            WC()->cart->add_fee('Shipping Cost', $shipment_cost, false, '');
+    function disable_shipping_rate_cache($packages) {
+        foreach ($packages as &$package) {
+            // Invalidate the cache by assigning a unique value
+            $package['rate_cache'] = wp_rand(); // Generates a random value for every package
         }
-    }
 
-    // Reset shipping session variable after order is completed
-    add_action('woocommerce_thankyou', 'reset_wc_session_variable_after_order');
-    function reset_wc_session_variable_after_order( $order_id ) {
-        if ( WC()->session->get('shipment_cost') ) {
-            error_log('Resetting shipping cost session value after order ' . $order_id);
-            WC()->session->__unset('shipment_cost');
-        }
+        return $packages;
     }
-
 
     add_action( 'admin_notices', 'wc_lalamove_admin_notice' );
     function wc_lalamove_admin_notice() {
@@ -388,15 +399,14 @@ if ( ! class_exists('Woo_Lalamove') ) {
     function set_lalamove_order( $order_id ) {
         // Custom code to run after the order is fully processed.
 
+        WC()->session->__unset( 'shipment_cost' );
+
         global $wpdb;
         $table_name = $wpdb->prefix . 'wc_lalamove_orders';
 
         // Get the data from WooCommerce session
         $quotationID = WC()->session->get('quotationID');
         echo '<pre>Quotation ID: ' . $quotationID . '</pre>';
-
-        $quotationBody = WC()->session->get('quotationBody');
-        echo '<pre>Quotation Body: ' . print_r($quotationBody, true) . '</pre>';
 
         $stopId0 = WC()->session->get('stopId0');
         echo '<pre>Stop ID 0: ' . $stopId0 . '</pre>';
@@ -436,8 +446,8 @@ if ( ! class_exists('Woo_Lalamove') ) {
         );
 
 
-        echo '<pre>Lalamove Order ID: ' . var_dump($lalamove_orderId) . '</pre>';
         $lalamove_orderId = $lalamove_orderId['data']['orderId'];
+        echo '<pre>Lalamove Order ID: ' . $lalamove_orderId . '</pre>';
 
 
         
@@ -503,7 +513,6 @@ if ( ! class_exists('Woo_Lalamove') ) {
     function set_quotation_data_session() {
         if (isset($_POST['quotationID'])) {
             $quotationID = sanitize_text_field($_POST['quotationID']);
-            $quotationBody = $_POST['quotationBody'];
             $stopId0 = sanitize_text_field($_POST['stopId0']);
             $stopId1 = sanitize_text_field($_POST['stopId1']);
             $customerFName = sanitize_text_field($_POST['customerFName']);
@@ -514,7 +523,6 @@ if ( ! class_exists('Woo_Lalamove') ) {
 
             // Save the data in WooCommerce session
             WC()->session->set('quotationID', $quotationID);
-            WC()->session->set('quotationBody', $quotationBody);
             WC()->session->set('stopId0', $stopId0);
             WC()->session->set('stopId1', $stopId1);
             WC()->session->set('customerFName', $customerFName);
@@ -534,5 +542,6 @@ if ( ! class_exists('Woo_Lalamove') ) {
         }
         wp_die();
     }
-    
+
+
 }
