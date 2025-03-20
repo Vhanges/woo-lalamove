@@ -1,12 +1,43 @@
-jq = jQuery.noConflict(); 
+jq = jQuery.noConflict();
 
 jq(document).ready(function ($) {
-
   var extensionCartUpdate = wc.blocksCheckout;
   extensionCartUpdate.extensionCartUpdate({
-      namespace: 'your_custom_namespace',
-      data: { testData: 'testing'}
+    namespace: "your_custom_namespace",
+    data: { testData: "testing" },
   });
+
+
+  var SessionData = {
+    lat: null,                  // Latitude from geolocation
+    lng: null,                  // Longitude from geolocation
+    serviceType: null,          // Selected vehicle/service type
+    scheduleDate: null,         // Delivery schedule date (ISO string)
+    additionalNotes: "",        // User-provided additional notes
+    optimizeRoute: false,       // Whether route optimization is enabled
+    proofOfDelivery: false,     // Whether Proof of Delivery (POD) is enabled
+    priceBreakdown: {},         // Object to store price breakdown info
+    requestBody: {}             // The body data for quotation AJAX calls
+  };
+
+  // Function to save state to sessionStorage
+  function saveSessionData() {
+    sessionStorage.setItem('SessionData', JSON.stringify(SessionData));
+    console.log("SessionData saved to sessionStorage:", SessionData);
+  }
+
+  // Function to load state from sessionStorage
+  function loadSessionData() {
+    var storedState = sessionStorage.getItem('SessionData');
+    if (storedState) {
+      SessionData = JSON.parse(storedState);
+      console.log("SessionData loaded from sessionStorage:", SessionData);
+    }
+  }
+
+  loadSessionData();
+
+ 
   
   window.isVehicleSelected = false;
   // Add custom CSS styles for the modal and Leaflet map
@@ -78,25 +109,28 @@ jq(document).ready(function ($) {
   </style>
 
 `;
-$("head").append(customModalCss);
+  $("head").append(customModalCss);
 
   $(document).off("click", 'input[id="radio-control-0-your_shipping_method"]');
 
-  $(document).on("click", 'input[id="radio-control-0-your_shipping_method"]', async function (event) {
-    event.preventDefault();
-    event.stopPropagation();
+  $(document).on(
+    "click",
+    'input[id="radio-control-0-your_shipping_method"]',
+    async function (event) {
+      event.preventDefault();
+      event.stopPropagation();
 
-    var selectedValue = $(this).val();
-    if (selectedValue === "your_shipping_method") {
-      $(this).css("background-color", "yellow");
-      $(this).next("label").css({
-        color: "blue",
-        "font-weight": "bold",
-      });
-      console.log("Clicked shipping method radio button:", $(this));
+      var selectedValue = $(this).val();
+      if (selectedValue === "your_shipping_method") {
+        $(this).css("background-color", "yellow");
+        $(this).next("label").css({
+          color: "blue",
+          "font-weight": "bold",
+        });
+        console.log("Clicked shipping method radio button:", $(this));
 
-      // Define and append the modal with a loading state
-    var modalHtml = `
+        // Define and append the modal with a loading state
+        var modalHtml = `
             <div class="modal fade" id="customModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
               <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content" style="min-height: 600px; max-height: 600px; min-width: 600px; max-width: 600px;">
@@ -116,37 +150,35 @@ $("head").append(customModalCss);
               </div>
             </div>
         `;
-      $("body").append(modalHtml);
+        $("body").append(modalHtml);
 
-      // Trigger the modal
-      $("#customModal").modal("show");
+        // Trigger the modal
+        $("#customModal").modal("show");
 
-      // When modal is shown, remove aria-hidden and load data
-      $("#customModal").on("shown.bs.modal", async function () {
-        $(this).removeAttr("aria-hidden");
-    
-        window.siteUrl = window.location.origin;
-        try {
+        // When modal is shown, remove aria-hidden and load data
+        $("#customModal").on("shown.bs.modal", async function () {
+          $(this).removeAttr("aria-hidden");
+
+          window.siteUrl = window.location.origin;
+          try {
             // Fetch city data via AJAX
             let get_city = await $.ajax({
-                url: window.siteUrl + "/wp-json/woo-lalamove/v1/get-city",
-                method: "GET",
-                data: { shipping_method: selectedValue },
+              url: window.siteUrl + "/wp-json/woo-lalamove/v1/get-city",
+              method: "GET",
+              data: { shipping_method: selectedValue },
             });
-    
+
             // Fetch checkout product data via AJAX
             let productData = await $.ajax({
-                url: pluginAjax.ajax_url,
-                method: "POST",
-                data: {
-                    action: "get_checkout_product_data",
-                    nonce: pluginAjax.nonce,
-                    image: pluginAjax.image_url,
-                },
+              url: pluginAjax.ajax_url,
+              method: "POST",
+              data: {
+                action: "get_checkout_product_data",
+                nonce: pluginAjax.nonce,
+                image: pluginAjax.image_url,
+              },
             });
 
-
-    
             const [Cebu, NCR_South, North_Central] = get_city;
             window.cebu = Cebu.services;
             window.ncr_south = NCR_South.services;
@@ -155,21 +187,16 @@ $("head").append(customModalCss);
             window.totalWeight = 0;
             window.quantity = 0;
 
-            productData.data.products.forEach(product => {
+            productData.data.products.forEach((product) => {
               window.totalWeight = product.quantity * product.weight;
               window.quantity += product.quantity;
-          });
+            });
 
-            window.shipping_address = productData.data.shipping_address;  
+            window.shipping_address = productData.data.shipping_address;
 
             console.log("Product data:", productData.data.products);
             console.log("Product data:", productData.data.shipping_address);
 
-
-
-    
-      
-    
             $("#customModal .modal-body").html(`
               <div id="map" class="mb-4" style="height: 300px;"></div>
               <form id="deliveryForm" class="d-flex flex-column justify-content-center align-items-start delivery mb-6">
@@ -208,131 +235,200 @@ $("head").append(customModalCss);
 
               </form>
             `);
-    
+
             // Initialize the Leaflet map with enhanced geolocation accuracy
             initMap();
-    
-            var startDate = moment();
-            var endDate = moment().add(30, 'days');
+
+          
+            $("#customModal .vehicle-wrapper").empty();
+
+            var manilaServices = filterServices(window.ncr_south).reverse();
+            manilaServices.forEach(function (value) {
+              
+
+              var selectedVehicle = (SessionData.serviceType === value.key) 
+              ? 'style="border: solid 2px #f16622"'
+              : "";
+              
+
+              $("#customModal .vehicle-wrapper").prepend(
+                `
+                <div class="d-flex flex-column vehicle-content">
+                  <div class="vehicle" ${selectedVehicle} data-index="${value.key}">
+                    <div class="content">
+                      <img src="/wp-content/plugins/woo-lalamove/assets/images/motorcycle.png" alt="motor" style="height: 60px; width: auto;">
+                      <span id="vehicle-type" class="vehicle-type">${value.key}</span>
+                    </div>
+                  </div>
+                </div>
+                `
+              );
+
+
+
+            });
+            
+
+            var startDate = null;
+            if(SessionData.scheduleDate){
+                startDate = moment(SessionData.scheduleDate, moment.ISO_8601);
+            } else{
+                startDate = moment().add(1, "days");
+            }
+
+            var endDate = moment().add(30, "days");
 
             function cb(start, end) {
-              console.log('start:', start.format('MMMM D, YYYY HH:mm:ss'));
-                window.scheduleDate = end.toISOString();
-                console.log('Selected schedule date:', window.scheduleDate);
-              $('#customModal #schedule-date').empty();
-              $('#customModal #schedule-date').append(`
-                  <p style="margin: 0;">${start.format('MMMM D, YYYY HH:mm:ss')}</p>
+              console.log("start:", start.format("MMMM D, YYYY HH:mm:ss"));
+              window.scheduleDate = start.toISOString();   
+
+              console.log("Selected schedule date:", window.scheduleDate);
+              $("#customModal #schedule-date").empty();
+              $("#customModal #schedule-date").append(`
+                  <p style="margin: 0;">${start.format(
+                    "MMMM D, YYYY HH:mm"
+                  )}</p>
                   <i class="bi bi-calendar" style="margin-left: auto;"></i>
               `);
             }
-          
+
             var date = jQuery.noConflict();
 
-            date('#schedule-date').daterangepicker({
-              "startDate": startDate,
-              "endDate": endDate,
-              ranges: {
-                'Today': [moment(), moment()],
-                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                'This Month': [moment().startOf('month'), moment().endOf('month')],
-                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-             },
-              minDate: moment().add(1, 'days'), // Minimum selectable date
-              maxDate: moment().add(30, 'days'), // Maximum selectable date
-              singleDatePicker: true, // Set to true for single date selection
-              timePicker: true,
-              timePicker24Hour: false,
-              timePickerSeconds: false,
-              timePickerIncrement: 15, // Time picker increment in minutes
-              autoApply: true,
-              opens: 'right',
-              drops: 'up', // Set the position to open at the top
-              showDropdowns: true, // Show month and year dropdowns
-              locale: {
-                format: 'DD/MM/YYYY HH:mm:ss',
-                applyLabel: 'Apply', // Custom label for apply button
-                cancelLabel: 'Cancel' // Custom label for cancel button
+            date("#schedule-date").daterangepicker(
+              {
+                startDate: startDate,
+                endDate: endDate,
+                ranges: {
+                  Today: [moment(), moment()],
+                  Yesterday: [
+                    moment().subtract(1, "days"),
+                    moment().subtract(1, "days"),
+                  ],
+                  "Last 7 Days": [moment().subtract(6, "days"), moment()],
+                  "Last 30 Days": [moment().subtract(29, "days"), moment()],
+                  "This Month": [
+                    moment().startOf("month"),
+                    moment().endOf("month"),
+                  ],
+                  "Last Month": [
+                    moment().subtract(1, "month").startOf("month"),
+                    moment().subtract(1, "month").endOf("month"),
+                  ],
+                },
+                minDate: moment().add(1, "days"), // Minimum selectable date
+                maxDate: moment().add(30, "days"), // Maximum selectable date
+                singleDatePicker: true, // Set to true for single date selection
+                timePicker: true,
+                timePicker24Hour: false,
+                timePickerSeconds: false,
+                timePickerIncrement: 15, // Time picker increment in minutes
+                autoApply: true,
+                opens: "right",
+                drops: "up", // Set the position to open at the top
+                showDropdowns: true, // Show month and year dropdowns
+                locale: {
+                  format: "DD/MM/YYYY HH:mm:ss",
+                  applyLabel: "Apply", // Custom label for apply button
+                  cancelLabel: "Cancel", // Custom label for cancel button
+                },
               },
-            }, cb);
+              cb
+            );
 
             cb(startDate, endDate);
-    
-        } catch (error) {
+          } catch (error) {
             console.error("AJAX request failed:", error);
             $("#customModal .modal-body").html(`
                 <p>Error loading data: ${error.statusText || error}</p>
             `);
-        }
-    });
+          }
+        });
 
-      // Remove modal from DOM when hidden
-      $("#customModal").on("hidden.bs.modal", function () {
-        $(this).remove();
-      });
-
-
+        // Remove modal from DOM when hidden
+        $("#customModal").on("hidden.bs.modal", function () {
+          $(this).remove();
+        });
+      }
     }
-  });
+  );
 
-  // Flag to prevent multiple location fetches
-  let locationFetched = false;
-
-  // Initialize the Leaflet map and continuously update user's position
+  // Initialize the Leaflet map and conditionally fetch user location
   function initMap() {
-    
+    const defaultLat = 12.8797;
+    const defaultLng = 121.774;
 
-    var map = L.map("map").setView([12.8797, 121.774], 6); // Default center on the Philippines
+    //Verify if a service is already selected
+    var isVehicleSelected = SessionData.serviceType ? true : false;
 
+    // Use stored session data if available, otherwise fallback to defaults
+    let mapLat = SessionData.lat || defaultLat;
+    let mapLng = SessionData.lng || defaultLng;
+
+    console.log("Using Coordinates:", mapLat, mapLng);
+
+    // Initialize the map and marker
+    const map = L.map("map").setView([mapLat, mapLng], 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
-      attribution: "© OpenStreetMap",
+      attribution: "© OpenStreetMap"
     }).addTo(map);
 
-    var marker = L.marker([12.8797, 121.774], { draggable: true }).addTo(map);
+    const marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
 
-      marker.on("dragend", function (e) {
-      var latlng = marker.getLatLng();
-      
-      // Perform reverse geocoding when the marker is dragged
-      reverseGeocode(latlng.lat, latlng.lng);
+    // Bind service events using initial coordinates
+    bindServiceEvents(mapLat, mapLng);
 
-    }); 
+    // Update marker location on dragend
+    marker.on("dragend", () => {
+
+      console.log("Dragend event triggered");
+      const latlng = marker.getLatLng();
+      mapLat = latlng.lat;
+      mapLng = latlng.lng;
+    
+      SessionData.lat = mapLat;
+      SessionData.lng = mapLng;
+      sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
+    
+      triggerServiceEvents(mapLat, mapLng, isVehicleSelected);
+
+    });
+    
+    // If session data exists, skip geolocation fetching
+    if (SessionData.lat && SessionData.lng) {
+      console.log("Session data exists. Skipping geolocation.");
+      return;
+    }
+
+    console.log("Fetching user location...");
 
     // Geolocation options for high accuracy
-    var options = {
+    const options = {
       enableHighAccuracy: true,
       timeout: 10000,
-      maximumAge: 6000,
+      maximumAge: 6000
     };
 
-    function success(position) {
-      if (locationFetched) return; // Prevent multiple location fetches
+    const success = (position) => {
+      mapLat = position.coords.latitude;
+      mapLng = position.coords.longitude;
 
-      var lat = position.coords.latitude;
-      var lon = position.coords.longitude;
-      
+      // Save fetched location to session
+      SessionData.lat = mapLat;
+      SessionData.lng = mapLng;
+      sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
 
-      map.setView([lat, lon], 15); // Zoom to user's location
-      marker.setLatLng([lat, lon]); // Update marker position
-      // console.log("User Location - Latitude: " + lat + ", Longitude: " + lon);
+      map.setView([mapLat, mapLng], 15);
+      marker.setLatLng([mapLat, mapLng]);
+      console.log("User Location - Latitude:", mapLat, "Longitude:", mapLng);
 
+      triggerServiceEvents(mapLat, mapLng, isVehicleSelected);
+    };
 
-      // Perform reverse geocoding when the location is fetched
-      reverseGeocode(lat, lon);
-
-      locationFetched = true; // Set the flag to true after fetching the location
-    }
-
-    function error(err) {
+    const error = (err) => {
       console.warn(`ERROR(${err.code}): ${err.message}`);
-      alert(
-        "Error getting your location. Please try again or adjust your settings."
-      );
-    }
+    };
 
-    // Get current position and start watching for updates
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(success, error, options);
       navigator.geolocation.watchPosition(success, error, options);
@@ -341,21 +437,59 @@ $("head").append(customModalCss);
     }
   }
 
-  function filterServices(state){
+  // Bind service-related events (using the provided lat and lng)
+  function bindServiceEvents(lat, lng, isVehicleSelected) {
 
-    if (!Array.isArray(state)) {
-      console.error('Invalid state parameter:', state);
-      return [];
+    if(isVehicleSelected){
+
+        quotationAjax(lat, lng);
+        return;
+
+    }
+
+    // Bind the click event on the switch button
+    $(document)
+      .off("click", "#customSwitch1")
+      .on("click", "#customSwitch1", function () {
+        if ($(this).is(":checked")) {
+          quotationAjax(lat, lng);
+        }
+      });
+
+    // Bind the click event on vehicle elements
+    $(document)
+      .off("click", ".vehicle")
+      .on("click", ".vehicle", function () {
+
+        $(".vehicle").css("border", "solid 2px #EDEDED");
+        $(this).css("border", "solid 2px #f16622");
+
+        window.serviceType = $(this).attr("data-index");
+        quotationAjax(lat, lng);
+      });
   }
 
-    
-    let filteredArray = state.filter(function(value) {
+  // Update the service events with the new coordinates
+  function triggerServiceEvents(lat, lng, isVehicleSelected) {
+    bindServiceEvents(lat, lng, isVehicleSelected);
+  }
+
+
+  function filterServices(state) {
+    if (!Array.isArray(state)) {
+      console.error("Invalid state parameter:", state);
+      return [];
+    }
+
+    let filteredArray = state.filter(function (value) {
       return window.totalWeight < value.load.value;
     });
 
     // Sort the filtered array by the difference between load.value and totalWeight in ascending order
-    filteredArray.sort(function(a, b) {
-      return (a.load.value - window.totalWeight) - (b.load.value - window.totalWeight);
+    filteredArray.sort(function (a, b) {
+      return (
+        a.load.value - window.totalWeight - (b.load.value - window.totalWeight)
+      );
     });
 
     // Slice the first three elements from the sorted array
@@ -364,389 +498,235 @@ $("head").append(customModalCss);
     return nearestValues;
   }
 
-  // Function to perform reverse geocoding
-  function reverseGeocode(lat, lon) {
-    // List of Lalamove available regions
-    const cebuIslandwide = ["Cebu"];
-    const manilaNCRSouthLuzon = [
-      "Metro Manila",
-      "Cavite",
-      "Laguna",
-      "Batangas",
-      "Rizal",
-      "Quezon",
-    ];
-    const northCentralLuzon = [
-      "Pampanga",
-      "Bulacan",
-      "Bataan",
-      "Zambales",
-      "Tarlac",
-      "Nueva Ecija",
-      "La Union",
-      "Ilocos Norte",
-      "Ilocos Sur",
-      "Abra",
-      "Apayao",
-      "Kalinga",
-      "Benguet",
-      "Ifugao",
-      "Mountain Province",
-      "Cagayan",
-      "Isabela",
-      "Nueva Vizcaya",
-    ];
+  function quotationAjax(lat, lng) {
+    isRouteOptimized = document.getElementById("customSwitch1").checked;
 
-    // Reverse geocode to get region name
-    $.getJSON(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
-      function (data) {
-        if (data && data.address) {
-          var state = data.address.state;
-          console.log("lat: " + lat + "lon: " + lon); 
-          console.log("User is in: " + state);  
+    //Set data for saving session
+    SessionData.lat = lat;
+    SessionData.lng = lng;
+    SessionData.serviceType = window.serviceType;
+    SessionData.scheduleDate = window.scheduleDate;
 
-          
-          window.body = {
-            "data": {
-                "scheduleAt": window.scheduleDate, 
-                "serviceType": window.serviceType,
-                "language": "en_PH",
-                "stops": [
-                  {
-                      "coordinates": {
-                          "lat": "14.555566",
-                          "lng": "121.130056"
-                      },
-                      "address": "GFT Textile Main Office, Unit E, Sitio Malabon, Barangay San Juan, Hwy 2000, Taytay, 1920 Rizal"
-                  },
-                  {
-                      "coordinates": {
-                          "lat": lat.toString(),                      
-                          "lng": lon.toString()
-                      },
-                      "address": "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines"
-                  }
-                ],
-                "isRouteOptimized": false,
-                "item": {
-                    "quantity": window.quantity.toString(),
-                    "weight": window.totalWeight.toString(),
-                }
-            }
-          };
+    window.body = {
+      data: {
+        scheduleAt: SessionData.scheduleDate,
+        serviceType: SessionData.serviceType,
+        language: "en_PH",
+        stops: [
+          {
+            coordinates: {
+              lat: "14.555566",
+              lng: "121.130056",
+            },
+            address:
+              "GFT Textile Main Office, Unit E, Sitio Malabon, Barangay San Juan, Hwy 2000, Taytay, 1920 Rizal",
+          },
+          {
+            coordinates: {
+              lat: lat.toString(),
+              lng: lng.toString(),
+            },
+            address: "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines",
+          },
+        ],
+        isRouteOptimized: isRouteOptimized,
+        item: {
+          quantity: window.quantity.toString(),
+          weight: window.totalWeight.toString(),
+        },
+      },
+    };
 
-          console.log("Body", window.body); 
-
-
-          if (cebuIslandwide.includes(state)) {
-
-            centralIslandWideBlock()
-            getQuotation(lat, lon);
-
-          } else if (manilaNCRSouthLuzon.includes(state)) {
-
-            manilaNCRSouthLuzonBlock();
-            
-            $("#customSwitch1").on("click", function () {
-              if(window.isVehicleSelected){
-
-                if ($(this).is(":checked")) {
-                  window.body.data.serviceType = window.serviceType;
-    
-                  quotationAjax(window.body);
-                } 
-
-              }
-            });
-
-            
-            if(window.isVehicleSelected){
-
-
-              $(document).on("click", ".vehicle", function () {
-                window.serviceType = $(this).get(0).getAttribute("data-index");
-  
-                window.body.data.serviceType = window.serviceType;
-                console.log("CLLICKED", window.serviceType);
-  
-                quotationAjax(window.body);
-  
-                return;
-              });
-            } else {
-              getQuotation();
-            }
-          
-
-
-
-          } else if (northCentralLuzon.includes(state)) {
-
-            northCentralLuzonBlock()
-            getQuotation(lat, lon);
-
-          } else {
-            $("#customModal .vehicle-wrapper").empty();
-
-            alert("Lalamove does not service your location.");
-          }
-        } else {
-          alert("Region not found for the current location.");
-        }
-      }
-    );
-  }
-
-  function centralIslandWideBlock(){
-    $("#customModal .vehicle-wrapper").empty();
-
-    var cebuServices = filterServices(window.cebu).reverse();
-    cebuServices.forEach(function(value, index) {
-      $("#customModal .vehicle-wrapper").prepend(
-      `
-      <div class="d-flex flex-column vehicle-content" >
-        <div class="vehicle" data-index="${index}">
-          <div class="content">
-            <img src="/wp-content/plugins/woo-lalamove/assets/images/motorcycle.png" alt="motor" style="height: 60px; width: auto;">
-            <span id="vehicle-type" class="vehicle-type">${value.key}</span>
-          </div>
-        </div>
-      </div>
-      `
-      );
-    });
-  }
-  function manilaNCRSouthLuzonBlock(){
-    $("#customModal .vehicle-wrapper").empty();
-
-    var manilaServices = filterServices(window.ncr_south).reverse();
-    manilaServices.forEach(function(value) {
-      $("#customModal .vehicle-wrapper").prepend(
-      `
-      <div class="d-flex flex-column vehicle-content" >
-        <div class="vehicle" data-index="${value.key}">
-          <div class="content">
-            <img src="/wp-content/plugins/woo-lalamove/assets/images/motorcycle.png" alt="motor" style="height: 60px; width: auto;">
-            <span id="vehicle-type" class="vehicle-type">${value.key}</span>
-          </div>
-        </div>
-      </div>
-      `
-      );
-    });
- 
-  }
-  function northCentralLuzonBlock(){
-    $("#customModal .vehicle-wrapper").empty();
-
-    var NclServices = filterServices(window.north_central).reverse();
-    NclServices.forEach(function(value, index) {
-      $("#customModal .vehicle-wrapper").prepend(
-      `
-      <div class="d-flex flex-column vehicle-content" >
-        <div class="vehicle" data-index="${index}">
-          <div class="content">
-            <img src="/wp-content/plugins/woo-lalamove/assets/images/motorcycle.png" alt="motor" style="height: 60px; width: auto;">
-            <span id="vehicle-type" class="vehicle-type">${value.key}</span>
-          </div>
-        </div>
-      </div>
-      `
-      );
-    });
-  }
-  function getQuotation(){
-    $(document).on("click", ".vehicle", function () {
-      window.isVehicleSelected = true;
-      window.serviceType = $(this).get(0).getAttribute("data-index");
-
-
-      window.body.data.serviceType = window.serviceType;
-      console.log("CLLICKED", window.serviceType);
-
-      quotationAjax(window.body);
-
-      return
-    });
-
-  }
-
-  function quotationAjax(body){
-    
-    body.data.isRouteOptimized = document.getElementById("customSwitch1").checked;
+    console.log("MERON NAMAN: ", body);
 
     let quotation = $.ajax({
       url: `${wpApiSettings.root}woo-lalamove/v1/get-quotation`,
       method: "POST",
       contentType: "application/json",
       data: JSON.stringify(body),
-      headers: { 'X-WP-Nonce': wpApiSettings.nonce },
-      success: function(response) {
+      headers: { "X-WP-Nonce": wpApiSettings.nonce },
+      success: function (response) {
+        const customerFName = document.getElementById(
+          "shipping-first_name"
+        ).value;
+        const customerLName =
+          document.getElementById("shipping-last_name").value;
+        const customerPhoneNo = document.getElementById("shipping-phone").value;
+        const additionalNotes =
+          document.getElementById("additionalNotes").value;
 
-          
-          const customerFName = document.getElementById("shipping-first_name").value;
-          const customerLName = document.getElementById("shipping-last_name").value;
-          const customerPhoneNo = document.getElementById("shipping-phone").value;
-          const additionalNotes = document.getElementById("additionalNotes").value;
+        console.log("Additional Notes:", additionalNotes);
+        console.log("Response received:", response);
 
-          console.log("Additional Notes:", additionalNotes);
-          console.log("Response received:", response);
+        window.currency = response.data.priceBreakdown.currency
+          ? response.data.priceBreakdown.currency
+          : null;
+        window.total = response.data.priceBreakdown.total
+          ? response.data.priceBreakdown.total
+          : null;
+        var base = response.data.priceBreakdown.base
+          ? response.data.priceBreakdown.base
+          : null;
+        var extraMileage = response.data.priceBreakdown.extraMileage
+          ? response.data.priceBreakdown.extraMileage
+          : null;
+        var surcharge = response.data.priceBreakdown.surcharge
+          ? response.data.priceBreakdown.surcharge
+          : null;
 
-        
+        var total = window.total;
+        var currency = window.currency;
 
-          
-          window.currency = response.data.priceBreakdown.currency? response.data.priceBreakdown.currency : null; ; 
-          window.total = response.data.priceBreakdown.total? response.data.priceBreakdown.total : null;   
-          var base   = response.data.priceBreakdown.base? response.data.priceBreakdown.base : null;  ;    
-          var extraMileage = response.data.priceBreakdown.extraMileage? response.data.priceBreakdown.extraMileage : null; ; 
-          var surcharge = response.data.priceBreakdown.surcharge? response.data.priceBreakdown.surcharge : null; ;    
+        $("#customModal .modal-footer").empty();
 
-          var total= window.total;
-          var currency = window.currency;
-
-          $('#customModal .modal-footer').empty();
-
-          $('#customModal .modal-footer').prepend(`
+        $("#customModal .modal-footer").prepend(`
               <div class="total-wrapper w-100 d-inline-flex flex-column justify-content-end align-items-start gap-2 p-3" style="width: auto; height: 80px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #EDEDED;">
                 <div class="text-dark" style="font-size: 14px; font-weight: 400;">TOTAL: </div>
-                <div class="text-dark" style="font-size: 20px; font-weight: 600;">${currency + " " + total}</div>
+                <div class="text-dark" style="font-size: 20px; font-weight: 600;">${
+                  currency + " " + total
+                }</div>
               </div>  
               
               <button type="button" class="btn btn-primary w-100" id="saveLocation">Save</button>
 
           `);
 
-          $('#customModal .pricing-details').empty();  
+        $("#customModal .pricing-details").empty();
 
-          let baseContent = `
+        let baseContent = `
             <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
                   <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
-                  <p class="m-0 align-self-center justify-self-center">${currency + " "+base}</p>  
+                  <p class="m-0 align-self-center justify-self-center">${
+                    currency + " " + base
+                  }</p>  
             </div>
           `;
-          let extraMileageContent = `
+        let extraMileageContent = `
             <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
                   <p class="m-0 align-self-center justify-self-center">Additional Distance Fee</p>  
-                  <p class="m-0 align-self-center justify-self-center">${currency + " "+ extraMileage}</p>  
+                  <p class="m-0 align-self-center justify-self-center">${
+                    currency + " " + extraMileage
+                  }</p>  
             </div>
           `;
-          let surchargeContent = `
+        let surchargeContent = `
             <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
                   <p class="m-0 align-self-center justify-self-center">Surcharge</p>  
-                  <p class="m-0 align-self-center justify-self-center">${currency + " "+surcharge}</p>  
+                  <p class="m-0 align-self-center justify-self-center">${
+                    currency + " " + surcharge
+                  }</p>  
             </div>
           `;
-            
-          $('#customModal .pricing-details').prepend(`              
+
+        $("#customModal .pricing-details").prepend(`              
             <p class="header">Pricing Details</p>
           `);
 
-          if(base !== null){
-            $('#customModal .pricing-details').append(baseContent);
-          }
-          if(extraMileage !== null){
-            $('#customModal .pricing-details').append(extraMileageContent);
-          }
-          if(surcharge !== null){
-            $('#customModal .pricing-details').append(surchargeContent);
-          }
+        if (base !== null) {
+          $("#customModal .pricing-details").append(baseContent);
+        }
+        if (extraMileage !== null) {
+          $("#customModal .pricing-details").append(extraMileageContent);
+        }
+        if (surcharge !== null) {
+          $("#customModal .pricing-details").append(surchargeContent);
+        }
 
-          // Add event listener for saveLocation button
-          $('#saveLocation').on('click', function() {
-            // Collect data from the form
-            const additionalNotes = $('#additionalNotes').val();
-            const optimizeRoute = $('#customSwitch1').is(':checked');
-            const proofOfDelivery = $('#customSwitch2').is(':checked');
+        // Add event listener for saveLocation button
+        $("#saveLocation").on("click", function () {
+          // Collect data from the form
+          const additionalNotes = $("#additionalNotes").val();
+          const optimizeRoute = $("#customSwitch1").is(":checked");
+          const proofOfDelivery = $("#customSwitch2").is(":checked");
 
+          // Log the collected data
+          console.log("Saving data...");
+          console.log("Additional Notes:", additionalNotes);
+          console.log("Optimize Route:", optimizeRoute);
+          console.log("Proof of Delivery:", proofOfDelivery);
+          console.log("Quotation ID", window.quotationId);
+          console.log("Quotation Body", body);
 
-            // Log the collected data
-            console.log('Saving data...');
-            console.log('Additional Notes:', additionalNotes);
-            console.log('Optimize Route:', optimizeRoute);
-            console.log('Proof of Delivery:', proofOfDelivery);
-            console.log('Quotation ID', window.quotationId);
-            console.log('Quotation Body', body);
-
-            quotationID = window.quotationId;
-            // Set the quotation ID as a session variable
-            jQuery.ajax({
-              url: pluginAjax.ajax_url,
-              method: 'POST',
-              data: {
-                action: 'set_quotation_data_session',
-                quotationID: response.data.quotationId,
-                stopId0: response.data.stops[0].stopId,
-                stopId1: response.data.stops[1].stopId,
-                customerFName: customerFName,
-                customerLName: customerLName,
-                customerPhoneNo: customerPhoneNo,
-                additionalNotes: additionalNotes,
-               proofOfDelivery:proofOfDelivery,
-              },
-              success: function(response) {
-                if (response.success) {
-                  console.log('Quotation ID set in session successfully.');
-                } else {
-                  console.error('Failed to set Quotation ID in session:', response.data.message);
-                }
-              },
-              error: function(error, xhr) {
-                console.error('Error setting Quotation ID in session:', error);
-                console.error('XHR Response Text:', xhr.responseText);
+          quotationID = window.quotationId;
+          // Set the quotation ID as a session variable
+          jQuery.ajax({
+            url: pluginAjax.ajax_url,
+            method: "POST",
+            data: {
+              action: "set_quotation_data_session",
+              quotationID: response.data.quotationId,
+              stopId0: response.data.stops[0].stopId,
+              stopId1: response.data.stops[1].stopId,
+              customerFName: customerFName,
+              customerLName: customerLName,
+              customerPhoneNo: customerPhoneNo,
+              additionalNotes: additionalNotes,
+              proofOfDelivery: proofOfDelivery,
+            },
+            success: function (response) {
+              if (response.success) {
+                console.log("Quotation ID set in session successfully.");
+              } else {
+                console.error(
+                  "Failed to set Quotation ID in session:",
+                  response.data.message
+                );
               }
-            });
-            console.log('Currency', currency);
-            console.log('Total', total);
-
-            
-            
-            let ajaxTimer;
-            clearTimeout(ajaxTimer);
-
-            ajaxTimer = setTimeout(function(){
-                // Send the shipping cost to the server via AJAX
-              jQuery.ajax({
-                url: pluginAjax.ajax_url, // Replace `ajax_object` with your localized object name
-                method: 'POST',
-                data: {
-                    action: 'update_shipping_rate', // Custom AJAX action
-                    shipping_cost: total // Cost from modal
-                },
-                success: function (response) {
-                  
-                  // Solution One
-                  // if ( typeof wp !== 'undefined' && typeof wp.data !== 'undefined' ) {
-                  //   wp.data.dispatch('wc/store/cart').invalidateResolutionForStore();
-                  // }
-
-                  if ( typeof wc !== 'undefined' && typeof wc.blocksCheckout !== 'undefined' ) {
-                    var extensionCartUpdate = wc.blocksCheckout;
-                    extensionCartUpdate.extensionCartUpdate({
-                        namespace: 'your_custom_namespace',
-                        data: { testData: 'testing'}
-                    });
-                }
-                
-                 
-                  console.log('Shipping rate updated successfully.');
-                },
-                error: function (error) {
-                    console.error('Error updating shipping rate:', error);
-                }
-              });
-            }), 500;
-            
-
-            $('#customModal').modal('hide');
-
+            },
+            error: function (error, xhr) {
+              console.error("Error setting Quotation ID in session:", error);
+              console.error("XHR Response Text:", xhr.responseText);
+            },
           });
+          console.log("Currency", currency);
+          console.log("Total", total);
 
+          let ajaxTimer;
+          clearTimeout(ajaxTimer);
+
+          (ajaxTimer = setTimeout(function () {
+            // Send the shipping cost to the server via AJAX
+            jQuery.ajax({
+              url: pluginAjax.ajax_url, // Replace `ajax_object` with your localized object name
+              method: "POST",
+              data: {
+                action: "update_shipping_rate", // Custom AJAX action
+                shipping_cost: total, // Cost from modal
+              },
+              success: function (response) {
+                // Solution One
+                // if ( typeof wp !== 'undefined' && typeof wp.data !== 'undefined' ) {
+                //   wp.data.dispatch('wc/store/cart').invalidateResolutionForStore();
+                // }
+
+                if (
+                  typeof wc !== "undefined" &&
+                  typeof wc.blocksCheckout !== "undefined"
+                ) {
+                  var extensionCartUpdate = wc.blocksCheckout;
+                  extensionCartUpdate.extensionCartUpdate({
+                    namespace: "your_custom_namespace",
+                    data: { testData: "testing" },
+                  });
+                }
+
+                console.log("Shipping rate updated successfully.");
+
+                saveSessionData();
+              },
+              error: function (error) {
+                console.error("Error updating shipping rate:", error);
+              },
+            });
+          })),
+            500;
+
+          $("#customModal").modal("hide");
+        });
       },
-      error: function(xhr, status, error) {
-          console.error("Error occurred:", status, error);
-      }
+      error: function (xhr, status, error) {
+        console.error("Error occurred:", status, error);
+      },
     });
   }
 });
-

@@ -52,6 +52,7 @@ if ( ! class_exists('Woo_Lalamove') ) {
 
                 add_filter( 'woocommerce_billing_fields', [$this, 'make_phone_field_required'], 10, 2 );
            
+                add_action('woocommerce_blocks_loaded', 'register_custom_cart_update_callback');
 
             }   
         }
