@@ -8,27 +8,131 @@ jq(document).ready(function ($) {
   });
 
 
+
+
   var SessionData = {
-    lat: null,                  // Latitude from geolocation
-    lng: null,                  // Longitude from geolocation
-    serviceType: null,          // Selected vehicle/service type
-    scheduleDate: null,         // Delivery schedule date (ISO string)
-    additionalNotes: "",        // User-provided additional notes
-    optimizeRoute: false,       // Whether route optimization is enabled
-    proofOfDelivery: false,     // Whether Proof of Delivery (POD) is enabled
-    priceBreakdown: {},         // Object to store price breakdown info
-    requestBody: {}             // The body data for quotation AJAX calls
+    quotationID: null,
+    coordinates:{},
+    serviceType: null,
+    stops:{}, // Selected vehicle/service type
+    scheduleDate: null, // Delivery schedule date (ISO string)
+    additionalNotes: "", // User-provided additional notes
+    optimizeRoute: null, // Whether route optimization is enabled
+    proofOfDelivery: null, // Whether Proof of Delivery (POD) is enabled
+    priceBreakdown: {}, // Object to store price breakdown info
   };
 
   // Function to save state to sessionStorage
   function saveSessionData() {
-    sessionStorage.setItem('SessionData', JSON.stringify(SessionData));
-    console.log("SessionData saved to sessionStorage:", SessionData);
+    
+
+    console.log("ADD NAWTS: ", additionalNotes);
+
+    // Add event listener for saveLocation button
+    $("#saveLocation").on("click", function () {
+      // Log the collected data
+      console.log("Saving data...");
+
+      SessionData.quotationID = window.quotationData.quotationID; 
+      SessionData.coordinates.lat = window.quotationData.coordinates.lat;
+      SessionData.coordinates.lng = window.quotationData.coordinates.lng;
+      SessionData.serviceType = window.quotationData.serviceType;
+      SessionData.stops.stopID0 = window.quotationData.stops.stopID0;
+      SessionData.stops.stopID1 = window.quotationData.stops.stopID1;
+      SessionData.optimizeRoute = window.quotationData.optimizeRoute;
+      SessionData.proofOfDelivery = window.quotationData.proofOfDelivery;
+      SessionData.priceBreakdown = window.quotationData.priceBreakdown;
+
+      sessionStorage.setItem("SessionData", JSON.stringify(SessionData));
+      console.log("SessionData saved to sessionStorage:", SessionData);
+      console.log("Scheduled Date", window.quotationData.scheduleDate);
+      console.log("Drop Off Location", window.customer_address);
+
+      // Set the quotation ID as a session variable
+      jQuery.ajax({
+        url: pluginAjax.ajax_url,
+        method: "POST",
+        data: {
+          action: "set_quotation_data_session",
+          quotationID:SessionData.quotationID,
+          stopId0: SessionData.stops.stopID0,
+          stopId1: SessionData.stops.stopID1,
+          customerFName: window.customerFName,
+          customerLName: window.customerLName,
+          scheduledOn: SessionData.scheduleDate,
+          dropOffLocation: window.customer_address,
+          customerPhoneNo: window.customerPhoneNo,
+          additionalNotes: SessionData.additionalNotes,
+          proofOfDelivery: window.quotationData.optimizeRoute,
+          serviceType: SessionData.serviceType,
+          priceBreakdown: JSON.stringify(SessionData.priceBreakdown),
+        },
+        success: function (response) {
+          console.log("RESPONSE", response);
+          if (response.success) {
+            console.log("Quotation ID set in session successfully.");
+          } else {
+            console.error(
+              "Failed to set Quotation ID in session:",
+              response.data.message
+            );
+          }
+        },
+        error: function (response, error, xhr) {
+          console.log("RESPONSE", response);
+          console.error("MAY MALI!!!", error);
+          console.error("XHR Response Text:", xhr.responseText);
+        },
+      });
+
+      let ajaxTimer;
+      clearTimeout(ajaxTimer);
+
+      (ajaxTimer = setTimeout(function () {
+        // Send the shipping cost to the server via AJAX
+        jQuery.ajax({
+          url: pluginAjax.ajax_url, // Replace `ajax_object` with your localized object name
+          method: "POST",
+          data: {
+            action: "update_shipping_rate", // Custom AJAX action
+            shipping_cost: quotationData.priceBreakdown.total||SessionData.priceBreakdown.total,
+          },
+          success: function (response) {
+            // Solution One
+            // if ( typeof wp !== 'undefined' && typeof wp.data !== 'undefined' ) {
+            //   wp.data.dispatch('wc/store/cart').invalidateResolutionForStore();
+            // }
+
+         
+            if (
+              typeof wc !== "undefined" &&
+              typeof wc.blocksCheckout !== "undefined"
+            ) {
+              var extensionCartUpdate = wc.blocksCheckout;
+              extensionCartUpdate.extensionCartUpdate({
+                namespace: "your_custom_namespace",
+                data: { shipping_cost: 100 },
+              });
+            }
+
+            console.log("Shipping rate updated successfully.");
+
+          },
+          error: function (error) {
+            console.error("Error updating shipping rate:", error);
+          },
+        });
+      })),
+        500;
+
+      $("#customModal").modal("hide");
+    });
+
   }
 
   // Function to load state from sessionStorage
   function loadSessionData() {
-    var storedState = sessionStorage.getItem('SessionData');
+    var storedState = sessionStorage.getItem("SessionData");
     if (storedState) {
       SessionData = JSON.parse(storedState);
       console.log("SessionData loaded from sessionStorage:", SessionData);
@@ -37,8 +141,6 @@ jq(document).ready(function ($) {
 
   loadSessionData();
 
- 
-  
   window.isVehicleSelected = false;
   // Add custom CSS styles for the modal and Leaflet map
   var customModalCss = `
@@ -160,6 +262,29 @@ jq(document).ready(function ($) {
           $(this).removeAttr("aria-hidden");
 
           window.siteUrl = window.location.origin;
+
+
+          let quotationID = SessionData.quotationID ;
+          let serviceType = SessionData.serviceType;
+          let scheduleDate = SessionData.scheduleDate;
+          let additionalNotes = SessionData.additionalNotes;
+          let coordinates = SessionData.coordinates ;
+          let stops = SessionData.stops;
+          let optimizeRoute = SessionData.optimizeRoute; 
+          let proofOfDelivery = SessionData. proofOfDelivery;
+          let priceBreakdown = SessionData. priceBreakdown;
+
+          window.quotationData = {
+            quotationID,
+            serviceType,
+            scheduleDate,
+            additionalNotes,
+            coordinates,
+            stops,
+            optimizeRoute,
+            proofOfDelivery,
+            priceBreakdown
+          };
           try {
             // Fetch city data via AJAX
             let get_city = await $.ajax({
@@ -169,11 +294,11 @@ jq(document).ready(function ($) {
             });
 
             // Fetch checkout product data via AJAX
-            let productData = await $.ajax({
+            let shippingData = await $.ajax({
               url: pluginAjax.ajax_url,
               method: "POST",
               data: {
-                action: "get_checkout_product_data",
+                action: "get_shipping_data",
                 nonce: pluginAjax.nonce,
                 image: pluginAjax.image_url,
               },
@@ -187,15 +312,34 @@ jq(document).ready(function ($) {
             window.totalWeight = 0;
             window.quantity = 0;
 
-            productData.data.products.forEach((product) => {
+            shippingData.data.products.forEach((product) => {
               window.totalWeight = product.quantity * product.weight;
               window.quantity += product.quantity;
             });
 
-            window.shipping_address = productData.data.shipping_address;
+            window.sender_address = shippingData.data.store.address;
+            window.shipping_lat = shippingData.data.store.lat;
+            window.shipping_lng = shippingData.data.store.lng;
+            window.shipping_phone_number = shippingData.data.store.phone_number;
 
-            console.log("Product data:", productData.data.products);
-            console.log("Product data:", productData.data.shipping_address);
+            let customer_address = shippingData.data.customer;
+
+            window.customer_address = 
+            (customer_address.address ?? "") + " " +
+            (customer_address.city ?? "") + " " +
+            (customer_address.street ?? "") + " " +
+            (customer_address.postcode ?? "") + " ";
+            
+            console.log("FJFSLKDJFLSDF", window.customer_address);
+            window.customerFName = document.getElementById(
+              "shipping-first_name"
+            ).value;
+            window.customerLName =
+              document.getElementById("shipping-last_name").value;
+            window.customerPhoneNo = document.getElementById("shipping-phone").value;
+    
+
+            console.log("Product data:", shippingData.data.products);
 
             $("#customModal .modal-body").html(`
               <div id="map" class="mb-4" style="height: 300px;"></div>
@@ -236,20 +380,80 @@ jq(document).ready(function ($) {
               </form>
             `);
 
+            $("#additionalNotes").on("mouseleave", function() {
+              console.log("Hovered: ", $(this).val());
+              SessionData.additionalNotes = $(this).val();
+            });
+
+            $("#customSwitch1").prop("checked", SessionData.optimizeRoute);
+            $("#customSwitch2").prop("checked", SessionData.proofOfDelivery);
+
+            let pricingDetailsContent = "";
+
+            if (SessionData.priceBreakdown.base) {
+              pricingDetailsContent += `
+                <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                  <p class="m-0 align-self-center justify-self-center">Base Fare</p>
+                  <p class="m-0 align-self-center justify-self-center">${SessionData.priceBreakdown.currency +
+                " " +
+                SessionData.priceBreakdown.base
+                }</p>
+                </div>
+              `;
+            }
+
+            if (SessionData.priceBreakdown.extraMileage) {
+              pricingDetailsContent += `
+                <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                  <p class="m-0 align-self-center justify-self-center">Additional Distance Fee</p>
+                  <p class="m-0 align-self-center justify-self-center">${SessionData.priceBreakdown.currency +
+                " " +
+                SessionData.priceBreakdown.extraMileage
+                }</p>
+                </div>
+              `;
+            }
+
+            if (SessionData.priceBreakdown.surcharge) {
+              pricingDetailsContent += `
+                <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
+                  <p class="m-0 align-self-center justify-self-center">Surcharge</p>
+                  <p class="m-0 align-self-center justify-self-center">${SessionData.priceBreakdown.currency +
+                " " +
+                SessionData.priceBreakdown.surcharge
+                }</p>
+                </div>
+              `;
+            }
+
+            let totalContent = "";
+
+            if (SessionData.priceBreakdown.total) {
+              totalContent += `
+                <div class="total-wrapper w-100 d-inline-flex flex-column justify-content-end align-items-start gap-2 p-3" style="width: auto; height: 80px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #EDEDED;">
+                  <div class="text-dark" style="font-size: 14px; font-weight: 400;">TOTAL: </div>
+                  <div class="text-dark" style="font-size: 20px; font-weight: 600;">${SessionData.priceBreakdown.currency +
+                " " +
+                SessionData.priceBreakdown.total
+                }</div>
+                </div>  
+              `;
+            }
+
+            $("#customModal .modal-footer").prepend(totalContent);
+            $("#customModal .pricing-details").append(pricingDetailsContent);
+
             // Initialize the Leaflet map with enhanced geolocation accuracy
             initMap();
 
-          
             $("#customModal .vehicle-wrapper").empty();
 
             var manilaServices = filterServices(window.ncr_south).reverse();
             manilaServices.forEach(function (value) {
-              
-
-              var selectedVehicle = (SessionData.serviceType === value.key) 
-              ? 'style="border: solid 2px #f16622"'
-              : "";
-              
+              var selectedVehicle =
+                SessionData.serviceType === value.key
+                  ? 'style="border: solid 2px #f16622"'
+                  : "";
 
               $("#customModal .vehicle-wrapper").prepend(
                 `
@@ -263,33 +467,31 @@ jq(document).ready(function ($) {
                 </div>
                 `
               );
-
-
-
             });
-            
 
             var startDate = null;
-            if(SessionData.scheduleDate){
-                startDate = moment(SessionData.scheduleDate, moment.ISO_8601);
-            } else{
-                startDate = moment().add(1, "days");
+            if (SessionData.scheduleDate) {
+              startDate = moment(SessionData.scheduleDate, moment.ISO_8601);
+            } else {
+              startDate = moment().add(1, "days");
             }
 
             var endDate = moment().add(30, "days");
 
             function cb(start, end) {
               console.log("start:", start.format("MMMM D, YYYY HH:mm:ss"));
-              window.scheduleDate = start.toISOString();   
+              window.scheduleDate = start.toISOString();
+              SessionData.scheduleDate = window.scheduleDate;
 
               console.log("Selected schedule date:", window.scheduleDate);
               $("#customModal #schedule-date").empty();
               $("#customModal #schedule-date").append(`
                   <p style="margin: 0;">${start.format(
-                    "MMMM D, YYYY HH:mm"
-                  )}</p>
+                "MMMM D, YYYY HH:mm"
+              )}</p>
                   <i class="bi bi-calendar" style="margin-left: auto;"></i>
               `);
+
             }
 
             var date = jQuery.noConflict();
@@ -336,6 +538,11 @@ jq(document).ready(function ($) {
             );
 
             cb(startDate, endDate);
+
+            if(SessionData.quotationID != null && SessionData.quotationID != 0){
+              saveSessionData();
+              console.log("BOWM");
+            }
           } catch (error) {
             console.error("AJAX request failed:", error);
             $("#customModal .modal-body").html(`
@@ -343,6 +550,9 @@ jq(document).ready(function ($) {
             `);
           }
         });
+
+
+
 
         // Remove modal from DOM when hidden
         $("#customModal").on("hidden.bs.modal", function () {
@@ -357,6 +567,8 @@ jq(document).ready(function ($) {
     const defaultLat = 12.8797;
     const defaultLng = 121.774;
 
+    $(".modal-body #additionalNotes").append(SessionData.additionalNotes);
+
     //Verify if a service is already selected
     var isVehicleSelected = SessionData.serviceType ? true : false;
 
@@ -370,7 +582,7 @@ jq(document).ready(function ($) {
     const map = L.map("map").setView([mapLat, mapLng], 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
-      attribution: "© OpenStreetMap"
+      attribution: "© OpenStreetMap",
     }).addTo(map);
 
     const marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
@@ -380,20 +592,22 @@ jq(document).ready(function ($) {
 
     // Update marker location on dragend
     marker.on("dragend", () => {
-
       console.log("Dragend event triggered");
       const latlng = marker.getLatLng();
       mapLat = latlng.lat;
       mapLng = latlng.lng;
-    
+
       SessionData.lat = mapLat;
       SessionData.lng = mapLng;
       sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
-    
-      triggerServiceEvents(mapLat, mapLng, isVehicleSelected);
 
+      triggerServiceEvents(mapLat, mapLng, isVehicleSelected);
     });
-    
+
+    const storeMarker = L.marker([window.shipping_lat, window.shipping_lng], { draggable: false }).addTo(map);
+    storeMarker.bindPopup("Store Address").openPopup();
+  
+
     // If session data exists, skip geolocation fetching
     if (SessionData.lat && SessionData.lng) {
       console.log("Session data exists. Skipping geolocation.");
@@ -406,7 +620,7 @@ jq(document).ready(function ($) {
     const options = {
       enableHighAccuracy: true,
       timeout: 10000,
-      maximumAge: 6000
+      maximumAge: 6000,
     };
 
     const success = (position) => {
@@ -439,12 +653,18 @@ jq(document).ready(function ($) {
 
   // Bind service-related events (using the provided lat and lng)
   function bindServiceEvents(lat, lng, isVehicleSelected) {
+    if (isVehicleSelected) {
+      quotationAjax(lat, lng);
 
-    if(isVehicleSelected){
+      $(document)
+        .off("click", "#customSwitch1")
+        .on("click", "#customSwitch1", function () {
+          if ($(this).is(":checked")) {
+            quotationAjax(lat, lng);
+          }
+        });
 
-        quotationAjax(lat, lng);
-        return;
-
+      return;
     }
 
     // Bind the click event on the switch button
@@ -460,7 +680,6 @@ jq(document).ready(function ($) {
     $(document)
       .off("click", ".vehicle")
       .on("click", ".vehicle", function () {
-
         $(".vehicle").css("border", "solid 2px #EDEDED");
         $(this).css("border", "solid 2px #f16622");
 
@@ -473,7 +692,6 @@ jq(document).ready(function ($) {
   function triggerServiceEvents(lat, lng, isVehicleSelected) {
     bindServiceEvents(lat, lng, isVehicleSelected);
   }
-
 
   function filterServices(state) {
     if (!Array.isArray(state)) {
@@ -499,34 +717,28 @@ jq(document).ready(function ($) {
   }
 
   function quotationAjax(lat, lng) {
-    isRouteOptimized = document.getElementById("customSwitch1").checked;
-
-    //Set data for saving session
-    SessionData.lat = lat;
-    SessionData.lng = lng;
-    SessionData.serviceType = window.serviceType;
-    SessionData.scheduleDate = window.scheduleDate;
+    var isRouteOptimized = document.getElementById("customSwitch1").checked;
 
     window.body = {
       data: {
-        scheduleAt: SessionData.scheduleDate,
-        serviceType: SessionData.serviceType,
+        scheduleAt: window.scheduleDate || SessionData.scheduleDate,
+        serviceType: window.serviceType || SessionData.serviceType,
         language: "en_PH",
         stops: [
           {
             coordinates: {
-              lat: "14.555566",
-              lng: "121.130056",
+              lat: window.shipping_lat.toString(),
+              lng: window.shipping_lng.toString(),
             },
             address:
-              "GFT Textile Main Office, Unit E, Sitio Malabon, Barangay San Juan, Hwy 2000, Taytay, 1920 Rizal",
+              window.sender_address.toString(),
           },
           {
             coordinates: {
               lat: lat.toString(),
               lng: lng.toString(),
             },
-            address: "134 Cabrera Rd, Taytay, 1920 Rizal, Philippines",
+            address: window.customer_address.toString(),
           },
         ],
         isRouteOptimized: isRouteOptimized,
@@ -546,45 +758,33 @@ jq(document).ready(function ($) {
       data: JSON.stringify(body),
       headers: { "X-WP-Nonce": wpApiSettings.nonce },
       success: function (response) {
-        const customerFName = document.getElementById(
-          "shipping-first_name"
-        ).value;
-        const customerLName =
-          document.getElementById("shipping-last_name").value;
-        const customerPhoneNo = document.getElementById("shipping-phone").value;
-        const additionalNotes =
-          document.getElementById("additionalNotes").value;
-
-        console.log("Additional Notes:", additionalNotes);
         console.log("Response received:", response);
 
-        window.currency = response.data.priceBreakdown.currency
+        console.log("Price Breakdown ", SessionData.priceBreakdown);
+
+        var currency = response.data.priceBreakdown.currency
           ? response.data.priceBreakdown.currency
-          : null;
-        window.total = response.data.priceBreakdown.total
+          : SessionData.priceBreakdown.currency;
+        var total = response.data.priceBreakdown.total
           ? response.data.priceBreakdown.total
-          : null;
+          : SessionData.priceBreakdown.total;
         var base = response.data.priceBreakdown.base
           ? response.data.priceBreakdown.base
-          : null;
+          : SessionData.priceBreakdown.base;
         var extraMileage = response.data.priceBreakdown.extraMileage
           ? response.data.priceBreakdown.extraMileage
-          : null;
+          : SessionData.priceBreakdown.extraMileage;
         var surcharge = response.data.priceBreakdown.surcharge
           ? response.data.priceBreakdown.surcharge
-          : null;
-
-        var total = window.total;
-        var currency = window.currency;
+          : SessionData.priceBreakdown.surcharge;
 
         $("#customModal .modal-footer").empty();
 
         $("#customModal .modal-footer").prepend(`
               <div class="total-wrapper w-100 d-inline-flex flex-column justify-content-end align-items-start gap-2 p-3" style="width: auto; height: 80px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #EDEDED;">
                 <div class="text-dark" style="font-size: 14px; font-weight: 400;">TOTAL: </div>
-                <div class="text-dark" style="font-size: 20px; font-weight: 600;">${
-                  currency + " " + total
-                }</div>
+                <div class="text-dark" style="font-size: 20px; font-weight: 600;">${currency + " " + total
+          }</div>
               </div>  
               
               <button type="button" class="btn btn-primary w-100" id="saveLocation">Save</button>
@@ -596,25 +796,22 @@ jq(document).ready(function ($) {
         let baseContent = `
             <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
                   <p class="m-0 align-self-center justify-self-center">Base Fare</p>  
-                  <p class="m-0 align-self-center justify-self-center">${
-                    currency + " " + base
-                  }</p>  
+                  <p class="m-0 align-self-center justify-self-center">${currency + " " + base
+          }</p>  
             </div>
           `;
         let extraMileageContent = `
             <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
                   <p class="m-0 align-self-center justify-self-center">Additional Distance Fee</p>  
-                  <p class="m-0 align-self-center justify-self-center">${
-                    currency + " " + extraMileage
-                  }</p>  
+                  <p class="m-0 align-self-center justify-self-center">${currency + " " + extraMileage
+          }</p>  
             </div>
           `;
         let surchargeContent = `
             <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
                   <p class="m-0 align-self-center justify-self-center">Surcharge</p>  
-                  <p class="m-0 align-self-center justify-self-center">${
-                    currency + " " + surcharge
-                  }</p>  
+                  <p class="m-0 align-self-center justify-self-center">${currency + " " + surcharge
+          }</p>  
             </div>
           `;
 
@@ -622,111 +819,54 @@ jq(document).ready(function ($) {
             <p class="header">Pricing Details</p>
           `);
 
-        if (base !== null) {
+        if (base) {
           $("#customModal .pricing-details").append(baseContent);
         }
-        if (extraMileage !== null) {
+        if (extraMileage) {
           $("#customModal .pricing-details").append(extraMileageContent);
         }
-        if (surcharge !== null) {
+        if (surcharge) {
           $("#customModal .pricing-details").append(surchargeContent);
         }
 
-        // Add event listener for saveLocation button
-        $("#saveLocation").on("click", function () {
-          // Collect data from the form
-          const additionalNotes = $("#additionalNotes").val();
-          const optimizeRoute = $("#customSwitch1").is(":checked");
-          const proofOfDelivery = $("#customSwitch2").is(":checked");
+        const optimizeRoute = $("#customSwitch1").is(":checked");
+        const proofOfDelivery = $("#customSwitch2").is(":checked");
+        const additionalNotes = $("#additionalNotes").val();
 
-          // Log the collected data
-          console.log("Saving data...");
-          console.log("Additional Notes:", additionalNotes);
-          console.log("Optimize Route:", optimizeRoute);
-          console.log("Proof of Delivery:", proofOfDelivery);
-          console.log("Quotation ID", window.quotationId);
-          console.log("Quotation Body", body);
+        let quotationID = response.data.quotationId;
+        let serviceType = window.serviceType;
+        let scheduleDate = window.scheduleDate;
+        let stopID0 = response.data.stops[0].stopId;
+        let stopID1 = response.data.stops[1].stopId;
+        let stops = { stopID0, stopID1 };
+        let coordinates = { lat, lng };
+        let priceBreakdown = response.data.priceBreakdown;
 
-          quotationID = window.quotationId;
-          // Set the quotation ID as a session variable
-          jQuery.ajax({
-            url: pluginAjax.ajax_url,
-            method: "POST",
-            data: {
-              action: "set_quotation_data_session",
-              quotationID: response.data.quotationId,
-              stopId0: response.data.stops[0].stopId,
-              stopId1: response.data.stops[1].stopId,
-              customerFName: customerFName,
-              customerLName: customerLName,
-              customerPhoneNo: customerPhoneNo,
-              additionalNotes: additionalNotes,
-              proofOfDelivery: proofOfDelivery,
-            },
-            success: function (response) {
-              if (response.success) {
-                console.log("Quotation ID set in session successfully.");
-              } else {
-                console.error(
-                  "Failed to set Quotation ID in session:",
-                  response.data.message
-                );
-              }
-            },
-            error: function (error, xhr) {
-              console.error("Error setting Quotation ID in session:", error);
-              console.error("XHR Response Text:", xhr.responseText);
-            },
-          });
-          console.log("Currency", currency);
-          console.log("Total", total);
+        console.log("OYYYYYYYYYYYYYYYY", serviceType);
 
-          let ajaxTimer;
-          clearTimeout(ajaxTimer);
+        window.quotationData = {
+          quotationID,
+          serviceType,
+          scheduleDate,
+          additionalNotes,
+          coordinates,
+          stops,
+          optimizeRoute,
+          proofOfDelivery,
+          priceBreakdown
+        };
 
-          (ajaxTimer = setTimeout(function () {
-            // Send the shipping cost to the server via AJAX
-            jQuery.ajax({
-              url: pluginAjax.ajax_url, // Replace `ajax_object` with your localized object name
-              method: "POST",
-              data: {
-                action: "update_shipping_rate", // Custom AJAX action
-                shipping_cost: total, // Cost from modal
-              },
-              success: function (response) {
-                // Solution One
-                // if ( typeof wp !== 'undefined' && typeof wp.data !== 'undefined' ) {
-                //   wp.data.dispatch('wc/store/cart').invalidateResolutionForStore();
-                // }
+        console.log(window.quotationData);
 
-                if (
-                  typeof wc !== "undefined" &&
-                  typeof wc.blocksCheckout !== "undefined"
-                ) {
-                  var extensionCartUpdate = wc.blocksCheckout;
-                  extensionCartUpdate.extensionCartUpdate({
-                    namespace: "your_custom_namespace",
-                    data: { testData: "testing" },
-                  });
-                }
 
-                console.log("Shipping rate updated successfully.");
+        saveSessionData();
 
-                saveSessionData();
-              },
-              error: function (error) {
-                console.error("Error updating shipping rate:", error);
-              },
-            });
-          })),
-            500;
-
-          $("#customModal").modal("hide");
-        });
       },
       error: function (xhr, status, error) {
         console.error("Error occurred:", status, error);
       },
     });
   }
+
+
 });

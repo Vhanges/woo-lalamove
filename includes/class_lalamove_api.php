@@ -230,19 +230,19 @@ class Class_Lalamove_Api
                 "quotationId" => $quotationID,
                 "sender" => [
                     "stopId" => $stopId0,
-                    "name"    => $senderName,     // e.g. "Malopit ako"
-                    "phone"   => "+634315873"     // e.g. "+634315873"
+                    "name"    => $senderName,     
+                    "phone"   => $senderPhone,    
                 ],
                 "recipients" => [
                     [
                         "stopId"  => $stopId1,
-                        "name"    => $recipientName,   // e.g. "MasMalopit"
-                        "phone"   => "+6307457184",  // e.g. "+639171234567"
-                        "remarks" => $remarks          // e.g. "YYYYYY"
+                        "name"    => $recipientName,  
+                        "phone"   => $recipientPhone, 
+                        "remarks" => "YYYYYYYY",          
                     ]
                 ],
-                "isPODEnabled" => $isPODEnabled,        // boolean true/false
-                "partner"      => "Lalamove Partner 1"   // as per guide
+                "isPODEnabled" => $isPODEnabled,        
+                "partner"      => "Lalamove Partner 1"   
             ]
         ];
     
@@ -253,11 +253,13 @@ class Class_Lalamove_Api
         $signature = hash_hmac("sha256", $rawSignature, $this->api_secret);
     
         $token = "{$this->api_key}:{$timestamp}:{$signature}";
+        error_log("Order Body". $order_body);
+        error_log("Token". $token);
     
         $curl = curl_init();
     
         curl_setopt_array($curl, [
-            CURLOPT_URL => "https://{$this->base_url}/v3/orders", // e.g. rest.sandbox.lalamove.com
+            CURLOPT_URL => "https://{$this->base_url}/v3/orders", 
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
             CURLOPT_MAXREDIRS => 10,
@@ -273,6 +275,7 @@ class Class_Lalamove_Api
                 "Market:". get_option('lalamove_market', '')
             ],
         ]);
+
     
         $response = curl_exec($curl);
     
@@ -287,7 +290,7 @@ class Class_Lalamove_Api
 
 
    public function get_driver_details($orderId, $driverId)
-{
+   {
     $timestamp = round(microtime(true) * 1000);
 
     $rawSignature = "{$timestamp}\r\nGET\r\n/v3/orders/{$orderId}/drivers/{$driverId}\r\n\r\n";
@@ -324,7 +327,7 @@ class Class_Lalamove_Api
     curl_close($curl);
 
     return json_decode($response, true);
-}
+    }
 
     
 }
