@@ -12,6 +12,10 @@ function lalamove_check_is_woocommerce_active() {
 	}
 }
 
+function showError($message){
+	wc_add_notice('There is an issue with your order. Please contact support.', 'error');
+}
+
 /**
  * Calculate the estimated travel time using OSRM.
  *

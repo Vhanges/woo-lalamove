@@ -242,7 +242,7 @@ class Class_Lalamove_Api
                     ]
                 ],
                 "isPODEnabled" => $isPODEnabled,        
-                "partner"      => "Lalamove Partner 1"   
+                "partner"      => $senderName   
             ]
         ];
     

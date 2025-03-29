@@ -451,17 +451,34 @@ if (!class_exists('Woo_Lalamove')) {
     function set_lalamove_order($order_id)
     {
 
+        global $wpdb;
+
+
         WC()->session->__unset('shipment_cost');
+
+        $current_user = wp_get_current_user();
+        $name = $current_user->display_name;
+        $role = $current_user->roles[0];
+
+        $orders_table = $wpdb->prefix . 'wc_lalamove_orders';
+        $transaction_table = $wpdb->prefix . 'wc_lalamove_transaction';
+        $cost_details_table = $wpdb->prefix . 'wc_lalamove_cost_details';
+        $status_table = $wpdb->prefix . 'wc_lalamove_status';
+
+        $isLalamoveOrderSet = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$orders_table} WHERE wc_order_id = %d", $order_id 
+        ));
+
+        if($isLalamoveOrderSet > 0){
+            return;
+        }
 
         // Start a secure session
         session_start([
-            'cookie_lifetime' => 3600,
+            'cookie_lifetime' => 20 * 60,
             'read_and_close'  => false,
         ]);
 
-        $current_user = wp_get_current_user();
-
-        global $wpdb;
 
         // Retrieve data from $_SESSION
         $quotationID = $_SESSION['quotationID'] ?? null;
@@ -486,13 +503,18 @@ if (!class_exists('Woo_Lalamove')) {
         echo '<pre>Additional Notes: ' . $additionalNotes . '</pre>';
 
         $proofOfDelivery = $_SESSION['proofOfDelivery'] ?? null;
+        $proofOfDelivery = $proofOfDelivery ? true : false;
         echo '<pre>Proof of Delivery: ' . $proofOfDelivery . '</pre>';
 
         $vehicleType = $_SESSION['serviceType'] ?? null;
         echo '<pre>Vehicle Type: ' . $vehicleType . '</pre>';
 
         $priceBreakdownData = $_SESSION['priceBreakdown'] ?? null;
-        $priceBreakdown = json_decode($priceBreakdownData, true);
+
+        if($priceBreakdownData != null){
+            $priceBreakdown = json_decode($priceBreakdownData, true);
+        }
+
         var_dump($priceBreakdown);
 
         $scheduledOn = $_SESSION['scheduledOn'] ?? null;
@@ -507,33 +529,40 @@ if (!class_exists('Woo_Lalamove')) {
 
         $lalamove_api = new Class_Lalamove_Api();
 
-        $lalamove_orderId = $lalamove_api->place_order(
+
+        $lalamove_order = $lalamove_api->place_order(
             $quotationID,
             $stopId0,
             $stopId1,
-            'babowm',
-            "+634315873",
+            get_bloginfo('name'),
+            get_option("lalamove_phone_number", "+634315873"),
             $customerFullName,
             "+6307457184",
-            "UWOWERs",
-            true
+            $additionalNotes,
+            $proofOfDelivery
         );
 
-        if (!isset($lalamove_orderId['data']['quotationId'])) {
-            error_log("TIGNAN MO TO ANGELO: " . var_dump($lalamove_orderId));
+        var_dump($lalamove_order );
+
+        if (!isset($lalamove_order['data']['orderId'])) {
+            error_log("[Lalamove] There's an error on placing an order: " . var_dump($lalamove_order));
             return;
         }
         
-        $name = $current_user->display_name;
-        $role = $current_user->roles[0];
-
-        $orders_table = $wpdb->prefix . 'wc_lalamove_orders';
-        $transaction_table = $wpdb->prefix . 'wc_lalamove_transaction';
-        $cost_details_table = $wpdb->prefix . 'wc_lalamove_cost_details';
-        $status_table = $wpdb->prefix . 'wc_lalamove_status';
-
+        $lalamove_orderId = $lalamove_order['data']['orderId'];
 
         var_dump($lalamove_orderId );
+
+
+        $doesItExist = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$orders_table} WHERE lalamove_order_id = %d", $lalamove_orderId 
+        ));
+
+        if($doesItExist > 0){
+            error_log("Lalamove Order ID Already Exist");
+            return;
+        }
+        
 
         try {
             $wpdb->query('START TRANSACTION');
@@ -576,20 +605,40 @@ if (!class_exists('Woo_Lalamove')) {
             ]);
 
             if ($result === false) {
-
                 $error_message = $wpdb->last_error;
                 throw new Exception("Database insert error: " . $error_message);
-            
             }
             
             $wpdb->query('COMMIT');
-            
+
+            unset($_SESSION['quotationID']);
+            unset($_SESSION['stopId0']);
+            unset($_SESSION['stopId1']);
+            unset($_SESSION['customerFName']);
+            unset($_SESSION['customerLName']);
+            unset($_SESSION['customerPhoneNo']);
+            unset($_SESSION['scheduledOn']);
+            unset($_SESSION['dropOffLocation']);
+            unset($_SESSION['additionalNotes']);
+            unset($_SESSION['proofOfDelivery']);
+            unset($_SESSION['serviceType']);
+            unset($_SESSION['priceBreakdown']);
+
         } catch(Exception $e) {
             // Rollback the transaction if an error occurs
             $wpdb->query('ROLLBACK');
-                
             // Log the error and return a failure response
             error_log('Transaction failed: ' . $e->getMessage());
+            echo "
+            <div class='alert alert-danger d-flex align-items-center' role='alert' style='font-size: 1.2rem;'>
+                <div>
+                    <strong>Please Contact Us.</strong> There's a problem on placing your shipment order
+                    <br>
+                    <i class='bi bi-telephone-fill'></i> <strong>Phone:</strong> <a href='tel:+1234567890'>+1234567890</a><br>
+                    <i class='bi bi-envelope-fill'></i> <strong>Email:</strong> <a href='mailto:support@example.com'>support@example.com</a>
+                </div>
+            </div>
+           ";
         }
 
         // error_log('Quotation Body' . )
@@ -628,8 +677,7 @@ if (!class_exists('Woo_Lalamove')) {
             $_SESSION['serviceType'] = sanitize_text_field($_POST['serviceType']);
             $_SESSION['priceBreakdown'] = stripslashes($_POST['priceBreakdown']);
     
-            // Set expiration for the session
-            $_SESSION['expiry'] = time() + 3600; // Session expires after 1 hour
+            $_SESSION['expiry'] = time() + 20 * 60; // Session expires after 20 minutes
     
             wp_send_json_success(['message' => 'Quotation updated securely.']);
         } else {
@@ -637,4 +685,5 @@ if (!class_exists('Woo_Lalamove')) {
         }
         wp_die();
     }
+
 }
