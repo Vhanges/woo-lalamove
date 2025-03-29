@@ -511,12 +511,12 @@ if (!class_exists('Woo_Lalamove')) {
             $quotationID,
             $stopId0,
             $stopId1,
-            "BBABOWM",
-            get_option("lalamove_phone_number", ""),
+            'babowm',
+            "+634315873",
             $customerFullName,
             "+6307457184",
-            $additionalNotes,
-            $proofOfDelivery
+            "UWOWERs",
+            true
         );
 
         if (!isset($lalamove_orderId['data']['quotationId'])) {
