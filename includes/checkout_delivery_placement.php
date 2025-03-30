@@ -24,9 +24,9 @@ function set_lalamove_order($order_id)
         "SELECT COUNT(*) FROM {$orders_table} WHERE wc_order_id = %d", $order_id 
     ));
 
-    // if($isLalamoveOrderSet > 0){
-    //     return;
-    // }
+    if($isLalamoveOrderSet > 0){
+        return;
+    }
 
     // Start a secure session
     session_start([
@@ -78,8 +78,6 @@ function set_lalamove_order($order_id)
     $dropOffLocation = $_SESSION['dropOffLocation'] ?? null;
     echo '<pre>Drop Off Location: ' . $dropOffLocation . '</pre>';
 
-
-
     $customerFullName = $customerFName . " " . $customerLName;
 
     $lalamove_api = new Class_Lalamove_Api();
@@ -93,8 +91,6 @@ function set_lalamove_order($order_id)
         $name = $customerFullName;
         $role = 'Guest';
     }
-
-    return;
 
     $lalamove_order = $lalamove_api->place_order(
         $quotationID,
@@ -189,6 +185,18 @@ function set_lalamove_order($order_id)
         unset($_SESSION['proofOfDelivery']);
         unset($_SESSION['serviceType']);
         unset($_SESSION['priceBreakdown']);
+
+        ?> 
+        <script>
+        var storedState = sessionStorage.getItem("SessionData"); 
+        var SessionData = JSON.parse(storedState);
+        console.log("SessionData loaded from sessionStorage:", SessionData);
+
+     
+        sessionStorage.removeItem("SessionData");
+        console.log("SessionData has been removed from sessionStorage.");
+        </script>
+        <?php
 
     } catch(Exception $e) {
         // Rollback the transaction if an error occurs

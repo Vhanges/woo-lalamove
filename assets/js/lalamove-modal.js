@@ -204,10 +204,6 @@ jq(document).ready(function ($) {
           justify-content: flex-end;
           align-items: center;
       }
-
-      
-
-
   </style>
 
 `;
@@ -508,34 +504,17 @@ jq(document).ready(function ($) {
               {
                 startDate: startDate,
                 endDate: endDate,
-                ranges: {
-                  Today: [moment(), moment()],
-                  Yesterday: [
-                    moment().subtract(1, "days"),
-                    moment().subtract(1, "days"),
-                  ],
-                  "Last 7 Days": [moment().subtract(6, "days"), moment()],
-                  "Last 30 Days": [moment().subtract(29, "days"), moment()],
-                  "This Month": [
-                    moment().startOf("month"),
-                    moment().endOf("month"),
-                  ],
-                  "Last Month": [
-                    moment().subtract(1, "month").startOf("month"),
-                    moment().subtract(1, "month").endOf("month"),
-                  ],
-                },
-                minDate: moment().add(1, "days"), // Minimum selectable date
-                maxDate: moment().add(30, "days"), // Maximum selectable date
-                singleDatePicker: true, // Set to true for single date selection
+                minDate: moment().add(1, "days"), 
+                maxDate: moment().add(30, "days"), 
+                singleDatePicker: true, 
                 timePicker: true,
                 timePicker24Hour: false,
                 timePickerSeconds: false,
-                timePickerIncrement: 15, // Time picker increment in minutes
+                timePickerIncrement: 15,
                 autoApply: true,
                 opens: "right",
-                drops: "up", // Set the position to open at the top
-                showDropdowns: true, // Show month and year dropdowns
+                drops: "bottom", 
+                showDropdowns: true,
                 locale: {
                   format: "DD/MM/YYYY HH:mm:ss",
                   applyLabel: "Apply", // Custom label for apply button
