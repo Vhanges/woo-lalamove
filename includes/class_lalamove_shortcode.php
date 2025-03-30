@@ -1,5 +1,7 @@
 <?php
 namespace Sevhen\WooLalamove;
+if (!defined('ABSPATH'))
+    exit;
 
 class Class_Lalamove_Shortcode{
 
@@ -113,13 +115,6 @@ class Class_Lalamove_Shortcode{
         $endLon   = $recipientLng;
 
         $estimatedTime = "TBA";
-
-
-        echo "Start Latitude: " . $startLat . "\n";
-        echo "Start Longitude: " . $startLon . "\n";
-        echo "End Latitude: " . $endLat . "\n";
-        echo "End Longitude: " . $endLon . "\n";
-        
 
         if(isset($startLat) && isset($startLon) && isset($endLat) && isset($endtLon) ){
             $estimatedTime = get_estimated_time($startLat, $startLon, $endLat, $endLon);

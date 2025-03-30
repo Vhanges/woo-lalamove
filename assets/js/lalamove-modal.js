@@ -322,10 +322,18 @@ jq(document).ready(function ($) {
             window.shipping_lng = shippingData.data.store.lng;
             window.shipping_phone_number = shippingData.data.store.phone_number;
 
-            let customer_address = shippingData.data.customer;
+            customer_address = {
+              address_1: document.getElementById('shipping-address_1')?.value || '',
+              address_2: document.getElementById('shipping-address_2')?.value || '',
+              city: document.getElementById('shipping-city')?.value || '',
+              state: document.getElementById('shipping-state')?.value || '',
+              postcode: document.getElementById('shipping-postcode')?.value || '',
+              country: document.getElementById('shipping-country')?.value || ''
+            };
 
             window.customer_address = 
-            (customer_address.address ?? "") + " " +
+            (customer_address.address_1 ?? "") + " " +
+            (customer_address.address_2 ?? "") + " " +
             (customer_address.city ?? "") + " " +
             (customer_address.street ?? "") + " " +
             (customer_address.postcode ?? "") + " ";

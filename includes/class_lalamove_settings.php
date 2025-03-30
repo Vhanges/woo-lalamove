@@ -1,6 +1,9 @@
 <?php
 namespace Sevhen\WooLalamove;
 
+if (!defined('ABSPATH'))
+    exit;
+
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 
 /**

@@ -2,6 +2,9 @@
 
 namespace Sevhen\WooLalamove;
 
+if (!defined('ABSPATH'))
+    exit;
+
 use WP_Error;
 
 class Class_Lalamove_Api
