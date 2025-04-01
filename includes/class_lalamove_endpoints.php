@@ -49,6 +49,16 @@ class Class_Lalamove_Endpoints
      * 
      * @return $res
      */
+    public function print_waybill()
+    {
+        $response = $this->lalamove_api->get_city();
+        return rest_ensure_response($response);
+    }
+    /**
+     * Callback for get_city route
+     * 
+     * @return $res
+     */
     public function get_city()
     {
         $response = $this->lalamove_api->get_city();
@@ -68,6 +78,11 @@ class Class_Lalamove_Endpoints
         return rest_ensure_response($response);
     }
 
+    /**
+     * Callback for get_quotation route
+     * 
+     * @return $res
+     */
     public function lalamove_webhook(WP_REST_Request $request)
     {
         $payload = $request->get_body();

@@ -21,12 +21,11 @@ use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 use Sevhen\WooLalamove\Class_Lalamove_Shortcode;
 
+
 new Class_Lalamove_Settings();
 new Class_Lalamove_Endpoints();
 new Class_Lalamove_Api();
 new Class_Lalamove_Shortcode();
-
-
 
 
 if (!class_exists('Woo_Lalamove')) {
@@ -50,7 +49,7 @@ if (!class_exists('Woo_Lalamove')) {
                 add_action('woocommerce_shipping_init', 'your_shipping_method_init');
                 add_filter('woocommerce_shipping_methods', [$this, 'add_your_shipping_method']);
 
-                add_filter('woocommerce_my_account_my_orders_actions', [$this, 'my_custom_order_button'], 10, 2);
+                add_filter('woocommerce_my_account_my_orders_actions', [$this, 'customer_delivery_status_button'], 10, 2);
 
                 register_activation_hook(__FILE__, callback: [$this, 'my_plugin_create_custom_table']);
 
@@ -148,11 +147,11 @@ if (!class_exists('Woo_Lalamove')) {
         }
 
 
-        function my_custom_order_button($actions, $order)
+        function customer_delivery_status_button($actions, $order)
         {
             $order_id = $order->get_id();
             // Build URL to a custom order details page, e.g. with the slug "order-details"
-            $url = add_query_arg('order_id', $order_id, site_url('/delivery-details/'));
+            $url = add_query_arg('order_id', $order_id, site_url('/delivery-status/'));
 
             $actions['custom_button'] = array(
                 'url' => $url,
@@ -348,11 +347,11 @@ if (!class_exists('Woo_Lalamove')) {
             );
         } else {
             $shipping_address = array(
-                'address' => WC()->session->get('shipping_address_1') ?? "ZAMN",
-                'city' => WC()->session->get('shipping_city' ?? "ZAMN"),
-                'state' => WC()->session->get('shipping_state') ?? "ZAMN",
-                'postcode' => WC()->session->get('shipping_postcode') ?? "ZAMN",
-                'country' => WC()->session->get('shipping_country') ?? "ZAMN",
+                'address' => WC()->session->get('shipping_address_1') ?? "",
+                'city' => WC()->session->get('shipping_city' ?? ""),
+                'state' => WC()->session->get('shipping_state') ?? "",
+                'postcode' => WC()->session->get('shipping_postcode') ?? "",
+                'country' => WC()->session->get('shipping_country') ?? "",
             );
         }
 
@@ -442,10 +441,111 @@ if (!class_exists('Woo_Lalamove')) {
         if (get_transient('wc_lalamove_table_created')) {
             echo '<div class="notice notice-success is-dismissible">
                     <p>WooCommerce Lalamove table was successfully created.</p>
-                </div>';
+                </div>';    
             delete_transient('wc_lalamove_table_created');
         }
     }
+    add_action('admin_footer', 'bulk_print_waybill');
+    function bulk_print_waybill()
+    {
+        ?>
+        <script type="text/javascript">
+            jQuery(document).ready(function ($) {
+                if ($('select[name="action"]').length > 0) {
+                    $('<option>')
+                        .val('bulk_print_waybill')
+                        .text('<?php _e('Print Waybill', 'woocommerce-lalamove-extension'); ?>')
+                        .appendTo('select[name="action"]');
+                }
+
+            });
+        </script>
+        <?php
+    }
+
+    add_filter( 'handle_bulk_actions-edit-shop_order', 'handle_bulk_print_waybill_action', 10, 3 );
+    function handle_bulk_print_waybill_action( $redirect_to, $action, $order_ids ) {
+        if ( $action !== 'print_waybill' ) {
+            return $redirect_to;
+        }
+
+        // Generate a PDF for each selected order
+        foreach ( $order_ids as $order_id ) {
+            // generate_waybill_pdf( $order_id ); 
+        }
+
+        // Redirect after processing
+        $redirect_to = add_query_arg( 'bulk_printed_waybills', count( $order_ids ), $redirect_to );
+        return $redirect_to;
+    }
+
+    add_action('woocommerce_admin_order_actions', function ($actions, $order) {
+        $order_id = $order->get_id();
+        $waybill_order_action = 'print-waybill';
+
+        $actions[$waybill_order_action] = [
+            'url'  => admin_url("admin-ajax.php?action=print-waybill&order_id={$order_id}"),
+            'name' => 'Print Waybill',
+            'action' => $waybill_order_action,
+            'target' => '_blank',
+        ];
+        return $actions;
+    }, 10, 2);
+
+    // Register the AJAX action for logged-in users
+    add_action('wp_ajax_print-waybill', 'handle_print_waybill_action');
+
+    // Define the handler function
+    function handle_print_waybill_action() {
+
+        // Check if order_id is provided
+        if (!isset($_GET['order_id'])) {
+            wp_send_json_error(['message' => 'Order ID is missing.']);
+            return;
+        }
+        
+        print_waybill();
+
+        $order_id = intval($_GET['order_id']);
+        $referrer = wp_get_referer();
+
+        return;
+
+        if ($referrer) {
+            echo '<script>';
+            echo 'setTimeout(function() { window.location.href = "' . esc_url($referrer) . '"; }, 1000);'; // Redirect after 5 seconds
+            echo '</script>';
+        }
+
+        wp_die();
+
+    }
+
+    add_action('admin_head', 'waybill_css');
+    function waybill_css() {
+        wp_enqueue_style('material-symbols', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined', [], null);
+        $waybill_order_action = 'print-waybill';
+
+        echo '
+            <style>
+                .wc-action-button-'.$waybill_order_action.'::after {
+                    font-family: "Material Symbols Outlined" !important;
+                    content: "print"; 
+                    font-size: 16px; 
+                    background-color: #FF7937;
+                    margin: 0 !important;
+                    color: white;
+                }
+                .wc-action-button-'.$waybill_order_action.'.'.$waybill_order_action.' {
+                    border-color: #FF7937;
+                }
+                .wc-action-button-'.$waybill_order_action.'.'.$waybill_order_action.':hover {
+                    border-color: #FF7937;
+                }
+            </style>
+        ';
+    }
+    
 
     require_once plugin_dir_path(__FILE__) . 'includes/checkout_delivery_placement.php';
 

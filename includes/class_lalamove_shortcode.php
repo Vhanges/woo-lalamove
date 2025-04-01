@@ -83,31 +83,34 @@ class Class_Lalamove_Shortcode{
 
         global $wpdb;
 
-        $orderID = $_GET['order_id'];
+        $orderID = $_GET['order_id'] ?? null;
 
         $lalamove_table = $wpdb->prefix . 'wc_lalamove_orders';
         $data = $wpdb->get_results($wpdb->prepare("SELECT * FROM $lalamove_table WHERE wc_order_id = %d", $orderID), ARRAY_A);
         
-        $lalamove_order_id = $data[0]['lalamove_order_id'];
+        $lalamove_order_id = $data[0]['lalamove_order_id'] ?? null;
         $details = $this->lalamove_api->get_order_details($lalamove_order_id);
 
 
-        $driverId = $details['data']['driverId'];
-        $driver_data = $this->lalamove_api->get_driver_details($lalamove_order_id, $driverId);
+        $driverId = $details['data']['driverId'] ?? null;
 
-        var_dump($driver_data);
+        if($driverId != null){
+            $driver_data = $this->lalamove_api->get_driver_details($lalamove_order_id, $driverId);
+            var_dump($driver_data);
+        }
+
         $driver_name = $driver_data['data']['name'] ?? null;
         $driver_phone = $driver_data['data']['phone'] ?? null;
         $driver_plate_number = $driver_data['data']['plateNumber'] ?? null;
         $driver_lat = $driver_data['data']['coordinates']['lat'] ?? null;
         $driver_lng = $driver_data['data']['coordinates']['lng'] ?? null;
 
-        $senderAddress = $details['data']['stops'][0]['address'];
-        $recipientAddress = $details['data']['stops'][1]['address'];
-        $recipientLat = $details['data']['stops'][1]['coordinates']['lat']; 
-        $recipientLng = $details['data']['stops'][1]['coordinates']['lng'];
+        $senderAddress = $details['data']['stops'][0]['address'] ?? null;
+        $recipientAddress = $details['data']['stops'][1]['address'] ?? null;
+        $recipientLat = $details['data']['stops'][1]['coordinates']['lat'] ?? null; 
+        $recipientLng = $details['data']['stops'][1]['coordinates']['lng'] ?? null;
         $podImage = $details['data']['stops'][1]['POD']['image'] ?? 'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png';
-        $shareLink = $details['data']['shareLink'];
+        $shareLink = $details['data']['shareLink'] ?? null;
 
         $startLat = $driver_lat;
         $startLon = $driver_lng;
@@ -124,29 +127,21 @@ class Class_Lalamove_Shortcode{
             echo "Error: " . $estimatedTime->get_error_message();
         }
 
-        // <p style="color: #333;">'. var_dump($details).'</p>
-        if (isset($orderID) && !empty($data)) {
 
-            $order = wc_get_order($orderID); // Fetch the order object
+        $order = wc_get_order($orderID); // Fetch the order object
 
-            if (!$order) {
-                return "<p>Invalid order ID: $orderID</p>"; // Handle invalid order case
-            }
-        
+        if ($order) {
             $orderStatus = $order->get_status(); // Now safe to call get_status()
-        
-            echo '
-			<div class="delivery-details w-100 h-100 d-flex flex-column justify-content-center p-5" style="background-color: #FCFCFC; border: 1px solid #D9D9D9; padding: 10px; margin-bottom: 20px;">
-                '.short_code_delivery_status($orderStatus).'
-                '.short_code_delivery_location($estimatedTime).'
-                '.short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, $senderAddress, $recipientAddress, $driver_name, $driver_phone, $driver_plate_number).'
-            </div>
-                ';
-                // <pre>'.var_dump($driver_data).'</pre>
-                
-        } else {
-            return "<p>$orderID</p>";    
         }
+        $orderStatus = $orderStatus ?? null;
+    
+        echo '
+        <div class="delivery-details w-100 h-100 d-flex flex-column justify-content-center p-5" style="background-color: #FCFCFC; border: 1px solid #D9D9D9; padding: 10px; margin-bottom: 20px;">
+            '.short_code_delivery_status($orderStatus).'
+            '.short_code_delivery_location($estimatedTime).'
+            '.short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, $senderAddress, $recipientAddress, $driver_name, $driver_phone, $driver_plate_number).'
+        </div>
+            ';
     }
 }
 

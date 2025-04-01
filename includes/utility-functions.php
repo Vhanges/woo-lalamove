@@ -2,6 +2,142 @@
 
 if (!defined('ABSPATH'))
     exit;
+function get_shop_logo(){
+	// Get logo data
+	$logo_html = '';
+	$custom_logo_id = get_theme_mod('custom_logo');
+	
+	if ($custom_logo_id) {
+		$logo_path = get_attached_file($custom_logo_id);
+		
+		if ($logo_path && file_exists($logo_path)) {
+			// Convert logo to base64
+			$logo_data = file_get_contents($logo_path);
+			$logo_base64 = base64_encode($logo_data);
+			$logo_html = '<img src="data:image/png;base64,'.$logo_base64.'" alt="Shop Logo" width="50" height="40">';
+
+			return $logo_html;
+		}
+	}
+}
+
+function get_delivery_details(){
+	
+}
+
+function print_waybill() {
+	// Initialize mPDF first
+	$mpdf = new \Mpdf\Mpdf([
+		'mode' => 'utf-8',
+		'format' => 'A6',
+		'margin_left' => 5,
+		'margin_right' => 5,
+		'margin_top' => 5,
+		'margin_bottom' => 5,
+	]);
+
+	// QR code generation
+	$qrData = 'https://example.com/waybill/123456';
+	$qrCode = new Mpdf\QrCode\QrCode($qrData);
+	$output = new Mpdf\QrCode\Output\Png();
+	$qrCodePng = $output->output($qrCode, 100, [255, 255, 255], [0, 0, 0]);
+	$qrCodeBase64 = base64_encode($qrCodePng);
+
+	// HTML content
+	$html = '
+	<style>
+		table { width: 100%; border-collapse: collapse; font-size: 12px; }
+		td { padding:4px; text-align: left; }
+		.header { text-align: center; font-weight: bold; font-size: 14px; }
+		.barcode, .qr-code { text-align: center; }
+		.rotate { height: 30mm; width: 10mm; padding: 1px; text-align: center; vertical-align: middle; text-rotate: 90; }
+		.logo { text-align: center; }
+		.barcode { padding: 4px;}
+	</style>
+
+	<table border="1">
+		<!-- Header -->
+		<tr>
+			<td colspan="1" class="logo">'
+				. (get_shop_logo() ?: 'No Logo') .
+			'</td>
+			<td colspan="3">'. get_bloginfo('name') .'</td>
+		</tr>    
+		<tr>
+			<td colspan="4" class="header">Delivery ID: 22392823101</td>
+		</tr>
+		<tr>
+			<td colspan="2">Order ID: SPX123456789</td>
+			<td colspan="2" style="text-align: right;">Order Date: 2018-06-18</td>
+		</tr>
+
+		<!-- Barcode -->
+		<tr>
+			<td colspan="4" class="barcodecell" style="text-align: center;">
+				<barcode code="21231242123211" type="C128C" class="barcode" />
+			</td>
+		</tr>
+
+		<!-- Buyer Details -->
+		<tr>
+			<td class="rotate">BUYER</td>
+			<td colspan="3">
+				buyer123<br><br>
+				2nd Floor, Stall 39, ABC Building, Barangay 287, Binondo, Manila, Metro Manila 1234<br>
+				Metro Manila, 12180
+			</td>
+		</tr>
+
+		<!-- Seller Details -->
+		<tr>
+			<td class="rotate">SELLER</td>
+			<td colspan="3">
+				Seller123<br><br>
+				2nd Floor, Stall 39, ABC Building, Barangay 287, Binondo, Manila, Metro Manila 1234<br>
+				Metro Manila, 12180
+			</td>
+		</tr>
+
+		<!-- QR Code and Product Details -->
+		<tr>
+			<td class="qr-code">
+				<img src="data:image/png;base64,'.$qrCodeBase64.'" alt="QR Code" width="50" height="50"/>
+			</td>
+			<td colspan="3">
+				Product Quantity: 8<br>
+				Weight: 200,212,000 g
+			</td>
+		</tr>
+
+		<!-- Return Attempt -->
+		<tr>
+			<td colspan="2" style="text-align: left; padding: 10px;">
+				Thank you for your order!
+			</td>
+			<td colspan="2" style="text-align: center; padding: 10px;">
+				Return Attempt<br><br>
+				<table style="">
+					<tr>
+						<td style="text-align: center; border: 1px solid #000; padding: 5px;">1</td>
+						<td style="text-align: center; border: 1px solid #000; padding: 5px;">2</td>
+						<td style="text-align: center; border: 1px solid #000; padding: 5px;">3</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>';
+
+	// Write HTML to PDF
+	$mpdf->WriteHTML($html);
+
+	// Output the PDF to the browser
+	$mpdf->Output('waybill.pdf', 'I');
+}
+
+
+
+
+
 
 function lalamove_check_is_woocommerce_active() {
 	$active_plugins = (array) get_option( 'active_plugins', array() );

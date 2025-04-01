@@ -9,7 +9,9 @@
         }
     },
     "require": {
-        "composer/installers": "^2.0"
+        "composer/installers": "^2.0",
+        "mpdf/mpdf": "^8.2",
+        "mpdf/qrcode": "^1.2"
     },
     "config": {
         "allow-plugins": {
