@@ -42,7 +42,39 @@ class Class_Lalamove_Endpoints
             'callback' => [$this, 'lalamove_webhook'],
             'permission_callback' => '__return_true'
         ]);
+
+        // Waybill QR Code Order Details Link
+        register_rest_route('woo-lalamove/v1', '/order-details', [
+            'methods' => ['GET'],
+            'callback' => [$this, 'lalamove_webhook'],
+            'permission_callback' => '__return_true'
+        ]);
     }
+
+    /**
+     * Callback for QR Code Link Order Details Link
+     * 
+     * 
+     */
+
+    public function render_order_details(WP_REST_Request $request)
+    {
+        $order_id = $request->get_param('order_id');
+        $order = \wc_get_order($order_id);
+        if (!$order) {
+            return new WP_REST_Response(['message' => 'Order not found'], 404);
+        }else{
+            echo "HFSDLFJKJDF";
+        }
+
+        // $tracking_url = $this->lalamove_api->get_tracking_url($order_id);
+        // if (!$tracking_url) {
+        //     return new WP_REST_Response(['message' => 'Tracking URL not found'], 404);
+        // }
+
+        // return rest_ensure_response($tracking_url);
+    }
+
 
     /**
      * Callback for get_city route

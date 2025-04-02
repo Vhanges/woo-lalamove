@@ -503,10 +503,10 @@ if (!class_exists('Woo_Lalamove')) {
             wp_send_json_error(['message' => 'Order ID is missing.']);
             return;
         }
-        
-        print_waybill();
 
+        
         $order_id = intval($_GET['order_id']);
+        print_waybill($order_id);
         $referrer = wp_get_referer();
 
         return;

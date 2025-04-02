@@ -21,11 +21,103 @@ function get_shop_logo(){
 	}
 }
 
-function get_delivery_details(){
-	
+function get_delivery_details($order_id){
+
+	global $wpdb;
+
+    $orders_table = $wpdb->prefix . 'wc_lalamove_orders';
+	$transaction_table = "{$wpdb->prefix}wc_lalamove_transaction";
+
+	// Use INNER JOIN to fetch data from both tables
+	$delivery_data = $wpdb->get_row($wpdb->prepare(
+		"SELECT orders.*, transactions.* 
+		FROM {$orders_table} orders 
+		INNER JOIN {$transaction_table} transactions
+		ON orders.transaction_id = transactions.transaction_id
+		WHERE orders.wc_order_id = %d",
+		$order_id
+	));
+
+	$order_id = $delivery_data->wc_order_id;
+	$customer_name = $delivery_data->ordered_by;
+	$delivery_id = $delivery_data->lalamove_order_id;
+	$ordered_on = $delivery_data->ordered_on;
+
+	// Create a DateTime object
+	$date = new DateTime($ordered_on);
+	$ordered_on = $date->format('F j, Y');
+
+	$drop_off_location = $delivery_data->drop_off_location;
+
+	$delivery_details = [
+		"order_id" => $order_id,
+		"customer_name" => $customer_name,
+		"delivery_id" => $delivery_id,
+		"ordered_on" => $ordered_on,
+		"drop_off_location" => $drop_off_location,
+	];
+
+	return $delivery_details;
+
 }
 
-function print_waybill() {
+function get_weight_unit() {
+    // Fetch weight unit from WooCommerce settings
+    $weight_unit = get_option('woocommerce_weight_unit');
+
+    return $weight_unit;
+}
+
+
+function get_order_details($order_id) {
+    $order = wc_get_order($order_id);
+
+    if (!$order) {
+        return "Invalid Order ID";
+    }
+
+    // Initialize arrays and variables
+    $product_details = [];
+    $total_weight = 0;
+    $total_quantity = 0;
+
+    // Loop through the order items
+    foreach ($order->get_items() as $item) {
+        $product = $item->get_product();
+
+        if ($product) {
+            // Fetch quantity and weight
+            $quantity = $item->get_quantity();
+            $weight = $product->get_weight();
+
+            // Accumulate totals
+            $total_weight += $weight * $quantity;
+            $total_quantity += $quantity;
+
+            // Store individual product details
+            $product_details[] = [
+                'product_name' => $product->get_name(),
+                'quantity' => $quantity,
+                'weight' => $weight,
+            ];
+        }
+    }
+
+    // Add total details to the result
+    $product_details['totals'] = [
+        'total_quantity' => $total_quantity,
+        'total_weight' => $total_weight,
+    ];
+
+    return $product_details;
+}
+
+function format_address($text, $max_length = 45) {
+    return wordwrap(htmlspecialchars($text), $max_length, "<br>", true);
+}
+
+
+function print_waybill($order_id) {
 	// Initialize mPDF first
 	$mpdf = new \Mpdf\Mpdf([
 		'mode' => 'utf-8',
@@ -37,90 +129,151 @@ function print_waybill() {
 	]);
 
 	// QR code generation
-	$qrData = 'https://example.com/waybill/123456';
+	$qrData = get_site_url().'/wp-json/woo-lalamove/v1/order-details?order_id='. $order_id;
 	$qrCode = new Mpdf\QrCode\QrCode($qrData);
 	$output = new Mpdf\QrCode\Output\Png();
 	$qrCodePng = $output->output($qrCode, 100, [255, 255, 255], [0, 0, 0]);
 	$qrCodeBase64 = base64_encode($qrCodePng);
 
+	$delivery_data = get_delivery_details($order_id);
+	$order_details = get_order_details($order_id);
+	$wc_order_id = (int)$order_id;
+
 	// HTML content
 	$html = '
 	<style>
-		table { width: 100%; border-collapse: collapse; font-size: 12px; }
-		td { padding:4px; text-align: left; }
-		.header { text-align: center; font-weight: bold; font-size: 14px; }
-		.barcode, .qr-code { text-align: center; }
-		.rotate { height: 30mm; width: 10mm; padding: 1px; text-align: center; vertical-align: middle; text-rotate: 90; }
-		.logo { text-align: center; }
-		.barcode { padding: 4px;}
+		table { 
+			width: 100%; 
+			height: 100%; /* Fill available space */
+			border-collapse: collapse; 
+			font-size: 10pt;
+			table-layout: fixed; /* Crucial for fixed layout */
+		}
+		td { 
+			padding: 4px !important; 
+			text-align: center;
+			overflow: hidden; /* Prevent content overflow */
+		}
+		.header { 
+			text-align: center; 
+			font-weight: bold; 
+			font-size: 12pt;
+			height: 10mm !important; /* Fixed header height */
+		}
+		.rotate { 
+			width: 8mm !important;
+			height: 35mm !important;
+			text-rotate: 90;
+			font-size: 12pt;
+			padding: 1mm !important;
+			word-wrap: break-word;
+		}
+		.content-cell {
+			height: 35mm !important; /* Match rotate column height */
+			max-height: 35mm !important;
+			font-size: 9pt;
+			line-height: 1.1;
+			overflow: hidden;
+			text-align: left !important;
+			vertical-align: top !important;
+			padding: 5mm;
+		}
+		img {
+			max-width: 100% !important;
+			height: auto !important;
+			object-fit: contain; /* Maintain aspect ratio */
+		}
+		.barcodecell {
+			height: 15mm !important;
+		}
+		.nested-table {
+			width: 100% !important;
+			table-layout: fixed;
+		}
+		.attempts{
+			border: 1px solid #000;	
+		}
+		.test {
+			width: 10%;
+		}
 	</style>
-
-	<table border="1">
+	
+	<table style="page-break-inside:avoid" border="1">
 		<!-- Header -->
 		<tr>
-			<td colspan="1" class="logo">'
-				. (get_shop_logo() ?: 'No Logo') .
-			'</td>
-			<td colspan="3">'. get_bloginfo('name') .'</td>
+			<td colspan="1" class="logo" style="width: 15mm; height: 15mm;">
+				'. (get_shop_logo() ?: 'No Logo') .'
+			</td>
+			<td colspan="3" style="width: 85mm; height: 15mm; font-size: 10pt;">
+				'. get_bloginfo('name') .'
+			</td>
 		</tr>    
-		<tr>
-			<td colspan="4" class="header">Delivery ID: 22392823101</td>
+		<tr>	
+			<td colspan="4" class="header" style="height: 10mm;">
+				'.$delivery_data['delivery_id'].'
+			</td>
 		</tr>
 		<tr>
-			<td colspan="2">Order ID: SPX123456789</td>
-			<td colspan="2" style="text-align: right;">Order Date: 2018-06-18</td>
+			<td colspan="2" style=" height: 8mm; text-align: left;">Order ID: '. $order_id .'</td>
+			<td colspan="2" style=" height: 8mm; text-align: left;">Order Date: '. $delivery_data['ordered_on'] .'</td>
 		</tr>
-
+	
 		<!-- Barcode -->
 		<tr>
-			<td colspan="4" class="barcodecell" style="text-align: center;">
-				<barcode code="21231242123211" type="C128C" class="barcode" />
+			<td colspan="4" class="barcodecell" style="height: 30mm;">
+				<barcode code="'. $wc_order_id .'" type="C128B" style="width: 100mm; height: 50mm;" />
 			</td>
 		</tr>
-
+	
 		<!-- Buyer Details -->
 		<tr>
-			<td class="rotate">BUYER</td>
-			<td colspan="3">
-				buyer123<br><br>
-				2nd Floor, Stall 39, ABC Building, Barangay 287, Binondo, Manila, Metro Manila 1234<br>
-				Metro Manila, 12180
+			<td colspan="1" class="rotate">BUYER</td>
+			<td colspan="3" class="content-cell">
+				<div style="max-height: 33mm; overflow: hidden;">
+					 <strong>buyer123</strong><br><br>
+					'. wordwrap($delivery_data['drop_off_location'], 45, "<br>", true) .'
+				</div>
 			</td>
 		</tr>
-
+	
 		<!-- Seller Details -->
 		<tr>
-			<td class="rotate">SELLER</td>
-			<td colspan="3">
-				Seller123<br><br>
-				2nd Floor, Stall 39, ABC Building, Barangay 287, Binondo, Manila, Metro Manila 1234<br>
-				Metro Manila, 12180
+			<td colspan="1" class="rotate">SELLER</td>
+			<td colspan="3" class="content-cell">
+				<div style="max-height: 33mm; overflow: hidden;">
+					 <strong>'.get_bloginfo('name').'</strong><br><br>
+					'. wordwrap(get_option('lalamove_shipping_address', ''), 45, "<br>", true) .'
+				</div>
 			</td>
 		</tr>
-
+	
 		<!-- QR Code and Product Details -->
 		<tr>
-			<td class="qr-code">
-				<img src="data:image/png;base64,'.$qrCodeBase64.'" alt="QR Code" width="50" height="50"/>
+			<td colspan="2" style="width: 20mm; height: 25mm;">
+				<img src="data:image/png;base64,'.$qrCodeBase64.'" alt="QR Code" style="width: 25mm; height: 25mm;"/>
 			</td>
-			<td colspan="3">
-				Product Quantity: 8<br>
-				Weight: 200,212,000 g
+			<td colspan="2" style="height: 25mm;">
+				<div style="padding: 1mm;">
+					Product Quantity: '.$order_details['totals']['total_quantity'].'<br><br>
+					Weight:'.$order_details['totals']['total_weight'].' '. get_weight_unit().'
+				</div>
 			</td>
 		</tr>
-
+	
 		<!-- Return Attempt -->
 		<tr>
-			<td colspan="2" style="text-align: left; padding: 10px;">
+			<td colspan="2" style="width: 50mm; height: 20mm; padding: 2mm;">
 				Thank you for your order!
 			</td>
-			<td colspan="2" style="text-align: center; padding: 10px;">
-				Return Attempt<br><br>
-				<table style="">
+			<td colspan="2" style="width: 50mm; height: 20mm; padding: 2mm;">
+				<table class="nested-table">
 					<tr>
-						<td style="text-align: center; border: 1px solid #000; padding: 5px;">1</td>
-						<td style="text-align: center; border: 1px solid #000; padding: 5px;">2</td>
-						<td style="text-align: center; border: 1px solid #000; padding: 5px;">3</td>
+						<td colspan="4">Return Attempt</td>
+					</tr>
+					<tr>
+						<td class="attempts" style="width: 33%; text-align: center; padding: 1mm;">1</td>
+						<td class="attempts" style="width: 33%; text-align: center; padding: 1mm;">2</td>
+						<td class="attempts" style="width: 34%; text-align: center; padding: 1mm;">3</td>
 					</tr>
 				</table>
 			</td>
