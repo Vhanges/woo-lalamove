@@ -469,10 +469,7 @@ if (!class_exists('Woo_Lalamove')) {
             return $redirect_to;
         }
 
-        // Generate a PDF for each selected order
-        foreach ( $order_ids as $order_id ) {
-            // generate_waybill_pdf( $order_id ); 
-        }
+        print_waybill( $order_ids, true );
 
         // Redirect after processing
         $redirect_to = add_query_arg( 'bulk_printed_waybills', count( $order_ids ), $redirect_to );
@@ -506,7 +503,9 @@ if (!class_exists('Woo_Lalamove')) {
 
         
         $order_id = intval($_GET['order_id']);
-        print_waybill($order_id);
+        print_waybill($order_id, false);
+
+
         $referrer = wp_get_referer();
 
         return;
