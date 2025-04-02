@@ -25,6 +25,8 @@ function get_delivery_details($order_id){
 
 	global $wpdb;
 
+
+
     $orders_table = $wpdb->prefix . 'wc_lalamove_orders';
 	$transaction_table = "{$wpdb->prefix}wc_lalamove_transaction";
 
@@ -35,7 +37,7 @@ function get_delivery_details($order_id){
 		INNER JOIN {$transaction_table} transactions
 		ON orders.transaction_id = transactions.transaction_id
 		WHERE orders.wc_order_id = %d",
-		$order_id
+		intval($order_id)
 	));
 
 	$order_id = $delivery_data->wc_order_id;
@@ -123,10 +125,8 @@ function print_waybill($order_ids, $bulk_printing = false) {
 	if (!$bulk_printing) {
 		$order_ids = [$order_ids]; 
 	}
-	
-	if (!file_exists(WP_CONTENT_DIR . '/uploads/mpdf_temp')) {
-		wp_mkdir_p(WP_CONTENT_DIR . '/uploads/mpdf_temp');
-	}
+
+
 	// Initialize mPDF first
 	$mpdf = new \Mpdf\Mpdf([
 		'mode' => 'utf-8',
@@ -135,22 +135,24 @@ function print_waybill($order_ids, $bulk_printing = false) {
 		'margin_right' => 5,
 		'margin_top' => 5,
 		'margin_bottom' => 5,
-		'tempDir' => WP_CONTENT_DIR . '/uploads/mpdf_temp',
 	]);
 
 	foreach($order_ids as $order_id){
+
 		// QR code generation
 		$qrData = get_site_url().'/wp-json/woo-lalamove/v1/order-details?order_id='. $order_id;
 		$qrCode = new Mpdf\QrCode\QrCode($qrData);
 		$output = new Mpdf\QrCode\Output\Png();
 		$qrCodePng = $output->output($qrCode, 100, [255, 255, 255], [0, 0, 0]);
 		$qrCodeBase64 = base64_encode($qrCodePng);
-
+		error_log("Order ID: " . print_r($order_id, true));
 		$delivery_data = get_delivery_details($order_id);
 		$order_details = get_order_details($order_id);
 		$wc_order_id = (int)$order_id;
 
-		// HTML content
+
+
+	// HTML content
 	$html = '
 		<style>
 			table { 
@@ -290,27 +292,14 @@ function print_waybill($order_ids, $bulk_printing = false) {
 				</td>
 			</tr>
 		</table>';
-
-		// Add page break for bulk printing
-		if ($bulk_printing && count($order_ids) > 1) {
-			$mpdf->AddPage();
-		}
-
-		// Output the PDF to the browser
-		$output_mode = $bulk_printing ? 'D' : 'I'; // 'D' for download in bulk, 'I' for inline/single print
-		$mpdf->Output('waybill.pdf', $output_mode);
-	}
-
-
-
-
-	
-
 	// Write HTML to PDF
 	$mpdf->WriteHTML($html);
-
 	// Output the PDF to the browser
-	$mpdf->Output('waybill.pdf', 'I');
+}
+$mpdf->Output('waybill.pdf', 'I');
+
+	error_log("END OF PDF GENERATION");
+
 }
 
 

@@ -445,9 +445,9 @@ if (!class_exists('Woo_Lalamove')) {
             delete_transient('wc_lalamove_table_created');
         }
     }
+
     add_action('admin_footer', 'bulk_print_waybill');
-    function bulk_print_waybill()
-    {
+    function bulk_print_waybill() {
         ?>
         <script type="text/javascript">
             jQuery(document).ready(function ($) {
@@ -455,24 +455,72 @@ if (!class_exists('Woo_Lalamove')) {
                     $('<option>')
                         .val('bulk_print_waybill')
                         .text('<?php _e('Print Waybill', 'woocommerce-lalamove-extension'); ?>')
-                        .appendTo('select[name="action"]');
+                        .appendTo('select[name="action"], select[name="action2"]');
                 }
-
             });
         </script>
         <?php
     }
+    $add_custom_bulk_action = function ( array $bulk_actions ) {
+        return array_merge( $bulk_actions, [ 'custom-bulk-action' => 'Perform Custom Action!' ] );
+    };
+    
+    $custom_bulk_action_handler = function ( string $redirect_to, string $action, array $ids ) {
+        if ($action !== 'custom-bulk-action') {
+            return $redirect_to;
+        }
+    
+        // Generate URL to pass the IDs to a new page
+        $url = admin_url('admin-ajax.php?action=bulk_print-waybill&ids=' . implode(',', $ids));
+        
 
-    add_filter( 'handle_bulk_actions-edit-shop_order', 'handle_bulk_print_waybill_action', 10, 3 );
-    function handle_bulk_print_waybill_action( $redirect_to, $action, $order_ids ) {
-        if ( $action !== 'print_waybill' ) {
+        return $url;
+    
+        // Return the redirect URL (can be used if needed for redirection after action)
+        // return add_query_arg('bulk_action', 'custom-bulk-action-notice', $redirect_to);
+    };
+
+    // AJAX handler
+    add_action('wp_ajax_bulk_print-waybill', function () {
+
+
+        $ids = explode(',', sanitize_text_field($_GET['ids']));
+
+        print_waybill($ids, true);
+
+    });
+
+    
+    $custom_bulk_action_notice = function () {
+        if ( isset( $_GET['bulk_action'] ) && 'custom-bulk-action-notice' === $_GET['bulk_action'] ) {
+            print '<div class="updated" style="border-left-color: #d7f"><p>Custom Bulk Action Handler Fired</p></div>';
+        }
+    };
+    
+    add_filter( 'bulk_actions-woocommerce_page_wc-orders', $add_custom_bulk_action );
+    add_filter( 'handle_bulk_actions-woocommerce_page_wc-orders', $custom_bulk_action_handler, 10, 3 );
+    add_action( 'admin_notices', $custom_bulk_action_notice );
+
+    add_filter('handle_bulk_actions-edit-shop_order', 'debug_bulk_action_trigger', 10, 3);
+    function debug_bulk_action_trigger($redirect_to, $action, $order_ids) {
+    error_log("Triggered Action: $action"); // Log the triggered action
+    error_log("Order IDs: " . implode(', ', $order_ids)); // Log the order IDs
+
+    return $redirect_to; // Ensure it redirects properly after handling
+}
+
+    add_filter('handle_bulk_actions-edit-shop_order', 'handle_bulk_print_waybill_action', 10, 3);
+    function handle_bulk_print_waybill_action($redirect_to, $action, $order_ids) {
+        if ($action !== 'bulk_print_waybill') {
             return $redirect_to;
         }
 
-        print_waybill( $order_ids, true );
+        // Call your print function
+        print_waybill($order_ids, true);
+        error_log('Bulk print waybill action triggered for order IDs: ' . implode(', ', $order_ids));
 
         // Redirect after processing
-        $redirect_to = add_query_arg( 'bulk_printed_waybills', count( $order_ids ), $redirect_to );
+        $redirect_to = add_query_arg('bulk_printed_waybills', count($order_ids), $redirect_to);
         return $redirect_to;
     }
 
