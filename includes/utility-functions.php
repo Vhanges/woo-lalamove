@@ -140,7 +140,7 @@ function print_waybill($order_ids, $bulk_printing = false) {
 	foreach($order_ids as $order_id){
 
 		// QR code generation
-		$qrData = get_site_url().'/wp-json/woo-lalamove/v1/order-details?order_id='. $order_id;
+		$qrData = get_site_url().'/waybill-qr/?order_id='. $order_id;
 		$qrCode = new Mpdf\QrCode\QrCode($qrData);
 		$output = new Mpdf\QrCode\Output\Png();
 		$qrCodePng = $output->output($qrCode, 100, [255, 255, 255], [0, 0, 0]);
@@ -211,13 +211,13 @@ function print_waybill($order_ids, $bulk_printing = false) {
 			}
 		</style>
 		
-		<table style="page-break-inside:avoid; page-break-after: always;" border="1">
+		<table style="page-break-inside:avoid;" border="1">
 			<!-- Header -->
 			<tr>
-				<td colspan="1" class="logo" style="width: 15mm; height: 15mm;">
+				<td colspan="1" class="logo" style="width: 15mm; height: 15mm; padding: 3mm;">
 					'. (get_shop_logo() ?: 'No Logo') .'
 				</td>
-				<td colspan="3" style="width: 85mm; height: 15mm; font-size: 10pt;">
+				<td colspan="3" style="width: 85mm; height: 15mm; font-size: 10pt; padding: 3mm;">
 					'. get_bloginfo('name') .'
 				</td>
 			</tr>    
@@ -295,8 +295,8 @@ function print_waybill($order_ids, $bulk_printing = false) {
 	// Write HTML to PDF
 	$mpdf->WriteHTML($html);
 	// Output the PDF to the browser
-}
-$mpdf->Output('waybill.pdf', 'I');
+	}
+	$mpdf->Output('waybill.pdf', 'I');
 
 	error_log("END OF PDF GENERATION");
 

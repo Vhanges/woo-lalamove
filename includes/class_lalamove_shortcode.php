@@ -11,6 +11,7 @@ class Class_Lalamove_Shortcode{
         $this->lalamove_api = New Class_Lalamove_Api();
 
         add_shortcode('order_details', [$this, 'render_order_details']);
+        add_shortcode('qr_order_details', [$this, 'render_qr_content']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_styles'], 20); 
     }
 
@@ -18,7 +19,7 @@ class Class_Lalamove_Shortcode{
      * Enqueue styles for the shortcode.
      */
     public function enqueue_styles() {
-        if (is_page('delivery-details')) {
+        if (is_page('delivery-status')) {
             // Enqueue Bootstrap CSS
             wp_enqueue_style(
             'bootstrap-css',
@@ -48,8 +49,175 @@ class Class_Lalamove_Shortcode{
             true
             );
         } 
+        if(is_page('waybill-qr')){
+            // Enqueue Bootstrap CSS
+            wp_enqueue_style(
+            'bootstrap-css',
+            'https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'
+            );
+                        // Enqueue Material Symbols
+                        wp_enqueue_style(
+                            'material-symbols',
+                            'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined'
+                            );
+        }
+    }
+    
+/**
+ * Render QR Code Content.
+ * Usage: [qr_order_details]
+ */
+public function render_qr_content() {
+    // Get the order object
+    $order_id = $_GET['order_id'] ?? null;
+    $order = \wc_get_order($order_id);
+
+    // Check if the order exists
+    if (!$order) {
+        echo '<div class="container mt-5"><div class="alert alert-dark text-center p-3">Order not found.</div></div>';
+        return;
     }
 
+    $order_items = $order->get_items();
+    $customer_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
+    $customer_contact = $order->get_billing_phone();
+    $seller_name =  get_bloginfo('name');
+    $seller_contact = get_option('lalamove_phone_number', ''); // Replace with actual seller contact
+
+    ob_start();
+    ?>
+    
+    <div class="container-lg my-4">
+        <a href="<?php echo esc_url(wc_get_account_endpoint_url('orders')); ?>" class="btn btn-link mb-4 d-inline-flex align-items-center text-decoration-none">
+            <span class="material-symbols-outlined me-2">arrow_back</span>
+            <span class="text-dark">Back to Orders</span>
+        </a>
+
+        <div class="card border-0">
+            <div class="card-header bg-white pb-4">
+                <div class="container">
+                    <h1 class="h2 mb-2 fw-bold text-dark d-flex align-items-center">
+                        <span class="material-symbols-outlined me-2 mr-2">qr_code</span>
+                        Order Summary
+                    </h1>
+                    <p class="mb-0 text-muted">Scan QR code to view delivery details</p>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="container">
+                    <!-- Order ID -->
+                    <div class="alert alert-light mb-4 d-flex align-items-center py-3">
+                        <span class="material-symbols-outlined me-2">tag</span>
+                        <strong class="text-uppercase small me-2 mr-2">ORDER ID:</strong>
+                        <span class="h3 ms-2"><?php echo esc_html($order_id); ?></span>
+                    </div>
+
+                    <!-- Contact Cards -->
+                    <div class="row g-4 mb-5">
+                        <!-- Customer Card -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-4 d-flex align-items-center fw-bold">
+                                        <span class="material-symbols-outlined me-2">person</span>
+                                        Customer Details
+                                    </h5>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4 text-muted">Name</dt>
+                                        <dd class="col-sm-8 h5"><?php echo esc_html($customer_name); ?></dd>
+                                        
+                                        <dt class="col-sm-4 text-muted">Contact</dt>
+                                        <dd class="col-sm-8 h5">
+                                            <a href="tel:<?php echo esc_attr($customer_contact); ?>" class="text-dark text-decoration-none d-flex align-items-center">
+                                                <span class="material-symbols-outlined me-2">call</span>
+                                                <?php echo esc_html($customer_contact); ?>
+                                            </a>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seller Card -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-4 d-flex align-items-center fw-bold">
+                                        <span class="material-symbols-outlined me-2">store</span>
+                                        Seller Details
+                                    </h5>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4 text-muted">Name</dt>
+                                        <dd class="col-sm-8 h5"><?php echo esc_html($seller_name); ?></dd>
+                                        
+                                        <dt class="col-sm-4 text-muted">Contact</dt>
+                                        <dd class="col-sm-8 h5">
+                                            <a href="tel:<?php echo esc_attr($seller_contact); ?>" class="text-dark text-decoration-none d-flex align-items-center">
+                                                <span class="material-symbols-outlined me-2">call</span>
+                                                <?php echo esc_html($seller_contact); ?>
+                                            </a>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Items -->
+                    <h3 class="h4 mb-4 text-center fw-bold d-flex align-items-center justify-content-center">
+                        <span class="material-symbols-outlined me-2">package</span>
+                        Order Items
+                    </h3>
+
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        <?php foreach ($order_items as $item_id => $item) : 
+                            $product = $item->get_product();
+                            $image_url = wp_get_attachment_url($product->get_image_id());
+                            $weight = $product->get_weight();
+                        ?>
+                        <div class="col">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="row g-0">
+                                    <div class="col-4">
+                                        <img src="<?php echo esc_url($image_url); ?>" 
+                                             class="img-fluid h-100 object-fit-cover" 
+                                             alt="<?php echo esc_attr($product->get_name()); ?>">
+                                    </div>
+                                    <div class="col-8">
+                                        <div class="card-body">
+                                            <h5 class="card-title mb-3 fw-bold"><?php echo esc_html($item->get_name()); ?></h5>
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <span class="text-muted d-flex align-items-center">
+                                                    <span class="material-symbols-outlined me-2">numbers</span>
+                                                    Quantity
+                                                </span>
+                                                <span class="badge bg-dark text-white rounded-pill fs-6"><?php echo esc_html($item->get_quantity()); ?></span>
+                                            </div>
+                                            <?php if ($weight) : ?>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="text-muted d-flex align-items-center">
+                                                    <span class="material-symbols-outlined me-2">weight</span>
+                                                    Weight
+                                                </span>
+                                                <span class="fw-bold"><?php echo esc_html($weight); ?> kg</span>
+                                            </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php
+    echo ob_get_clean();
+}
     /**
      * Display stored Lalamove webhook data.
      * This function retrieves the data from a WordPress option and formats it.

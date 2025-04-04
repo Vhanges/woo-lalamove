@@ -43,36 +43,100 @@ class Class_Lalamove_Endpoints
             'permission_callback' => '__return_true'
         ]);
 
-        // Waybill QR Code Order Details Link
-        register_rest_route('woo-lalamove/v1', '/order-details', [
-            'methods' => ['GET'],
-            'callback' => [$this, 'lalamove_webhook'],
-            'permission_callback' => '__return_true'
-        ]);
+        // Waybill QR Code Order Details Linkz`
+        register_rest_route('woo-lalamove/v1', '/waybill/(?P<order_id>\d+)', array(
+            // Supported methods for this endpoint
+            'methods' => \WP_REST_Server::READABLE, 
+            // Register the callback for the endpoint
+            'callback' => [$this, 'get_waybill'],
+            'permission_callback' => '__return_true', // Open for now, adjust for authentication
+        ));
+    
     }
-
+    function get_waybill($request) {
+        $order_id = $request->get_param('order_id');
+        
+        if (!$order_id) {
+            return new WP_REST_Response('Order ID not provided', 400);
+        }
+    
+        $output = '<h1>Waybill</h1>';
+    
+        return new WP_REST_Response($output, 200, array('Content-Type' => 'text/html'));
+    }
+    
     /**
      * Callback for QR Code Link Order Details Link
      * 
      * 
      */
-
-    public function render_order_details(WP_REST_Request $request)
-    {
+    
+    function render_order_details(WP_REST_Request $request) {
+        header('Content-Type: text/html');
+        // Get the Order ID from the request
         $order_id = $request->get_param('order_id');
         $order = \wc_get_order($order_id);
+        
+        // Validate the order
         if (!$order) {
-            return new WP_REST_Response(['message' => 'Order not found'], 404);
-        }else{
-            echo "HFSDLFJKJDF";
+            header('Content-Type: text/html');
+            echo '<html><body><h1>Order not found</h1></body></html>';
+            exit;
         }
-
-        // $tracking_url = $this->lalamove_api->get_tracking_url($order_id);
-        // if (!$tracking_url) {
-        //     return new WP_REST_Response(['message' => 'Tracking URL not found'], 404);
-        // }
-
-        // return rest_ensure_response($tracking_url);
+    
+        // Fetch WooCommerce Order and Product Details
+        $woo_order_id = $order->get_id();
+        $lalamove_order_id = $order->get_meta('lalamove_order_id'); // Assuming custom meta field
+        $items = $order->get_items();
+    
+        // Generate Waybill HTML
+        ob_start();
+        ?>
+        <html>
+        <head>
+            <title>Waybill</title>
+            <style>
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid #ccc;
+                    padding: 8px;
+                    text-align: left;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Waybill</h1>
+            <p><strong>Woo Order ID:</strong> <?php echo esc_html($woo_order_id); ?></p>
+            <p><strong>Lalamove Order ID:</strong> <?php echo esc_html($lalamove_order_id); ?></p>
+    
+            <h2>Products Ordered</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($items as $item): ?>
+                        <tr>
+                            <td><?php echo esc_html($item->get_name()); ?></td>
+                            <td><?php echo esc_html($item->get_quantity()); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </body>
+        </html>
+        <?php
+    
+        // Send the output with proper headers
+        $output = ob_get_clean();
+        echo $output;
+        exit;
     }
 
 

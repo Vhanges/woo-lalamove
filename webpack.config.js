@@ -25,10 +25,10 @@ module.exports = {
                 }
             },
             {
-                test: /\.(png|jpe?g|gif|svg)$/,  // 🔥 Add support for images
+                test: /\.(png|jpe?g|gif|svg)$/, 
                 type: 'asset/resource',
                 generator: {
-                    filename: 'images/[name][ext]' // Saves images in dist/images/
+                    filename: 'images/[name][ext]' 
                 }
             },
             {
@@ -90,7 +90,7 @@ module.exports = {
             __VUE_PROD_DEVTOOLS__: JSON.stringify(true),
             __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false)
         }),
-        //new BundleAnalyzerPlugin()
+        new BundleAnalyzerPlugin()
     ],
     mode: 'production',
     devtool: 'source-map',
