@@ -1,0 +1,124 @@
+<template>
+  <div id="picked-date-wrapper">
+
+    <p class="date-range">
+        {{ formattedStartDate }} 
+            <span class="material-symbols-outlined arrow_right_alt">
+                arrow_right_alt
+            </span>
+        {{ formattedEndDate }}
+    </p>
+
+    <span class="material-symbols-outlined">
+        calendar_month
+    </span>
+
+  </div>
+</template>
+
+<script setup>
+import { onMounted, ref, computed } from "vue";
+
+const startDate = ref(moment());
+const endDate = ref(moment().add(30, "days"));
+
+const formattedStartDate = computed(() => startDate.value.format("MMM D, YYYY"));
+const formattedEndDate = computed(() => endDate.value.format("MMM D, YYYY"));
+
+function callback  (start, end) {
+  console.log("Selected Start Date:", startDate.value.format("MMM D, YYYY"));
+  console.log("Selected End Date:",  endDate.value.format("MMM D, YYYY"));
+
+  startDate.value = moment(start);
+  endDate.value = moment(end);
+};
+
+onMounted(() => {
+
+  const date = jQuery.noConflict();
+  date("#picked-date-wrapper").daterangepicker({
+    startDate: startDate.value,
+    endDate: endDate.value,
+    singleDatePicker: false,
+    timePicker: false,
+    timePicker24Hour: false,
+    timePickerSeconds: false,
+    timePickerIncrement: 15,
+    autoApply: false,
+    opens: "right",
+    drops: "bottom",
+    showDropdowns: true,
+    locale: {
+      format: "MMM D, YYYY",
+      applyLabel: "Apply",
+      cancelLabel: "Cancel",
+    },
+  });
+
+  date("#picked-date-wrapper").on("apply.daterangepicker", function (ev, picker) {
+    callback(picker.startDate, picker.endDate);
+  });
+ 
+});
+</script>
+
+
+<style lang="scss">
+@use "@/css/scss/_variables.scss" as *;
+
+#picked-date-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
+  padding: 0 0.5rem;
+  width: fit-content;
+  height: 2rem;
+  align-items: center;
+  border: 2px solid $border-color;
+  border-radius: 5px;
+  background-color: $bg-high-light;
+  color: $txt-secondary;
+  cursor: pointer;
+
+  .material-symbols-outlined {
+    color: $txt-secondary;
+    cursor: pointer;
+  }
+
+  .date-range {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+}
+
+
+.daterangepicker td.active,
+.daterangepicker td.active:hover {
+  background-color: $bg-primary !important;
+  color: $txt-light !important;
+}
+
+.daterangepicker td.in-range {
+  background-color: $bg-primary-light !important;
+  color: $txt-secondary !important;
+}
+
+.daterangerpicker td.start-date,
+.daterangerpicker td.end-date{
+  background-color: $bg-primary !important;
+  color: $txt-light !important;
+}
+
+
+.schedule-date {
+  width: 100%;
+  border-radius: 3%;
+  background-color: $bg-light;
+  font-size: $font-size-sm;
+}
+
+
+</style>

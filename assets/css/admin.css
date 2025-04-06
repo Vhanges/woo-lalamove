@@ -11,6 +11,7 @@
 
 #lalamove-app {
     padding: 0 !important;
+    background-color: #FAFAFA;
     box-sizing: border-box;
     position: relative;
     height: 100vh;

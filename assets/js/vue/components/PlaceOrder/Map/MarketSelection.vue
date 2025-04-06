@@ -94,7 +94,7 @@ onMounted(() => {
   height: 1fr;
   padding: 3%;
   border-radius: 3%;
-  background-color: $bg-light;
+  background-color: $bg-high-light;
   font-size: $font-size-sm;
 }
 
@@ -103,7 +103,7 @@ onMounted(() => {
   flex-direction: column;
   height: 2fr;
   width: 100%;
-  background-color: $bg-light;
+  background-color: $bg-high-light;
   overflow-y: auto;
 }
 

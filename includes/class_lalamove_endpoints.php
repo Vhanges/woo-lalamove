@@ -43,102 +43,78 @@ class Class_Lalamove_Endpoints
             'permission_callback' => '__return_true'
         ]);
 
-        // Waybill QR Code Order Details Linkz`
-        register_rest_route('woo-lalamove/v1', '/waybill/(?P<order_id>\d+)', array(
-            // Supported methods for this endpoint
-            'methods' => \WP_REST_Server::READABLE, 
-            // Register the callback for the endpoint
-            'callback' => [$this, 'get_waybill'],
-            'permission_callback' => '__return_true', // Open for now, adjust for authentication
-        ));
+        // Woo Lalamove Orders
+        register_rest_route('woo-lalamove/v1', '/get-lalamove-orders', [
+            'methods' => ['GET'],
+            'callback' => [$this, 'get_lalamove_orders'],
+            'permission_callback' => '__return_true'
+        ]);
+ 
+
     
-    }
-    function get_waybill($request) {
-        $order_id = $request->get_param('order_id');
-        
-        if (!$order_id) {
-            return new WP_REST_Response('Order ID not provided', 400);
-        }
-    
-        $output = '<h1>Waybill</h1>';
-    
-        return new WP_REST_Response($output, 200, array('Content-Type' => 'text/html'));
-    }
-    
-    /**
-     * Callback for QR Code Link Order Details Link
-     * 
-     * 
-     */
-    
-    function render_order_details(WP_REST_Request $request) {
-        header('Content-Type: text/html');
-        // Get the Order ID from the request
-        $order_id = $request->get_param('order_id');
-        $order = \wc_get_order($order_id);
-        
-        // Validate the order
-        if (!$order) {
-            header('Content-Type: text/html');
-            echo '<html><body><h1>Order not found</h1></body></html>';
-            exit;
-        }
-    
-        // Fetch WooCommerce Order and Product Details
-        $woo_order_id = $order->get_id();
-        $lalamove_order_id = $order->get_meta('lalamove_order_id'); // Assuming custom meta field
-        $items = $order->get_items();
-    
-        // Generate Waybill HTML
-        ob_start();
-        ?>
-        <html>
-        <head>
-            <title>Waybill</title>
-            <style>
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-                th, td {
-                    border: 1px solid #ccc;
-                    padding: 8px;
-                    text-align: left;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>Waybill</h1>
-            <p><strong>Woo Order ID:</strong> <?php echo esc_html($woo_order_id); ?></p>
-            <p><strong>Lalamove Order ID:</strong> <?php echo esc_html($lalamove_order_id); ?></p>
-    
-            <h2>Products Ordered</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Quantity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($items as $item): ?>
-                        <tr>
-                            <td><?php echo esc_html($item->get_name()); ?></td>
-                            <td><?php echo esc_html($item->get_quantity()); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </body>
-        </html>
-        <?php
-    
-        // Send the output with proper headers
-        $output = ob_get_clean();
-        echo $output;
-        exit;
     }
 
+    /**
+     * Callback for get_lalamove_orders
+     * 
+     */
+
+    public function get_lalamove_orders()
+    {
+        global $wpdb;
+        $order_table = $wpdb->prefix . 'wc_lalamove_orders';
+        $status_table = $wpdb->prefix . 'wc_lalamove_status';
+        $transaction_table = $wpdb->prefix . 'wc_lalamove_transaction';
+
+        // Start transaction
+        $wpdb->query('START TRANSACTION');
+
+        try {
+            $query = "SELECT
+                     o.wc_order_id,
+                     o.ordered_on,
+                     o.scheduled_on,
+                     o.drop_off_location,
+                     s.status_name,
+                     t.ordered_by,
+                     t.service_type
+                    FROM $order_table AS o
+                    INNER JOIN $status_table AS s 
+                    ON o.status_id = s.status_id
+                    INNER JOIN $transaction_table AS t 
+                    ON o.transaction_id = t.transaction_id";
+                    
+            $results = $wpdb->get_results($query, ARRAY_A);
+
+            foreach ($results as &$result) {    
+                $wc_order = \wc_get_order($result['wc_order_id']);
+                if ($wc_order) {
+                    $result['customer_email'] = $wc_order->get_billing_email();
+                    $result['customer_phone'] = $wc_order->get_billing_phone();
+                } else {
+                    $result['customer_email'] = null;
+                    $result['customer_phone'] = null;
+                }
+            }
+
+            // Commit transaction
+            $wpdb->query('COMMIT');
+
+            return rest_ensure_response($results);
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            $wpdb->query('ROLLBACK');
+
+            // Log the error
+            error_log('Error fetching Lalamove orders: ' . $e->getMessage());
+
+            return new WP_REST_Response(['message' => 'An error occurred while fetching orders.'], 500);
+        }
+    }
+     
+
+    
+  
 
     /**
      * Callback for get_city route

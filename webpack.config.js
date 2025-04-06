@@ -90,9 +90,9 @@ module.exports = {
             __VUE_PROD_DEVTOOLS__: JSON.stringify(true),
             __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false)
         }),
-        new BundleAnalyzerPlugin()
+        // new BundleAnalyzerPlugin()
     ],
-    mode: 'production',
+    mode: 'development',
     devtool: 'source-map',
     optimization: {
         minimize: true,

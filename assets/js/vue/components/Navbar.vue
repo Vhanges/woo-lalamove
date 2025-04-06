@@ -50,15 +50,8 @@
   </nav>
 </template>
 
-<script>
+<script setup>
 
-export default {
-  name: "Navbar",
-  data() {
-    return {
-    };
-  },
-};
 </script>
 
 <style lang="scss" scoped>

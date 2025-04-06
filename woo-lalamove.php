@@ -97,10 +97,10 @@ if (!class_exists('Woo_Lalamove')) {
             ) $charset_collate;";
 
             $sql_status = "CREATE TABLE $status_table (
-                status_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                status_name VARCHAR(10) NOT NULL,
+                status_id INT NOT NULL AUTO_INCREMENT,
+                status_name VARCHAR(100) NOT NULL,
                 description TEXT,
-                PRIMARY KEY (status_id)
+                PRIMARY KEY (status)
             ) $charset_collate;";
 
             $sql_transaction = "CREATE TABLE $transaction_table (
@@ -116,7 +116,7 @@ if (!class_exists('Woo_Lalamove')) {
                 integration_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 transaction_id BIGINT UNSIGNED NOT NULL,
                 wc_order_id BIGINT UNSIGNED,
-                order_status_id INT UNSIGNED NOT NULL,
+                order_status_id INT NOT NULL,
                 lalamove_order_id BIGINT NOT NULL,
                 ordered_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 scheduled_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -126,6 +126,20 @@ if (!class_exists('Woo_Lalamove')) {
                 FOREIGN KEY (transaction_id) REFERENCES $transaction_table(transaction_id),
                 FOREIGN KEY (wc_order_id) REFERENCES {$wpdb->prefix}wc_orders(ID) ON DELETE SET NULL
             ) $charset_collate;";
+
+            $sql_status_insert = "INSERT INTO $status_table (status, status_name, description) VALUES
+                ('0', 'Pending', 'The order has been created but is waiting for further action or confirmation.'),
+                ('1', 'Processed', 'The order has been reviewed and confirmed for fulfillment.'),
+                ('2', 'Assigning Driver', 'A driver is being assigned to handle the delivery.'),
+                ('3', 'In Transit', 'The delivery is currently underway to its destination.'),
+                ('4', 'Item Collected', 'The driver has successfully picked up the item from the origin location.'),
+                ('5', 'Delivered Successfully', 'The delivery has been completed, and the item has reached its destination.'),
+                ('6', 'Delivery Refused', 'The order was refused or canceled by the recipient or the driver.'),
+                ('7', 'Order Canceled', 'The order was canceled before the delivery process began.'),
+                ('8', 'Expired', 'The order\'s processing timeline has exceeded its limit and is no longer valid.');
+            ";
+
+            $wpdb->query($sql_status_insert);
 
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -209,6 +223,15 @@ if (!class_exists('Woo_Lalamove')) {
                 '3.0.0',
                 true
             );
+
+            // Enqueue Moment.js
+            wp_enqueue_script('moment-js', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js', array('jquery'), null, true);
+
+            // Enqueue Date Range Picker JS
+            wp_enqueue_script('daterangepicker-js', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js', array('jquery', 'moment-js'), null, true);
+
+            // Enqueue Date Range Picker CSS
+            wp_enqueue_style('daterangepicker-css', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css', array(), null);
 
             // Critical security nonce - MUST stay in
             wp_localize_script('woo-lalamove', 'wooLalamoveData', [
