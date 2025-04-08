@@ -7,29 +7,67 @@
                     <th>Order Date</th>
                     <th>Schedule Date</th>
                     <th>Drop Off Location</th>
-                    <th>Contacts</th>
+                    <th>Contact</th>
                     <th>Quantity</th>
                     <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            <tr v-for="order in orders" :key="order.id">
+            <tr v-for="order in orders" :key="order.wc_order_id" 
+            @click="toggleRowSelection(order)"
+            :class="{ 'selected-row': selectedRows.includes(order.wc_order_id) }">
          
-                <td>  <input type="checkbox" name="wc_order_id" id="" value="{{ order.wc_order_id }}">{{ order.wc_order_id }}</td>
-                <td>{{ order.ordered_on }}</td>
-                <td>{{ order.schedule_on_on }}</td>
+                <td style="vertical-align: center;">
+                    <input 
+                        type="checkbox" 
+                        name="wc_order_id"
+                        :value="order.wc_order_id"
+                          :disabled="!selectedRows.includes(order.wc_order_id)" 
+                            v-model="selectedRows"
+                    >
+                    <span style="height: 16px">{{ order.wc_order_id }}</span>
+                </td>
+                <td v-html=" order.ordered_on"></td>
+                <td v-html=" order.scheduled_on"></td>
                 <td>{{ order.drop_off_location }}</td>
-                <td>{{ order.contacts }}</td>
+                <td v-if="order.ordered_by || order.customer_phone || order.customer_email">
+                    <span v-if="order.ordered_by">{{ order.ordered_by }}</span>
+                    <br v-if="order.ordered_by && (order.customer_phone || order.customer_email)">
+                    <span v-if="order.customer_phone">{{ order.customer_phone }}</span>
+                    <br v-if="order.customer_phone && order.customer_email">
+                    <span v-if="order.customer_email">{{ order.customer_email }}</span>
+                </td>
                 <td>{{ order.quantity }}</td>
-                <td>{{ order.status }}</td>
+                <td>{{ order.status_name }}</td>
             </tr>
         </tbody>
-    </table>
+    </table>    
 </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { toast, ToastifyContainer } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
+const selectedRows = ref([]);
+
+function toggleRowSelection(order) {
+
+    if(order.status_name === 'Processed'){  
+        toast.error('This is order is already processed', { autoClose: 2000 });
+
+        return;
+    }
+
+    const index = selectedRows.value.indexOf(order.wc_order_id);
+    if (index === -1) {
+        selectedRows.value.push(order.wc_order_id);
+    } else {
+        selectedRows.value.splice(index, 1);
+    }
+}
+
 
 defineProps({
     orders: {
@@ -37,6 +75,8 @@ defineProps({
         default: () => [],
     },
 });
+
+
 
 
 </script>
@@ -71,6 +111,11 @@ defineProps({
             background-color: $bg-primary-light;
             box-shadow: inset 2px 0 0 0 $bg-primary;
         }
+
+        .selected-row{
+            background-color: $bg-primary-light;
+            box-shadow: inset 2px 0 0 0 $bg-primary;
+        }
    }
 }
-</style>
+</style>    

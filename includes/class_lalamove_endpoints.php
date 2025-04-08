@@ -86,14 +86,24 @@ class Class_Lalamove_Endpoints
                     
             $results = $wpdb->get_results($query, ARRAY_A);
 
-            foreach ($results as &$result) {    
+            foreach ($results as &$result) {
+                    
+                $orderedOn = new \DateTime($result['ordered_on']);
+                $scheduledOn = new \DateTime($result['scheduled_on']);
+
+                $result['ordered_on'] = $orderedOn->format('F j, Y') . '<br>' . $orderedOn->format('g:i A');
+                $result['scheduled_on'] = $scheduledOn->format('F j, Y') . '<br>' . $scheduledOn->format('g:i A');
+
+
                 $wc_order = \wc_get_order($result['wc_order_id']);
                 if ($wc_order) {
                     $result['customer_email'] = $wc_order->get_billing_email();
                     $result['customer_phone'] = $wc_order->get_billing_phone();
+                    $result['quantity'] = $wc_order->get_item_count();
                 } else {
                     $result['customer_email'] = null;
                     $result['customer_phone'] = null;
+                    $result['quantity'] = null;
                 }
             }
 

@@ -234,9 +234,11 @@ if (!class_exists('Woo_Lalamove')) {
             wp_enqueue_style('daterangepicker-css', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css', array(), null);
 
             // Critical security nonce - MUST stay in
-            wp_localize_script('woo-lalamove', 'wooLalamoveData', [
+            wp_localize_script('woo-lalamove', 'wooLalamoveAdmin', [
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('woo_lalamove_nonce')
+                'nonce' => wp_create_nonce('woo_lalamove_nonce'),
+                'root' => esc_url_raw(rest_url('/')),
+                'api_nonce' => wp_create_nonce('wp_rest'),
             ]);
 
             // Enqueue CSS only on this admin page
@@ -291,19 +293,10 @@ if (!class_exists('Woo_Lalamove')) {
 
         public function enqueue_custom_plugin_scripts()
         {
-            if (is_checkout()) {
+            if (is_checkout() && !defined('WOOCOMMERCE_BLOCKS_PHASE')) {
                 wp_enqueue_script('jquery'); // Enqueue jQuery
                 // Enqueue your custom script that depends on jQuery
                 wp_enqueue_script('custom-plugin-script', plugin_dir_url(__FILE__) . 'assets/js/lalamove-modal.js', array('jquery'), 1.0, true);
-
-                // Enqueue Bootstrap JS
-                wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js', array('jquery'), null, true);
-
-                // Enqueue Bootstrap CSS
-                wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css', array(), null);
-
-                // Enqueue Bootstrap Icons CSS
-                wp_enqueue_style('bootstrap-icons', 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css', array(), null);
 
                 // Enqueue Leaflet CSS
                 wp_enqueue_style('leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), null);

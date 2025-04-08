@@ -8,7 +8,7 @@
       <UtilityHeader />
     </div>
     <main>
-      <WooOrderTable />
+      <WooOrderTable :orders="WooLalamoveOrders" />
     </main>
   </div>
 </template>
@@ -55,11 +55,37 @@
 </style>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted} from 'vue';
+import axios from 'axios';
 
 import EditLocation from '../components/Orders/EditLocation.vue';
 import WooOrderTable from '../components/Orders/WooOrderTable.vue';
 import UtilityHeader from '../components/Utilities/UtilityHeader.vue';
 
+const WooLalamoveOrders = ref([]);
 
+const fetchOrders = async () => {
+  try {
+    const response = await axios.get(
+      wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lalamove-orders',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+        },
+      }
+    );
+
+    WooLalamoveOrders.value = response.data;
+    console.log('Woo Lalamove Orders: ', WooLalamoveOrders.value);
+  } catch (error) {
+    console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
+  }
+};
+
+
+onMounted(() => {
+
+  fetchOrders();
+});
 </script>

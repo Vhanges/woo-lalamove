@@ -159,7 +159,7 @@ function set_lalamove_order($order_id)
         $result = $wpdb->insert($orders_table, [
             'transaction_id' => $transaction_id,
             'wc_order_id' => $order_id,
-            'status' => 1,
+            'status_id' => 1,
             'lalamove_order_id' => $lalamove_orderId,
             'ordered_on' => current_time('mysql'),
             'scheduled_on' => $scheduledOn,
