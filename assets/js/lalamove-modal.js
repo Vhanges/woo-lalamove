@@ -2,6 +2,47 @@ jq = jQuery.noConflict();
 
 jq(document).ready(function ($) {
 
+  fieldsChecker();
+
+  function fieldsChecker (){
+      const oldRequiredFields = [
+        "#billing_first_name",
+        "#billing_last_name",
+        "#billing_address_1",
+        "#billing_city",
+        "#billing_postcode",
+        "#billing_country",
+        "#billing_phone"
+    ];
+    
+    const newRequiredFields = [
+        "#billing-first_name",
+        "#billing-last_name",
+        "#billing-address_1",
+        "#billing-city",
+        "#billing-postcode",
+        "#billing-country",
+        "#billing-phone",
+    ];
+    
+    function areFieldsFilled(fieldSelectors) {
+        return fieldSelectors.every((selector) => {
+            const fieldValue = $(selector).val();
+            return fieldValue && fieldValue.trim() !== ""; // Check if the field is not empty
+        });
+    }
+    
+    // Check if either old or new fields are valid
+    const oldFieldsValid = areFieldsFilled(oldRequiredFields);
+    const newFieldsValid = areFieldsFilled(newRequiredFields);
+    
+    if (!oldFieldsValid && !newFieldsValid) {
+        alert("Please fill in all required fields before proceeding.");
+        $('input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method').prop("checked", false);
+        return;
+    }  
+  }
+
   var SessionData = {
     quotationID: null,
     coordinates:{},
@@ -117,11 +158,12 @@ jq(document).ready(function ($) {
     }
 
     .total-amount {
+      display: flex;
       font-size: calc(1rem + 0.5vw);
       font-weight: 600;
       color: #f16622;
-      text-align: right;
       flex: 1;
+      justify-content: flex-end;
     }
 
     .custom-modal-button {
@@ -162,159 +204,186 @@ jq(document).ready(function ($) {
       text-align: right;
       flex: 1;
     }
-      .loading-spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #f16622;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 20px auto;
-        display: block;
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #f16622;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      animation: spin 1s linear infinite;
+      display: block;
+    }
+    .total-loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #f16622;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+      #map {
+      height: 300px;
+      margin-bottom: 1rem;
+    }
+
+    #deliveryForm {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      max-width: 600px;
+      padding: 1rem;
+    }
+
+    .header {
+      font-size: calc(1rem + 0.4vw);
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    #schedule-date {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+      padding: 0.5rem;
+      background: #fff;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    textarea {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      resize: vertical;
+      border: 1px solid #ccc;
+    }
+
+    .form-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    .form-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .switch {
+      display: flex;
+      align-items: center;
+    }
+
+    .switch input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-right: 0.5rem;
+    }
+
+    .pricing-details {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+    }
+    
+    .vehicle-wrapper {
+      width: 100%;
+      height: fit-content;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+
+    .vehicle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%; 
+      padding: 0.5rem 1rem; 
+      cursor: pointer;
+      border-radius: 5px;
+      background: #FCFCFC;
+      border: 2px solid #EDEDED;
+    }
+    .vehicle-content {
+      display: flex;
+      justify-content: start;
+      align-items: center;
+      width: 100%; 
+      background: #FCFCFC;
+      gap: 1rem;
+    }
+
+
+    .vehicle-content-inner {
+      display: flex;
+      width: 100%;
+      height: fit-content;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem; 
+    }
+
+    .vehicle-description {
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid #EDEDED;
+      border-radius: 5px;
+      background: #f9f9f9;
+      color: #555;
+    }
+
+    .vehicle-image {
+      width: 40px;
+      height: auto; 
+    }
+
+    .vehicle-type {
+      font-size: 1rem; /* Standard font size */
+      font-weight: 500;
+      color: #333;
+    }
+
+    #schedule-date { 
+      border: 2px solid #EDEDED;
+      border-radius: 5px;
+    }
+
+    #additionalNotes { 
+      border: 2px solid #EDEDED;
+      border-radius: 5px;
+    }
+
+    @media (max-width: 450px) {
+      .custom-modal-body {
+        max-height: 400px;
       }
 
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-        #map {
-        height: 300px;
-        margin-bottom: 1rem;
-      }
-
-      #deliveryForm {
-        display: flex;
+      .total-wrapper {
         flex-direction: column;
-        justify-content: center;
-        align-items: flex-start;
-        margin-bottom: 1.5rem;
-        max-width: 600px;
-        padding: 1rem;
       }
-
-      .header {
-        font-size: calc(1rem + 0.4vw);
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-      }
-      #schedule-date {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        width: 100%;
-        padding: 0.5rem;
-        background: #fff;
-        border: 1px solid #ccc;
-        cursor: pointer;
-        margin-bottom: 1rem;
-      }
-
-      textarea {
-        width: 100%;
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        resize: vertical;
-        border: 1px solid #ccc;
-      }
-
-      .form-group {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        margin-bottom: 1rem;
-      }
-
-      .form-text {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .switch {
-        display: flex;
-        align-items: center;
-      }
-
-      .switch input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        margin-right: 0.5rem;
-      }
-
-      .pricing-details {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: flex-start;
-        margin-bottom: 1.5rem;
-      }
-      
-      .vehicle-wrapper {
-        width: 100%;
-        height: fit-content;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        margin-bottom: 1rem;
-        gap: 1rem;
-      }
-
-      .vehicle {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%; 
-        padding: 0.5rem 1rem; 
-        cursor: pointer;
-        border-radius: 5px;
-        background: #FCFCFC;
-        border: 1px solid #EDEDED;
-      }
-      .vehicle-content {
-        display: flex;
-        justify-content: start;
-        align-items: center;
-        width: 100%; 
-        background: #FCFCFC;
-        gap: 1rem;
-      }
-
-
-      .vehicle-content-inner {
-        display: flex;
-        width: 100%;
-        height: fit-content;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem; 
-      }
-
-      .vehicle-image {
-        width: 40px;
-        height: auto; 
-      }
-
-      .vehicle-type {
-        font-size: 1rem; /* Standard font size */
-        font-weight: 500;
-        color: #333;
-      }
-
-      @media (max-width: 450px) {
-        .custom-modal-body {
-          max-height: 400px;
-        }
-
-        .total-wrapper {
-          flex-direction: column;
-        }
-      }
+    }
 
     </style>
   `;
@@ -340,12 +409,17 @@ jq(document).ready(function ($) {
   // Event listener for opening the modal
   $(document).on("click", 'input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method', async function () {
     const selectedValue = $(this).val();
-  
+
+    fieldsChecker();
+    
+    // Open the modal if shipping method is selected
     if (selectedValue === "your_shipping_method") {
-      openModal();
-      await fetchShippingData();
+        openModal();
+        await fetchShippingData();
     }
+    
   });
+
 
   // Event listener for closing the modal
   $(document).on("click", "#closeModal, .custom-modal", function (e) {
@@ -411,8 +485,8 @@ jq(document).ready(function ($) {
               <p>Find the most efficient route</p>
             </div>
             <div class="switch">
-              <input type="checkbox" id="customSwitch1">
-              <label for="customSwitch1"></label>
+              <input type="checkbox" id="optimizeRoute">
+              <label for="optimizeRoute"></label>
             </div>
           </div>
 
@@ -423,8 +497,8 @@ jq(document).ready(function ($) {
               <p>POD for picked up and received product</p>
             </div>
             <div class="switch">
-              <input type="checkbox" id="customSwitch2">
-              <label for="customSwitch2"></label>
+              <input type="checkbox" id="proofOfDelivery">
+              <label for="proofOfDelivery"></label>
             </div>
           </div>
 
@@ -440,8 +514,8 @@ jq(document).ready(function ($) {
         SessionData.additionalNotes = $(this).val();
       });
 
-      $("#customSwitch1").prop("checked", SessionData.optimizeRoute);
-      $("#customSwitch2").prop("checked", SessionData.proofOfDelivery);
+      $("#optimizeRoute").prop("checked", SessionData.optimizeRoute);
+      $("#proofOfDelivery").prop("checked", SessionData.proofOfDelivery);
 
       let pricingDetailsContent = "";
 
@@ -564,7 +638,7 @@ jq(document).ready(function ($) {
                     <span class="vehicle-type">${vehicleName}</span>
                   </div>
 
-                  <div class="vehicle-description" style="margin-top: 0.5rem; padding: 0.5rem; border: 1px solid #EDEDED; border-radius: 5px; background: #f9f9f9; color: #555;">
+                  <div class="vehicle-description">
                     <p style="margin-bottom: 1rem;">Load capacity of ${value.load.value} ${value.load.unit}</p>
                     <p>${value.description}</p>
                   </div>
@@ -587,7 +661,7 @@ jq(document).ready(function ($) {
       var endDate = moment().add(30, "days");
 
       function cb(start, end) {
-        console.log("start:", start.format("MMMM D, YYYY HH:mm:ss"));
+        console.log("start:", start.format("MMMM D, YYYY hh:mm:ss A"));
         window.scheduleDate = start.toISOString();
         SessionData.scheduleDate = window.scheduleDate;
 
@@ -595,7 +669,7 @@ jq(document).ready(function ($) {
         $("#customModal #schedule-date").empty();
         $("#customModal #schedule-date").append(`
             <p style="margin: 0;">${start.format(
-          "MMMM D, YYYY HH:mm"
+          "MMMM D, YYYY hh:mm A"
         )}</p>
             <i class="bi bi-calendar" style="margin-left: auto;"></i>
         `);
@@ -852,7 +926,7 @@ jq(document).ready(function ($) {
       (ajaxTimer = setTimeout(function () {
         // Send the shipping cost to the server via AJAX
         jQuery.ajax({
-          url: pluginAjax.ajax_url, // Replace `ajax_object` with your localized object name
+          url: pluginAjax.ajax_url, 
           method: "POST",
           data: {
             action: "update_shipping_rate", // Custom AJAX action
@@ -958,8 +1032,7 @@ jq(document).ready(function ($) {
       triggerServiceEvents(mapLat, mapLng, isVehicleSelected);
     });
 
-    const storeMarker = L.marker([window.shipping_lat, window.shipping_lng], { draggable: false }).addTo(map);
-    storeMarker.bindPopup("Store Address").openPopup();
+    marker.bindPopup("You").openPopup();
   
 
     // If session data exists, skip geolocation fetching
@@ -1011,8 +1084,8 @@ jq(document).ready(function ($) {
       quotationAjax(lat, lng);
 
       $(document)
-        .off("click", "#customSwitch1")
-        .on("click", "#customSwitch1", function () {
+        .off("click", "#optimizeRoute")
+        .on("click", "#optimizeRoute", function () {
           if ($(this).is(":checked")) {
             quotationAjax(lat, lng);
           }
@@ -1023,8 +1096,8 @@ jq(document).ready(function ($) {
 
     // Bind the click event on the switch button
     $(document)
-      .off("click", "#customSwitch1")
-      .on("click", "#customSwitch1", function () {
+      .off("click", "#optimizeRoute")
+      .on("click", "#optimizeRoute", function () {
         if ($(this).is(":checked")) {
           quotationAjax(lat, lng);
         }
@@ -1077,7 +1150,19 @@ jq(document).ready(function ($) {
   }
 
   function quotationAjax(lat, lng) {
-    var isRouteOptimized = document.getElementById("customSwitch1").checked;
+    
+    $("#customModal .custom-modal-footer").empty();
+    $("#customModal .custom-modal-footer").prepend(`
+      <div class="total-wrapper">
+        <div class="total-label">TOTAL:</div>
+        <div class="total-amount">
+            <div class="total-loading-spinner"></div>
+        </div>
+      </div>
+      <button type="button" id="saveLocation" class="custom-modal-button">Save</button>
+    `);
+
+    var isRouteOptimized = document.getElementById("optimizeRoute").checked;
 
     window.body = {
       data: {
@@ -1145,7 +1230,9 @@ jq(document).ready(function ($) {
           </div>
           <button type="button" id="saveLocation" class="custom-modal-button">Save</button>
         `);
+
         
+       
         $("#customModal .pricing-details").empty();
         
         let baseContent = `
@@ -1182,8 +1269,8 @@ jq(document).ready(function ($) {
         }
         
 
-        const optimizeRoute = $("#customSwitch1").is(":checked");
-        const proofOfDelivery = $("#customSwitch2").is(":checked");
+        const optimizeRoute = $("#optimizeRoute").is(":checked");
+        const proofOfDelivery = $("#proofOfDelivery").is(":checked");
         const additionalNotes = $("#additionalNotes").val();
 
         let quotationID = response.data.quotationId;
@@ -1239,5 +1326,6 @@ jq(document).ready(function ($) {
       $('input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method').prop("checked", false); // Uncheck the shipping method
     }
   );
-
+  
+    
 });

@@ -56,7 +56,13 @@ if (!class_exists('Woo_Lalamove')) {
                 add_filter('woocommerce_billing_fields', [$this, 'make_phone_field_required'], 10, 2);
 
                 add_action('woocommerce_blocks_loaded', 'register_custom_cart_update_callback');
+                add_filter('woocommerce_checkout_fields',[$this, 'modify_checkout_phone_field'], 10, 1);
             }
+        }
+        function modify_checkout_phone_field($fields) {
+            $fields['billing']['billing_phone']['placeholder'] = 'Ex. +6343554325';
+            $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '^\\+[1-9][0-9]{1,14}$';
+            return $fields;
         }
         function make_phone_field_required($fields)
         {
@@ -277,7 +283,6 @@ if (!class_exists('Woo_Lalamove')) {
 
 
 
-
         function sevhen_fetch_lalamove_quotation()
         {
             check_ajax_referer('sevhen_lalamove_nonce', 'nonce');
@@ -293,7 +298,7 @@ if (!class_exists('Woo_Lalamove')) {
 
         public function enqueue_custom_plugin_scripts()
         {
-            if (is_checkout() && !defined('WOOCOMMERCE_BLOCKS_PHASE')) {
+            if (is_checkout()) {
                 wp_enqueue_script('jquery'); // Enqueue jQuery
                 // Enqueue your custom script that depends on jQuery
                 wp_enqueue_script('custom-plugin-script', plugin_dir_url(__FILE__) . 'assets/js/lalamove-modal.js', array('jquery'), 1.0, true);
@@ -565,6 +570,20 @@ if (!class_exists('Woo_Lalamove')) {
             </style>
         ';
     }
+
+    add_action('woocommerce_checkout_process', 'validate_phone_field');
+
+    function validate_phone_field() {
+        $phone = isset($_POST['billing_phone']) ? trim($_POST['billing_phone']) : '';
+
+        // Define the regex pattern for the desired phone number format
+        $pattern = '/^\+[1-9]\d{1,14}$/';
+
+        if (!preg_match($pattern, $phone)) {
+            wc_add_notice(__('Please enter a valid phone number in the international format, e.g., +123456789.'), 'error');
+        }
+    }
+
     
 
     require_once plugin_dir_path(__FILE__) . 'includes/checkout_delivery_placement.php';
