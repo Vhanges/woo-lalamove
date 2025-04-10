@@ -28,7 +28,7 @@ const vehicle = defineProps({
 <template>
     <div class="vehicle" v-bind="$attrs">
         <div class="content">
-            <img src="@images/motorcycle.png" alt="motor" style="height: 60px; width: auto;">
+            <img :src="`@images/${vehicle.name}.png`" alt="motor" style="height: 60px; width: auto;">
             <span>{{ vehicle.name }}</span>
         </div>
     </div>

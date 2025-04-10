@@ -34,7 +34,7 @@ class Class_Lalamove_Endpoints
             'methods' => ['GET', 'POST'],
             'callback' => [$this, 'get_quotation'],
             'permission_callback' => '__return_true'
-        ]);
+        ]); 
 
         // Checkout Package
         register_rest_route('woo-lalamove/v1', '/lalamove-webhook', [

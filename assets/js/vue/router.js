@@ -1,6 +1,8 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 const Dashboard = () => import('@views/Dashboard.vue');
+const OrdersDashboard = () => import('./components/Dashboard/OrdersDashboard.vue'); 
+const SpendingDashboard = () => import('./components/Dashboard/SpendingDashboard.vue');
 const Orders = () => import('@views/Orders.vue');
 const PlaceOrder = () => import('@views/PlaceOrder.vue');
 const Settings = () => import('@views/Settings.vue');
@@ -23,7 +25,21 @@ const router = createRouter({
     { 
       path: '/dashboard',
       component: Dashboard,
-      name: 'dashboard'
+      name: 'dashboard',
+      children: [
+        {
+          path: '',
+          component: SpendingDashboard,
+        }, 
+        {
+          path: '/spending-dashboard',
+          component: SpendingDashboard, 
+        },
+        {
+          path: '/orders-dashboard',
+          component: OrdersDashboard, 
+        },
+      ],
     },
     { 
       path: '/orders',
@@ -44,7 +60,7 @@ const router = createRouter({
       path: '/info',
       component: Info,
       name: 'info'
-    }
+    },
   ]
 });
 
