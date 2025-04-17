@@ -86,7 +86,7 @@
   .filter-status-dropdown {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 2rem;
     width: 10rem;
     gap: 0.5rem;
     cursor: pointer;
@@ -112,7 +112,8 @@
     max-height: 8rem; 
     width: 100%;
     background-color: $bg-high-light;
-    overflow-y: show;
+    border: 2px solid $border-color;
+    border-radius: 3%;
   }
   
   .market {

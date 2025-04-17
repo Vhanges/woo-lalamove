@@ -19,23 +19,28 @@
 <script setup>
 import { onMounted, ref, computed } from "vue";
 
-const startDate = ref(moment());
-const endDate = ref(moment().add(30, "days"));
+const startDate = ref(moment().subtract(30, "days")); 
+const endDate = ref(moment()); 
+
+const emit = defineEmits(['dateRangeSelected']);
 
 const formattedStartDate = computed(() => startDate.value.format("MMM D, YYYY"));
 const formattedEndDate = computed(() => endDate.value.format("MMM D, YYYY"));
 
-function callback  (start, end) {
-  console.log("Selected Start Date:", startDate.value.format("MMM D, YYYY"));
-  console.log("Selected End Date:",  endDate.value.format("MMM D, YYYY"));
-
+function callback(start, end) {
+  console.log("Selected date range:", start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD"));  
   startDate.value = moment(start);
   endDate.value = moment(end);
-};
+
+  emit("dateRangeSelected", {
+    startDate: startDate.value.format("YYYY-MM-DD"),
+    endDate: endDate.value.format("YYYY-MM-DD"),
+  });
+}
 
 onMounted(() => {
-
   const date = jQuery.noConflict();
+
   date("#picked-date-wrapper").daterangepicker({
     startDate: startDate.value,
     endDate: endDate.value,
@@ -58,10 +63,11 @@ onMounted(() => {
   date("#picked-date-wrapper").on("apply.daterangepicker", function (ev, picker) {
     callback(picker.startDate, picker.endDate);
   });
- 
-});
-</script>
 
+  callback(startDate.value, endDate.value);
+});
+
+</script>
 
 <style lang="scss">
 @use "@/css/scss/_variables.scss" as *;
@@ -78,11 +84,13 @@ onMounted(() => {
   border-radius: 5px;
   background-color: $bg-high-light;
   color: $txt-secondary;
+  gap: 0.5rem;
   cursor: pointer;
 
   .material-symbols-outlined {
     color: $txt-secondary;
     cursor: pointer;
+    font-size: $font-size-lg;
   }
 
   .date-range {
@@ -91,9 +99,7 @@ onMounted(() => {
     gap: 0.5rem;
     margin: 0;
   }
-
 }
-
 
 .daterangepicker td.active,
 .daterangepicker td.active:hover {
@@ -107,11 +113,10 @@ onMounted(() => {
 }
 
 .daterangerpicker td.start-date,
-.daterangerpicker td.end-date{
+.daterangerpicker td.end-date {
   background-color: $bg-primary !important;
   color: $txt-light !important;
 }
-
 
 .schedule-date {
   width: 100%;
@@ -119,6 +124,4 @@ onMounted(() => {
   background-color: $bg-light;
   font-size: $font-size-sm;
 }
-
-
 </style>

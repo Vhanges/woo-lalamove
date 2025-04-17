@@ -76,6 +76,7 @@ if (!class_exists('Woo_Lalamove')) {
             $charset_collate = $wpdb->get_charset_collate();
 
             // Define table names with dynamic prefix
+            $balance_table = "{$wpdb->prefix}wc_lalamove_balance";
             $cost_details_table = "{$wpdb->prefix}wc_lalamove_cost_details";
             $status_table = "{$wpdb->prefix}wc_lalamove_status";
             $transaction_table = "{$wpdb->prefix}wc_lalamove_transaction";
@@ -83,6 +84,7 @@ if (!class_exists('Woo_Lalamove')) {
 
             // Check if tables already exist
             if (
+                $wpdb->get_var("SHOW TABLES LIKE '$balance_table'") == $balance_table &&
                 $wpdb->get_var("SHOW TABLES LIKE '$cost_details_table'") == $cost_details_table &&
                 $wpdb->get_var("SHOW TABLES LIKE '$status_table'") == $status_table &&
                 $wpdb->get_var("SHOW TABLES LIKE '$transaction_table'") == $transaction_table &&
@@ -91,7 +93,13 @@ if (!class_exists('Woo_Lalamove')) {
                 return;
             }
 
-            $sql_cost_details = "CREATE TABLE $cost_details_table (
+            $sql_status = "CREATE TABLE $balance_table (
+                wallet_balance DOUBLE
+                update_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            ) $charset_collate;";
+
+
+            $sql_cost_details = "CREATE TABLE $cost_details_table ( 
                 cost_details_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 currency CHAR(10) NOT NULL,
                 base DOUBLE NOT NULL,
@@ -99,11 +107,12 @@ if (!class_exists('Woo_Lalamove')) {
                 surcharge DOUBLE,
                 total DOUBLE NOT NULL,
                 priority_fee DOUBLE,
+                subsidy DOUBLE,
                 PRIMARY KEY (cost_details_id)
             ) $charset_collate;";
 
             $sql_status = "CREATE TABLE $status_table (
-                status_id INT NOT NULL AUTO_INCREMENT,
+                status_id INT NOT NULL AUTO_INCREMENT,W
                 status_name VARCHAR(100) NOT NULL,
                 description TEXT,
                 PRIMARY KEY (status)
@@ -140,7 +149,7 @@ if (!class_exists('Woo_Lalamove')) {
                 ('3', 'In Transit', 'The delivery is currently underway to its destination.'),
                 ('4', 'Item Collected', 'The driver has successfully picked up the item from the origin location.'),
                 ('5', 'Delivered Successfully', 'The delivery has been completed, and the item has reached its destination.'),
-                ('6', 'Delivery Refused', 'The order was refused or canceled by the recipient or the driver.'),
+                ('6', 'Rejected', 'The order was rejected by the drivers'),
                 ('7', 'Order Canceled', 'The order was canceled before the delivery process began.'),
                 ('8', 'Expired', 'The order\'s processing timeline has exceeded its limit and is no longer valid.');
             ";

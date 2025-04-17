@@ -1,71 +1,91 @@
 <template>
-    <div class="chart-container">
-        <canvas id="ShippingSpendingTrendChart"></canvas>
-    </div>
+  <div>
+      <canvas id="shippingSpendingChart"></canvas>
+  </div>
 </template>
 
 <script setup>
-import { onMounted } from "vue";
-import { Chart, registerables } from "chart.js";
+import { onMounted, defineProps, ref, onBeforeUnmount } from "vue";
+import Chart from "chart.js/auto";
 
-Chart.register(...registerables);
+const props = defineProps({
+  chartLabel: { type: Array, required: true },
+  chartTotalSpending: { type: Array, required: true },
+  chartNetSpending: { type: Array, required: true },
+});
+
+const chartInstance = ref(null);
+const hasInitialized = ref(false);
+
+const initializeChart = () => {
+  
+  if (hasInitialized.value || props.chartLabel.length === 0) return;
+  
+  const rawData = { 
+      chartLabel: [...props.chartLabel],
+      chartTotalSpending: [...props.chartTotalSpending],
+      chartNetSpending: [...props.chartNetSpending],
+  };
+
+  console.log('Chart Data:', rawData);
+
+  const ctx = document.getElementById("shippingSpendingChart").getContext("2d");
+  chartInstance.value = new Chart(ctx, {
+      type: "line",
+      data: {
+          labels: rawData.chartLabel,
+          datasets: [
+              {
+                  label: "Total Spending",
+                  data: rawData.chartTotalSpending,
+                  backgroundColor: "#20B2AA", 
+                  borderColor: "#20B2AA", 
+
+              },
+              {
+                  label: "Net Spending",
+                  data: rawData.chartNetSpending,
+                  backgroundColor: "#FFA07A",
+                  borderColor: "#FFA07A", 
+              },
+          ],
+      },
+      options: { 
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+              title: {
+                  display: true,
+                  text: "Total and Net Spending Trend",
+                  font: {
+                      size: 12,
+                      family: "Noto Sans, sans-serif",
+                  },
+              },
+          },
+          scales: {
+              y: {
+                beginAtZero: true,  
+              },
+          },
+      }
+  });
+
+  hasInitialized.value = true;
+};
+
 
 onMounted(() => {
-  const ctx = document.getElementById("ShippingSpendingTrendChart").getContext("2d");
+  if (props.chartLabel.length > 0) initializeChart();
+});
 
-  new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: ["Dec", "Jan", "Feb", "Mar", "Apr"],
-      datasets: [
-        {
-          label: "Active Orders",
-          data: [30, 45, 40, 35, 50],
-          borderColor: "#5578B1", // Muted blue
-          fill: false,
-        }
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          display: true,
-          position: "top",
-          labels: {
-            font: {
-              size: 12,
-              family: "Noto Sans, sans-serif",
-            },
-            color: "#0D0D0D",
-          },
-        },
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: function (tooltipItem) {
-              const dataset = tooltipItem.dataset;
-              const currentValue = dataset.data[tooltipItem.dataIndex];
-              return `${dataset.label}: ${currentValue}`;
-            },
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-        },
-      },
-    },
-  });
+// Cleanup
+onBeforeUnmount(() => {
+  if (chartInstance.value) {
+      chartInstance.value.destroy();
+  }
 });
 </script>
 
-
 <style lang="scss" scoped>
-.chart-container {
-    width: 1fr;
-    height: auto;
-}
 </style>

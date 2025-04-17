@@ -1,76 +1,83 @@
 <template>
-    <div class="chart-container">
-        <canvas id="WalletBalanceTrendChart"></canvas>
+    <div>
+        <canvas id="walletBalanceChart"></canvas>
     </div>
-</template>
-
-<script setup>
-import { onMounted } from "vue";
-import { Chart, registerables } from "chart.js";
-
-Chart.register(...registerables);
-
-onMounted(() => {
-    const ctx = document.getElementById("WalletBalanceTrendChart").getContext("2d");
-
-    new Chart(ctx, {
+  </template>
+  
+  <script setup>
+  import { onMounted, defineProps, ref, onBeforeUnmount } from "vue";
+  import Chart from "chart.js/auto";
+  
+  const props = defineProps({
+    chartLabel: { type: Array, required: true },
+    chartWalletBalance: { type: Array, required: true },
+  });
+  
+  const chartInstance = ref(null);
+  const hasInitialized = ref(false);
+  
+  const initializeChart = () => {
+    
+    if (hasInitialized.value || props.chartLabel.length === 0) return;
+    
+    const rawData = { 
+        chartLabel: [...props.chartLabel],
+        chartWalletBalance: [...props.chartWalletBalance],
+    };
+  
+    console.log('Chart Data:', rawData);
+  
+    const ctx = document.getElementById("walletBalanceChart").getContext("2d");
+    chartInstance.value = new Chart(ctx, {
         type: "line",
         data: {
-            labels: ["Dec", "Jan", "Feb", "Mar", "Apr"],
+            labels: rawData.chartLabel,
             datasets: [
                 {
                     label: "Wallet Balance Trend",
-                    data: [150, 200, 250, 180, 220],
-                    borderColor: "#6FAF75", // Muted green
-                    fill: false,
+                    data: rawData.chartWalletBalance,
+                    backgroundColor: "#20B2AA", 
+                    borderColor: "#20B2AA", 
+  
                 },
             ],
         },
-        options: {
-            responsive: false,
+        options: { 
+            responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
+                title: {
                     display: true,
-                    position: "top",
-                    labels: {
-                        font: {
-                            size: 12,
-                            family: "Noto Sans, sans-serif",
-                        },
-                        color: "#0D0D0D",
-                    },
-                },
-                tooltip: {
-                    enabled: true,
-                    callbacks: {
-                        label: function (tooltipItem) {
-                            const dataset = tooltipItem.dataset;
-                            const currentValue = dataset.data[tooltipItem.dataIndex];
-                            return `${dataset.label}: ${currentValue}`;
-                        },
+                    text: "Wallet Balance Trend",
+                    font: {
+                        size: 12,
+                        family: "Noto Sans, sans-serif",
                     },
                 },
             },
             scales: {
                 y: {
-                    beginAtZero: true,
+                  beginAtZero: true,  
                 },
             },
-        },
+        }
     });
-});
-</script>
-
-<style lang="scss" scoped>
-.chart-container {
-    width: 1fr;
-    height: auto;
-
-    #WalletBalanceTrendChart {
-        width: 100%;
-        height: 100%;
+  
+    hasInitialized.value = true;
+  };
+  
+  
+  onMounted(() => {
+    if (props.chartLabel.length > 0) initializeChart();
+  });
+  
+  // Cleanup
+  onBeforeUnmount(() => {
+    if (chartInstance.value) {
+        chartInstance.value.destroy();
     }
-
-}
-</style>
+  });
+  </script>
+  
+  <style lang="scss" scoped>
+  </style>

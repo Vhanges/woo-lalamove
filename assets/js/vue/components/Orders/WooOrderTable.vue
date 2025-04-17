@@ -66,7 +66,9 @@ function toggleRowSelection(order) {
     } else {
         selectedRows.value.splice(index, 1);
     }
-}
+
+    
+}   
 
 
 defineProps({
@@ -75,6 +77,8 @@ defineProps({
         default: () => [],
     },
 });
+
+
 
 
 

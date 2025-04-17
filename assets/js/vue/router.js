@@ -30,6 +30,7 @@ const router = createRouter({
         {
           path: '',
           component: SpendingDashboard,
+          name: 'spending-dashboard',
         }, 
         {
           path: '/spending-dashboard',

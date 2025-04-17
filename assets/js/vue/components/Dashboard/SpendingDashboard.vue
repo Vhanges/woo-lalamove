@@ -1,7 +1,11 @@
 <template>
     <div class="spending-wrapper">
         <div class="utility-actions">
-            Utility Actions
+            <DropDown/>
+            <DateRangePicker @dateRangeSelected = "handleDateRange"/>
+            <div class="action action-refresh">
+                    <span class="material-symbols-outlined restart">restart_alt</span>
+            </div>
         </div>
         
         <div class="key-performance-indicator-container">
@@ -10,7 +14,7 @@
                     Total Spending
                     <span class="material-symbols-outlined icon">payments</span>
                 </p>
-                <h2 style="margin-bottom: 0;">{{ formatNumber(netSpending) }}</h2>
+                <h2 style="margin-bottom: 0;">{{ formatNumber(totalSpending) }}</h2>
             </div>
             <div class="key-performance-indicator bordered">
                 <p>
@@ -51,33 +55,165 @@
 
         <!-- First Section -->
         <section class="first-section ">
-            <p style="width: 120%;">Hello </p>
-            <ServiceCostBreakdown class="bordered"/>
+            <div class="table-wrapper">
+                <table class="woo-order-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Ordered By</th>
+                            <th>Service Type</th>
+                            <th>Payment Source</th>
+                            <th>Overall Expense</th>
+                            <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="order in dashboardTable" :key="order.wc_order_id">
+                
+                        <td style="vertical-align: center;">
+                            {{ order.lalamove_order_id }}
+                        </td>
+                        <td>{{ order.ordered_by}}</td>
+                        <td>{{ order.service_type }}</td>
+                        <td v-html=" order.payment_details"></td>
+                        <td>{{ order.overall_expense}}</td>
+                        <td>{{ order.status_name}}</td>
+                    </tr>
+                </tbody>
+            </table>    
+        </div>
+        
+        <ServiceCostBreakdown
+         class="bordered"
+         :chartLabel = "chartLabel"
+         :chartMotorcycle = "chartMotorcycle"
+         :chartMotorcycleVehicle = "chartMotorVehicle"
+         :chartVan = "chartVan"
+         :chartHeavyTruck = "chartHeavyTruck"
+         :chartTruck = "chartTruck"
+         v-if="showChart"/>
         </section>
 
         <!-- Second Section -->
-        <WalletBalanceTrend class="bordered WalletBalanceTrend"/>
-        <ShippingSpendingTrend class="bordered ShippingSpendingTrend"/>
+        <WalletBalanceTrend v-if="showChart" 
+        class="bordered WalletBalanceTrend"
+        :chartLabel = "chartLabel"
+        :chartWalletBalance = "chartWalletBalance"
+        />
+        <ShippingSpendingTrend  v-if="showChart"
+        class="bordered ShippingSpendingTrend"
+        :chartLabel = "chartLabel"
+        :chartTotalSpending = "chartTotalSpending" 
+        :chartNetSpending = "chartNetSpending" 
+        />
 
         <!-- Third Section -->
-        <SubsidyVsCustomerPaid class="bordered SubsidyVsCustomerPaid"/>
-        <AdditionalFeeFrequency class="bordered AdditionalFeeFrequency"/>
+        <SubsidyVsCustomerPaid v-if="showChart"
+        class="bordered SubsidyVsCustomerPaid" 
+        :chartLabel = "chartLabel"
+        :chartTotalCustomerSpending = "chartTotalCustomerSpending" 
+        :chartTotalSubsidySpending = "chartTotalSubsidySpending" 
+        />
+        <AdditionalFeeFrequency  v-if="showChart" 
+        class="bordered AdditionalFeeFrequency"
+        :chartLabel = "chartLabel"
+        :chartSurchargeSpending = "chartSurchargeSpending" 
+        :chartPriorityFeeSpending = "chartPriorityFeeSpending" 
+        />
 
     </div>
 </template>
 
 <script setup>
+
+import {ref} from 'vue';
+import axios from 'axios';
+
 import AdditionalFeeFrequency from './Charts/Spending/AdditionalFeeFrequency.vue';
-import ServiceCostBreakdown from './Charts/Spending/ServiceCostBreakdown.vue';
+import ServiceCostBreakdown from './Charts/Spending/ServiceBreakdown.vue';
 import ShippingSpendingTrend from './Charts/Spending/ShippingSpendingTrend.vue';
 import SubsidyVsCustomerPaid from './Charts/Spending/SubsidyVsCustomerPaid.vue';
 import WalletBalanceTrend from './Charts/Spending/WalletBalanceTrend.vue';
+import DropDown from '../Controls/DropDown.vue';
+import DateRangePicker from '../Controls/DateRangePicker.vue';
 
-const netSpending = 3123214;
-const customerSpent = 1234567;
-const baseDeliveryCost = 987654;
-const shippingSubsidy = 54321;
-const priorityFee = 12345;
+const dashboardTable = ref([]);
+const dashboardChart = ref([]);
+
+const totalSpending = ref(0);
+const netSpending = ref(0);
+const customerSpent = ref(0);
+const baseDeliveryCost = ref(0);
+const shippingSubsidy = ref(0);
+const priorityFee = ref(0);
+
+const chartLabel = ref([]);
+const chartMotorcycle = ref(0);
+const chartMotorVehicle = ref(0);
+const chartVan = ref(0);
+const chartHeavyTruck = ref(0);
+const chartTruck = ref(0);
+
+const chartTotalSpending = ref([]);
+const chartNetSpending = ref([]);
+const chartTotalCustomerSpending = ref([]);
+const chartTotalSubsidySpending = ref([]);
+const chartBaseDeliveryCost = ref([]);
+const chartPriorityFeeSpending = ref([]);
+const chartSurchargeSpending = ref([]);
+const chartWalletBalance = ref([]);
+
+const showChart = ref(true);
+
+async function  handleDateRange({startDate, endDate}) {
+   showChart.value = false;
+   await fetchSpendingDashboardData(startDate, endDate);
+   showChart.value = true;
+   await  fillChartData();
+}
+
+
+function fillChartData() {
+    if (!dashboardChart.value || !Array.isArray(dashboardChart.value)) {
+        console.error('dashboardChart is not a valid array');
+        return;
+    }
+
+    chartLabel.value = [];
+    chartMotorcycle.value = 0;
+    chartMotorVehicle.value = 0;
+    chartVan.value = 0;
+    chartHeavyTruck.value = 0;
+    chartTruck.value = 0;
+
+    chartTotalSpending.value = [];
+    chartNetSpending.value = [];
+    chartTotalCustomerSpending.value = [];
+    chartTotalSubsidySpending.value = [];
+    chartBaseDeliveryCost.value = [];
+    chartPriorityFeeSpending.value = [];
+    chartSurchargeSpending.value = [];
+    chartWalletBalance.value = [];
+
+    dashboardChart.value.forEach(element => {
+        chartLabel.value.push(element.chart_label || "Unknown");
+        chartMotorcycle.value += Number(element.motorcycle_count) || 0;
+        chartMotorVehicle.value += Number(element.motor_vehicle_count) || 0;
+        chartVan.value += Number(element.van_count) || 0;
+        chartHeavyTruck.value += Number(element.heavy_truck_count) || 0;
+        chartTruck.value += Number(element.truck_count) || 0;
+        chartTotalSpending.value.push(Number(element.total_spending) || 0);
+        chartNetSpending.value.push(Number(element.net_spending) || 0);
+        chartTotalCustomerSpending.value.push(Number(element.total_customer_spending) || 0);
+        chartTotalSubsidySpending.value.push(Number(element.total_subsidy_spending) || 0);
+        chartBaseDeliveryCost.value.push(Number(element.base_delivery_cost) || 0);
+        chartPriorityFeeSpending.value.push(Number(element.priority_fee_spending) || 0);
+        chartSurchargeSpending.value.push(Number(element.surcharge_spending) || 0);
+        chartWalletBalance.value.push(Number(element.wallet_balance) || 0);
+    });
+}
+
+
 
 function formatNumber(num) {
   if (num >= 1_000_000) {
@@ -88,6 +224,40 @@ function formatNumber(num) {
   return num.toString(); 
 }
 
+
+const fetchSpendingDashboardData = async (startDate, endDate) => {
+  try {
+    const response = await axios.get(
+      wooLalamoveAdmin.root + 'woo-lalamove/v1/dashboard-spending-data/?from=' + startDate + '&to=' + endDate,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+        },
+      }
+    );
+
+    dashboardTable.value = response.data.table.slice(0, 10);
+    
+    console.log('response', dashboardTable.value);
+
+
+    totalSpending.value = response.data.kpi[0].total_spending || 0;
+    netSpending.value = response.data.kpi[0].net_spending || 0;
+    customerSpent.value = response.data.kpi[0].total_customer_spending || 0;
+    baseDeliveryCost.value = response.data.kpi[0].base_delivery_cost || 0;
+    shippingSubsidy.value = response.data.kpi[0].total_subsidy_spending || 0;
+    priorityFee.value = response.data.kpi[0].priority_fee_spending || 0;
+
+
+   dashboardChart.value = response.data.chart_data;
+
+   console.log(dashboardChart.value);
+
+  } catch (error) {
+    console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
+  }
+};
 
 </script>
 
@@ -103,7 +273,7 @@ function formatNumber(num) {
 .spending-wrapper {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: 50px auto auto auto;
     grid-template-areas: 
         "utility-actions utility-actions"
         "key-performance-indicator key-performance-indicator"
@@ -137,6 +307,28 @@ function formatNumber(num) {
 
     .utility-actions {
         grid-area: utility-actions;
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: center;
+        z-index: 100;    
+        
+        .action {
+            display: flex;
+            justify-content: center; 
+            align-items: center;
+            cursor: pointer;
+            height: 2rem;
+            width: 2rem ;
+            border-radius: 3%;
+            border: 2px solid $border-color;
+            background-color: $bg-high-light;
+            border-radius: 5px;
+        }
+
+        .restart {
+            font-size: $font-size-lg;
+        }
     }
 
     .key-performance-indicator {
@@ -148,7 +340,17 @@ function formatNumber(num) {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
+        gap: 1rem;
+
+        & > :first-child {
+            flex: 7;
+        }
+
+        & > :nth-child(2) {
+            flex: 3;
+            height: 300px;
+        }
     }
 
     .WalletBalanceTrend {
@@ -179,5 +381,50 @@ function formatNumber(num) {
     padding: 1rem;
     border-radius: 0.5rem;
     border: 2px solid $border-color;
+}
+
+.table-wrapper{
+    border: 2px solid $border-color;
+    width: 100%;
+    border-radius: 5px;
+    background-color: $bg-high-light;
+    max-height: 300px;
+    overflow: scroll;
+
+
+    .woo-order-table {
+        width: 100%;
+        border-collapse: collapse;
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background-color: $bg-gray;
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid $bg-gray;
+            font-size: $font-size-xs;
+        }
+        
+        th {
+            background-color:  $bg-gray;
+            font-weight: bold;
+        }
+        
+
+        tr:hover {
+            background-color: $bg-primary-light;
+            box-shadow: inset 2px 0 0 0 $bg-primary;
+        }
+
+        .selected-row{
+            background-color: $bg-primary-light;
+            box-shadow: inset 2px 0 0 0 $bg-primary;
+        }
+   }
 }
 </style>
