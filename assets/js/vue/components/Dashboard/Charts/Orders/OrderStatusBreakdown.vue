@@ -5,7 +5,7 @@
     </template>
 
     <script setup>
-    import { onMounted, defineProps, ref, watchEffect, toRaw, onBeforeUnmount } from "vue";
+    import { onMounted, ref, onBeforeUnmount } from "vue";
     import Chart from "chart.js/auto";
 
     const props = defineProps({

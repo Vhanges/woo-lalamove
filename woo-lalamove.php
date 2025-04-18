@@ -20,12 +20,14 @@ use Sevhen\WooLalamove\Class_Lalamove_Settings;
 use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 use Sevhen\WooLalamove\Class_Lalamove_Shortcode;
+use Sevhen\WooLalamove\Class_Lalamove_Model;
 
 
 new Class_Lalamove_Settings();
 new Class_Lalamove_Endpoints();
 new Class_Lalamove_Api();
 new Class_Lalamove_Shortcode();
+new Class_Lalamove_Model();
 
 
 if (!class_exists('Woo_Lalamove')) {
@@ -94,8 +96,11 @@ if (!class_exists('Woo_Lalamove')) {
             }
 
             $sql_status = "CREATE TABLE $balance_table (
-                wallet_balance DOUBLE
+                balance_id BIGINT AUTO_INCREMENT NOT NULL
+                balance_currency VARCHAR(100) NOT NULL,
+                wallet_balance DOUBLE NOT NULL,
                 update_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                PRIMARY KEY (balance_id)
             ) $charset_collate;";
 
 
@@ -333,6 +338,8 @@ if (!class_exists('Woo_Lalamove')) {
                 ));
             } else {
                 // Dequeue Bootstrap JS and CSS if not on the checkout page
+                wp_dequeue_script('jquery');
+                wp_dequeue_script('custom-plugin-script');
                 wp_dequeue_script('bootstrap-js');
                 wp_dequeue_style('bootstrap-css');
                 wp_dequeue_style('bootstrap-icons');
