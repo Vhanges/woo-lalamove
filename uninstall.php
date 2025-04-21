@@ -5,7 +5,15 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 global $wpdb;
-$table_name = $wpdb->prefix . 'wc_lalamove_orders';
 
+$order_table = $wpdb->prefix . 'wc_lalamove_orders';
+$status_table = $wpdb->prefix . 'wc_lalamove_status';
+$transaction_table = $wpdb->prefix . 'wc_lalamove_transaction'; 
+$cost_details_table = $wpdb->prefix . 'wc_lalamove_cost_details';
+$balance_table = $wpdb->prefix . 'wc_lalamove_balance';
 // Drop the table.
-$wpdb->query("DROP TABLE IF EXISTS $table_name");
+$wpdb->query("DROP TABLE IF EXISTS $order_table");
+$wpdb->query("DROP TABLE IF EXISTS $status_table");
+$wpdb->query("DROP TABLE IF EXISTS $transaction_table");
+$wpdb->query("DROP TABLE IF EXISTS $cost_details_table");
+$wpdb->query("DROP TABLE IF EXISTS $balance_table");

@@ -1,76 +1,93 @@
 <?php
-if (!defined('ABSPATH'))
-exit;
+if (!defined('ABSPATH')) exit;
 
 function your_shipping_method_init() {
-	if ( ! class_exists( 'Class_Lalamove_Shipping_Method' ) ) {
-		class Class_Lalamove_Shipping_Method extends WC_Shipping_Method {
-			/**
-			 * Constructor for your shipping class
-			 *
-			 * @access public
-			 * @return void
-			 */
-			public function __construct() {
-				$this->id                 = 'your_shipping_method'; // Id for your shipping method. Should be uunique.
-				$this->method_title       = __( 'Your Shipping Method' );  // Title shown in admin
-				$this->method_description = __( 'Description of your shipping method' ); // Description shown in admin
-				$this->enabled            = "yes"; // This can be added as an setting but for this example its forced enabled
-				$this->title              = "Lalamove"; // This can be added as an setting but for this example its forced.
+    if (!class_exists('Class_Lalamove_Shipping_Method')) {
+        class Class_Lalamove_Shipping_Method extends WC_Shipping_Method {
+            /**
+             * Constructor for your shipping class
+             */
+            public function __construct($instance_id = 0) {
+                $this->instance_id        = absint($instance_id);
+                $this->id                 = 'your_shipping_method';
+                $this->method_title       = __('Lalamove');
+                $this->method_description = __('Lalamove Shipping offers a fast, reliable delivery service');
+                $this->supports          = array(
+                    'shipping-zones',
+                    'instance-settings',
+                    'instance-settings-modal',
+                );
 
-				$this->init();
-			}
+                $this->init();
+            }
 
-			/**
-			 * Init your settings
-			 *
-			 * @access public
-			 * @return void
-			 */
-			function init() {
-				// Load the settings API
-				$this->init_form_fields(); // This is part of the settings API. Override the method to add your own settings
-				$this->init_settings(); // This is part of the settings API. Loads settings you previously init.
+            /**
+             * Initialize settings
+             */
+            function init() {
+                $this->init_form_fields();
+                $this->init_settings();
+                
+                // Set user-defined title or default
+                $this->title = $this->get_option('title', $this->method_title);
 
-				// Save settings in admin if you have any defined
-				add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
-			}
+                add_action('woocommerce_update_options_shipping_' . $this->id, array($this, 'process_admin_options'));
+            }
 
-			/**
-			 * calculate_shipping function.
-			 *
-			 * @access public
-			 * @param array $package
-			 * @return void
-			 */
-			public function calculate_shipping( $package = array() ) {
+            /**
+             * Define instance settings fields
+             */
+            public function init_form_fields() {
+                $this->instance_form_fields = array(
+                    'title' => array(
+                        'title'       => __('Title', 'your-text-domain'),
+                        'type'        => 'text',
+                        'description' => __('This controls the title which the user sees during checkout.', 'your-text-domain'),
+                        'default'     => __('Lalamove Delivery', 'your-text-domain'),
+                        'desc_tip'    => true,
+                    ),
+                    'base_cost' => array(
+                        'title'       => __('Base Cost', 'your-text-domain'),
+                        'type'        => 'number',
+                        'description' => __('Base shipping cost (excluding dynamic fees)', 'your-text-domain'),
+                        'default'     => 10,
+                        'desc_tip'    => true,
+                        'placeholder' => '0.00',
+                    )
+                );
+            }
 
-				$shipping_cost = WC()->session->get('shipment_cost');
-				// Check if the total is posted
-				if ( isset( $shipping_cost ) ) {
-					$total = floatval( sanitize_text_field(  WC()->session->get('shipment_cost')) ); // Fetch the posted total
-				} else {
-					$total = 0; // Default to 0 if no total is posted
-				}
-			
-				// Calculate the shipping rate using the total
-				$rate = array(
-					'id'       => $this->id,
-					'label'    => __('Lalamove Shipping', 'sevhen'),
-					'cost'     => $total, // Use the fetched total as the shipping cost
-					'calc_tax' => 'per_item',
-				);
-			
-				// Add the calculated rate
-				$this->add_rate( $rate );
-			}
-			
-			
-		}
-	}
+            /**
+             * Calculate shipping
+             */
+            public function calculate_shipping($package = array()) {
+                // Get base cost from instance settings
+                $base_cost = (float) $this->get_option('base_cost', 10);
+                
+                // Get dynamic cost from session
+                $dynamic_cost = (float) WC()->session->get('shipment_cost', 0);
+                
+                // Calculate total cost
+                $total_cost = $base_cost + $dynamic_cost;
+
+                $rate = array(
+                    'id'       => $this->id,
+                    'label'    => $this->title,
+                    'cost'     => $total_cost,
+                    'calc_tax' => 'per_item',
+                );
+
+                $this->add_rate($rate);
+            }
+        }
+    }
 }
 
+add_action('woocommerce_shipping_init', 'your_shipping_method_init');
 
-	
+function add_your_shipping_method($methods) {
+    $methods['your_shipping_method'] = 'Class_Lalamove_Shipping_Method';
+    return $methods;
+}
 
-
+add_filter('woocommerce_shipping_methods', 'add_your_shipping_method');

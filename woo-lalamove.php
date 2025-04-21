@@ -12,8 +12,7 @@ if (!defined('ABSPATH'))
     exit;
 
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
-require_once plugin_dir_path(__FILE__) . 'includes/utility-functions.php';
-require_once plugin_dir_path(__FILE__) . 'includes/class_lalamove_shipping_method.php';
+require_once plugin_dir_path(__FILE__) . 'includes/Utility-Functions.php';
 require_once plugin_dir_path(__FILE__) . 'cors.php';
 
 use Sevhen\WooLalamove\Class_Lalamove_Settings;
@@ -47,11 +46,9 @@ if (!class_exists('Woo_Lalamove')) {
 
                 add_action('wp_enqueue_scripts', [$this, 'enqueue_custom_plugin_scripts']);
 
-
-                add_action('woocommerce_shipping_init', 'your_shipping_method_init');
-                add_filter('woocommerce_shipping_methods', [$this, 'add_your_shipping_method']);
-
                 add_filter('woocommerce_my_account_my_orders_actions', [$this, 'customer_delivery_status_button'], 10, 2);
+
+                require_once plugin_dir_path(__FILE__) . 'includes/Class_Lalamove_Shipping_Method.php';
 
                 register_activation_hook(__FILE__, callback: [$this, 'my_plugin_create_custom_table']);
 
@@ -95,9 +92,9 @@ if (!class_exists('Woo_Lalamove')) {
                 return;
             }
 
-            $sql_status = "CREATE TABLE $balance_table (
-                balance_id BIGINT AUTO_INCREMENT NOT NULL
-                balance_currency VARCHAR(100) NOT NULL,
+            $sql_balance = "CREATE TABLE $balance_table (
+                balance_id BIGINT AUTO_INCREMENT NOT NULL,
+                balance_currency CHAR(10) NOT NULL,
                 wallet_balance DOUBLE NOT NULL,
                 update_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 PRIMARY KEY (balance_id)
@@ -117,10 +114,10 @@ if (!class_exists('Woo_Lalamove')) {
             ) $charset_collate;";
 
             $sql_status = "CREATE TABLE $status_table (
-                status_id INT NOT NULL AUTO_INCREMENT,W
+                status_id INT NOT NULL
                 status_name VARCHAR(100) NOT NULL,
                 description TEXT,
-                PRIMARY KEY (status)
+                PRIMARY KEY (status_id)
             ) $charset_collate;";
 
             $sql_transaction = "CREATE TABLE $transaction_table (
@@ -147,7 +144,22 @@ if (!class_exists('Woo_Lalamove')) {
                 FOREIGN KEY (wc_order_id) REFERENCES {$wpdb->prefix}wc_orders(ID) ON DELETE SET NULL
             ) $charset_collate;";
 
-            $sql_status_insert = "INSERT INTO $status_table (status, status_name, description) VALUES
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+            dbDelta($sql_balance);
+            dbDelta($sql_cost_details);
+            dbDelta($sql_status);
+            dbDelta($sql_transaction);
+            dbDelta($sql_orders);
+
+            $tables_created = [$cost_details_table, $status_table, $transaction_table, $orders_table];
+            $success = array_filter($tables_created, function ($table) use ($wpdb) {
+                return $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table;
+            });
+
+            
+            $sql_status_insert = "INSERT INTO $status_table (status_id, status_name, description) VALUES
                 ('0', 'Pending', 'The order has been created but is waiting for further action or confirmation.'),
                 ('1', 'Processed', 'The order has been reviewed and confirmed for fulfillment.'),
                 ('2', 'Assigning Driver', 'A driver is being assigned to handle the delivery.'),
@@ -160,18 +172,6 @@ if (!class_exists('Woo_Lalamove')) {
             ";
 
             $wpdb->query($sql_status_insert);
-
-            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-
-            dbDelta($sql_cost_details);
-            dbDelta($sql_status);
-            dbDelta($sql_transaction);
-            dbDelta($sql_orders);
-
-            $tables_created = [$cost_details_table, $status_table, $transaction_table, $orders_table];
-            $success = array_filter($tables_created, function ($table) use ($wpdb) {
-                return $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table;
-            });
 
             if (count($success) === count($tables_created)) {
                 set_transient('wc_lalamove_table_created', true, 5); // Notify admin
@@ -192,13 +192,6 @@ if (!class_exists('Woo_Lalamove')) {
                 'name' => __('Track Order', 'woocommerce-lalamove-extension'),
             );
             return $actions;
-        }
-
-
-        public function add_your_shipping_method($methods)
-        {
-            $methods['your_shipping_method'] = 'Class_Lalamove_Shipping_Method';
-            return $methods;
         }
 
         public function enqueue_vue_assets($hook)
@@ -602,7 +595,7 @@ if (!class_exists('Woo_Lalamove')) {
 
     
 
-    require_once plugin_dir_path(__FILE__) . 'includes/checkout_delivery_placement.php';
+    require_once plugin_dir_path(__FILE__) . 'includes/Checkout_Delivery_Placement.php';
 
 
 }

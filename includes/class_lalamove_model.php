@@ -245,7 +245,7 @@ class Class_Lalamove_Model{
             foreach ($results['table'] as &$row) {
                 $order = \wc_get_order($row['wc_order_id']);
             
-                $row['payment_details'] = ($order ? $order->get_payment_method() : 'Unknown') . '<br>' . ($order ? $order->get_payment_method_title() : 'Unknown');
+                $row['payment_details'] = $order ? $order->get_payment_method_title() : 'Unknown';
 
             }
 
@@ -274,26 +274,11 @@ class Class_Lalamove_Model{
 
             $query = $wpdb->prepare(
                 "SELECT
-                    SUM(CASE 
-                        WHEN t.service_type IN ('MOTORCYCLE') THEN 1 
-                        ELSE 0 
-                    END) AS motorcycle_count,
-                    SUM(CASE 
-                        WHEN t.service_type IN ('SEDAN', 'SEDAN_INTERCITY', 'MPV', 'MPV_INTERCITY') THEN 1 
-                        ELSE 0 
-                    END) AS motor_vehicle_count,
-                    SUM(CASE 
-                        WHEN t.service_type IN ('VAN', 'VAN_INTERCITY', 'VAN1000') THEN 1 
-                        ELSE 0 
-                    END) AS van_count,
-                    SUM(CASE 
-                        WHEN t.service_type IN ('2000KG_ALUMINUM_LD', '2000KG_FB_LD') THEN 1 
-                        ELSE 0 
-                    END) AS heavy_truck_count,
-                    SUM(CASE 
-                        WHEN t.service_type IN ('TRUCK550', '10WHEEL_TRUCK', 'LD_10WHEEL_TRUCK') THEN 1 
-                        ELSE 0 
-                    END) AS truck_count,
+                    SUM(CASE WHEN t.service_type IN ('MOTORCYCLE') THEN 1 ELSE 0 END) AS motorcycle_count,
+                    SUM(CASE WHEN t.service_type IN ('SEDAN', 'SEDAN_INTERCITY', 'MPV', 'MPV_INTERCITY') THEN 1 ELSE 0 END) AS motor_vehicle_count,
+                    SUM(CASE WHEN t.service_type IN ('VAN', 'VAN_INTERCITY', 'VAN1000') THEN 1 ELSE 0 END) AS van_count,
+                    SUM(CASE WHEN t.service_type IN ('2000KG_ALUMINUM_LD', '2000KG_FB_LD') THEN 1 ELSE 0 END) AS heavy_truck_count,
+                    SUM(CASE WHEN t.service_type IN ('TRUCK550', '10WHEEL_TRUCK', 'LD_10WHEEL_TRUCK') THEN 1 ELSE 0 END) AS truck_count,
                     SUM(c.total) + SUM(c.subsidy) + SUM(c.priority_fee) AS total_spending,
                     SUM(c.subsidy) + SUM(c.priority_fee) AS net_spending,
                     SUM(c.total) AS total_customer_spending,
@@ -301,19 +286,24 @@ class Class_Lalamove_Model{
                     SUM(c.base) AS base_delivery_cost,
                     SUM(c.priority_fee) AS priority_fee_spending,
                     SUM(c.surcharge) AS surcharge_spending,
-                    (SELECT SUM(wallet_balance) 
-                     FROM {$this->balance_table} 
-                     WHERE updated_on BETWEEN %s AND %s) AS wallet_balance,
+                    COALESCE(
+                        (SELECT wallet_balance 
+                         FROM {$this->balance_table} 
+                         WHERE updated_on BETWEEN 
+                             STR_TO_DATE(CONCAT(DATE_FORMAT(o.ordered_on, '%%M %%Y'), ' 01'), '%%M %%Y %%d') 
+                             AND LAST_DAY(STR_TO_DATE(CONCAT(DATE_FORMAT(o.ordered_on, '%%M %%Y'), ' 01'), '%%M %%Y %%d'))
+                         ORDER BY updated_on DESC 
+                         LIMIT 1), 
+                        0
+                    ) AS wallet_balance,
                     DATE_FORMAT(o.ordered_on, '%%M %%Y') AS chart_label
                 FROM {$this->order_table} AS o
-                INNER JOIN {$this->transaction_table} AS t 
-                    ON o.transaction_id = t.transaction_id
-                INNER JOIN {$this->cost_details_table} AS c 
-                    ON t.cost_details_id = c.cost_details_id
+                INNER JOIN {$this->transaction_table} AS t ON o.transaction_id = t.transaction_id
+                INNER JOIN {$this->cost_details_table} AS c ON t.cost_details_id = c.cost_details_id
                 WHERE o.ordered_on BETWEEN %s AND %s
                 GROUP BY chart_label
                 ORDER BY o.ordered_on ASC",
-                $from, $to, $from, $to
+                $from, $to
             );
             
             

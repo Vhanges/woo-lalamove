@@ -1,10 +1,11 @@
 jq = jQuery.noConflict();
 
-jq(document).ready(function ($) {
-
-  fieldsChecker();
+jq(document).ready(function ($) {  
 
   function fieldsChecker (){
+
+      let isFilled = true;
+
       const oldRequiredFields = [
         "#billing_first_name",
         "#billing_last_name",
@@ -28,7 +29,7 @@ jq(document).ready(function ($) {
     function areFieldsFilled(fieldSelectors) {
         return fieldSelectors.every((selector) => {
             const fieldValue = $(selector).val();
-            return fieldValue && fieldValue.trim() !== ""; // Check if the field is not empty
+            return fieldValue && fieldValue.trim() !== ""; 
         });
     }
     
@@ -39,11 +40,13 @@ jq(document).ready(function ($) {
     if (!oldFieldsValid && !newFieldsValid) {
         alert("Please fill in all required fields before proceeding.");
         $('input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method').prop("checked", false);
-        return;
+        isFilled = false;
     }  
+
+    return isFilled;
   }
 
-  var SessionData = {
+  var SessionData = { 
     quotationID: null,
     coordinates:{},
     serviceType: null,
@@ -410,14 +413,17 @@ jq(document).ready(function ($) {
   $(document).on("click", 'input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method', async function () {
     const selectedValue = $(this).val();
 
-    fieldsChecker();
-    
-    // Open the modal if shipping method is selected
-    if (selectedValue === "your_shipping_method") {
+    if(fieldsChecker()){
+
+      // Open the modal if shipping method is selected
+      if (selectedValue === "your_shipping_method") {
         openModal();
         await fetchShippingData();
-    }
+      }
+
+    } 
     
+    return;
   });
 
 
@@ -445,7 +451,7 @@ jq(document).ready(function ($) {
 
   // Example AJAX call (replace with your actual logic) */ 
   async function fetchShippingData() {
-    // try {
+    try {
 
 
       await loadQuotationData();
@@ -695,20 +701,20 @@ jq(document).ready(function ($) {
           showDropdowns: true,
           locale: {
             format: "DD/MM/YYYY HH:mm:ss",
-            applyLabel: "Apply", // Custom label for apply button
-            cancelLabel: "Cancel", // Custom label for cancel button
+            applyLabel: "Apply", 
+            cancelLabel: "Cancel",
           },
         },
         cb
       );
 
       cb(startDate, endDate);
-    // } catch (error) {
-    //   console.error("Error fetching shipping data:", error);
-    //   $("#customModal .custom-modal-body").html(`
-    //     <p>Error loading shipping data.</p>
-    //   `);
-    // }
+    } catch (error) {
+      console.error("Error fetching shipping data:", error);
+      $("#customModal .custom-modal-body").html(`
+        <p>Error loading shipping data.</p>
+      `);
+    }
   }
 
   // Trigger data fetch when modal is opened
