@@ -40,7 +40,6 @@ function callback(start, end) {
 
 onMounted(() => {
   const date = jQuery.noConflict();
-
   date("#picked-date-wrapper").daterangepicker({
     startDate: startDate.value,
     endDate: endDate.value,
@@ -57,6 +56,11 @@ onMounted(() => {
       format: "MMM D, YYYY",
       applyLabel: "Apply",
       cancelLabel: "Cancel",
+    },
+    ranges: {
+      "Last Year": [moment().subtract(1, "year"), moment()],
+      "Last Month": [moment().subtract(1, "month"), moment()],
+      "Last Week": [moment().subtract(7, "days"), moment()],
     },
   });
 

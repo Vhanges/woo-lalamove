@@ -229,10 +229,11 @@ class Class_Lalamove_Model{
                         t.ordered_by,
                         t.service_type,
                         CONCAT(c.currency, ' ', c.total) AS overall_expense,
-                        s.status_name
+                        s.status_name,
+                        DATE_FORMAT(o.ordered_on, '%M %d, %Y') AS ordered_on
                         FROM $this->order_table AS o
                         INNER JOIN $this->status_table AS s 
-                            ON o.status_id = s.status_id
+                            ON o.status_id = s.status_id    
                         INNER JOIN $this->transaction_table AS t 
                             ON o.transaction_id = t.transaction_id
                         INNER JOIN $this->cost_details_table AS c 
@@ -245,7 +246,7 @@ class Class_Lalamove_Model{
             foreach ($results['table'] as &$row) {
                 $order = \wc_get_order($row['wc_order_id']);
             
-                $row['payment_details'] = $order ? $order->get_payment_method_title() : 'Unknown';
+                $row['payment_method'] = $order ? $order->get_payment_method_title() : 'Unknown';
 
             }
 

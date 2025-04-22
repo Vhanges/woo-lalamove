@@ -1,7 +1,7 @@
 <template>
     <div class="spending-wrapper">
         <div class="utility-actions">
-            <DropDown/>
+            <ExcelDropDown/>
             <DateRangePicker @dateRangeSelected = "handleDateRange"/>
             <div class="action action-refresh">
                     <span class="material-symbols-outlined restart">restart_alt</span>
@@ -129,7 +129,7 @@ import axios from 'axios';
 import TotalOrdersOverview from './Charts/Orders/TotalOrdersOverview.vue';
 import OrderStatusTrend from './Charts/Orders/OrderStatusBreakdown.vue';
 import OrderFullfilmentBreakdown from './Charts/Orders/OrderFulfillmentBreakdown.vue';
-import DropDown from '../Controls/DropDown.vue';
+import ExcelDropDown from '../Controls/ExcelExport.vue';
 import DateRangePicker from '../Controls/DateRangePicker.vue';
 
 const dashboardKpi = ref(null);

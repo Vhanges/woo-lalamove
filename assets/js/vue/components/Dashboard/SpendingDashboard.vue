@@ -1,7 +1,10 @@
 <template>
     <div class="spending-wrapper">
         <div class="utility-actions">
-            <DropDown/>
+            <ExcelDropDown
+                :data="data"
+                :filename="fileName"
+            />
             <DateRangePicker @dateRangeSelected = "handleDateRange"/>
             <div class="action action-refresh">
                     <span class="material-symbols-outlined restart">restart_alt</span>
@@ -59,7 +62,7 @@
                 <table class="woo-order-table">
                     <thead>
                         <tr>
-                            <th>Order ID</th>
+                            <th>Lala ID</th>
                             <th>Ordered By</th>
                             <th>Service Type</th>
                             <th>Payment Source</th>
@@ -75,7 +78,7 @@
                         </td>
                         <td>{{ order.ordered_by}}</td>
                         <td>{{ order.service_type }}</td>
-                        <td v-html=" order.payment_details"></td>
+                        <td v-html=" order.payment_method"></td>
                         <td>{{ order.overall_expense}}</td>
                         <td>{{ order.status_name}}</td>
                     </tr>
@@ -126,7 +129,7 @@
 
 <script setup>
 
-import {ref} from 'vue';
+import {ref, computed} from 'vue';
 import axios from 'axios';
 
 import AdditionalFeeFrequency from './Charts/Spending/AdditionalFeeFrequency.vue';
@@ -134,7 +137,7 @@ import ServiceCostBreakdown from './Charts/Spending/ServiceBreakdown.vue';
 import ShippingSpendingTrend from './Charts/Spending/ShippingSpendingTrend.vue';
 import SubsidyVsCustomerPaid from './Charts/Spending/SubsidyVsCustomerPaid.vue';
 import WalletBalanceTrend from './Charts/Spending/WalletBalanceTrend.vue';
-import DropDown from '../Controls/DropDown.vue';
+import ExcelDropDown from '../Controls/ExcelExport.vue';
 import DateRangePicker from '../Controls/DateRangePicker.vue';
 
 const dashboardTable = ref([]);
@@ -165,7 +168,51 @@ const chartWalletBalance = ref([]);
 
 const showChart = ref(true);
 
+let data = computed(() => ({
+  KPI: [
+    {
+      totalSpending: totalSpending.value,
+      netSpending: netSpending.value,
+      customerSpent: customerSpent.value,
+      baseDeliveryCost: baseDeliveryCost.value,
+      shippingSubsidy: shippingSubsidy.value,
+      priorityFee: priorityFee.value,
+    },
+  ],
+  ChartData: dashboardChart.value.map(entry => ({
+    chartLabel: entry.chart_label,
+    motorcycleCount: entry.motorcycle_count,
+    motorVehicleCount: entry.motor_vehicle_count,
+    vanCount: entry.van_count,
+    heavyTruckCount: entry.heavy_truck_count,
+    truckCount: entry.truck_count,
+    totalSpending: entry.total_spending,
+    netSpending: entry.net_spending,
+    customerSpent: entry.total_customer_spending,
+    subsidySpent: entry.total_subsidy_spending,
+    baseDeliveryCost: entry.base_delivery_cost,
+    priorityFee: entry.priority_fee_spending,
+    surcharge: entry.surcharge_spending,
+    walletBalance: entry.wallet_balance,
+  })),
+  TransactionData: dashboardTable.value.map(entry => ({
+    lalaID: entry.lalamove_order_id,
+    wooID: entry.wc_order_id,
+    orderedBy: entry.ordered_by,
+    orderedOn: entry.ordered_on,
+    overallExpense: entry.overall_expense,
+    paymentMethod: entry.payment_method,
+    serviceType: entry.service_type,
+    statusName: entry.status_name,
+  }))
+}));
+
+
+const fileName = ref();
+
 async function  handleDateRange({startDate, endDate}) {
+
+   fileName.value = startDate + " - " + endDate;
    showChart.value = false;
    await fetchSpendingDashboardData(startDate, endDate);
    showChart.value = true;
@@ -258,6 +305,8 @@ const fetchSpendingDashboardData = async (startDate, endDate) => {
     console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
   }
 };
+
+
 
 </script>
 
