@@ -75,19 +75,34 @@ async function exportToExcel(data) {
   const workbook = new ExcelJS.Workbook();
 
   try {
-    if (data.KPI?.length > 0) {
-      const kpiSheet = workbook.addWorksheet('KPI Data');
-      addStyledTable(kpiSheet, data.KPI, 'KPI Report');
+    if (data.spendingKPI?.length > 0) {
+      const kpiSheet = workbook.addWorksheet('Spending KPI Report');
+      addStyledTable(kpiSheet, data.spendingKPI, 'Spending KPI Report');
     }
 
-    if (data.ChartData?.length > 0) {
-      const chartSheet = workbook.addWorksheet('Chart Data');
-      addStyledTable(chartSheet, data.ChartData, 'Chart Report');
+    if (data.spendingChartData?.length > 0) {
+      const chartSheet = workbook.addWorksheet('Spending Chart Report');
+      addStyledTable(chartSheet, data.spendingChartData, 'Spending Chart Report');
     }
 
-    if (data.TransactionData?.length > 0) {
+    if (data.ordersKPI?.length > 0) {
+      const kpiSheet = workbook.addWorksheet('Orders KPI Report');
+      addStyledTable(kpiSheet, data.ordersKPI, 'Orders KPI Report');
+    }
+
+    if (data.ordersChartData?.length > 0) {
+      const chartSheet = workbook.addWorksheet('Orders Chart Report');
+      addStyledTable(chartSheet, data.ordersChartData, 'Orders Chart Report');
+    }
+
+    if (data.TransactionData?.length > 0) { 
       const transactionSheet = workbook.addWorksheet('Transaction Data');
       addStyledTable(transactionSheet, data.TransactionData, 'Transaction Report');
+    }
+    
+    if (data.OrdersData?.length > 0) {
+      const transactionSheet = workbook.addWorksheet('Orders Data');
+      addStyledTable(transactionSheet, data.OrdersData, 'Orders Report');
     }
 
     if (workbook.worksheets.length === 0) {

@@ -1,7 +1,10 @@
 <template>
-    <div class="spending-wrapper">
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+    </div>
+    <div v-else class="spending-wrapper">
         <div class="utility-actions">
-            <ExcelDropDown
+            <ExcelExport
                 :data="data"
                 :filename="fileName"
             />
@@ -10,126 +13,136 @@
                     <span class="material-symbols-outlined restart">restart_alt</span>
             </div>
         </div>
-        
-        <div class="key-performance-indicator-container">
-            <div class="key-performance-indicator bordered">
-                <p>
-                    Total Spending
-                    <span class="material-symbols-outlined icon">payments</span>
-                </p>
-                <h2 style="margin-bottom: 0;">{{ formatNumber(totalSpending) }}</h2>
-            </div>
-            <div class="key-performance-indicator bordered">
-                <p>
-                    Net Spending
-                    <span class="material-symbols-outlined icon">account_balance</span>
-                </p>
-                <h2 style="margin-bottom: 0;">{{ formatNumber(netSpending) }}</h2>
-            </div>
-            <div class="key-performance-indicator bordered">
-                <p>
-                    Customer Spent
-                    <span class="material-symbols-outlined icon">account_circle</span>
-                </p>
-                <h2 style="margin-bottom: 0;">{{ formatNumber(customerSpent) }}</h2>
-            </div>
-            <div class="key-performance-indicator bordered">
-                <p>
-                    Base Delivery Cost
-                    <span class="material-symbols-outlined icon">local_shipping</span>
-                </p>
-                <h2 style="margin-bottom: 0;">{{ formatNumber(baseDeliveryCost) }}</h2>
-            </div>
-            <div class="key-performance-indicator bordered">
-                <p>
-                    Shipping Subsidy
-                    <span class="material-symbols-outlined icon">account_balance</span>
-                </p>
-                <h2 style="margin-bottom: 0;">{{ formatNumber(shippingSubsidy) }}</h2>
-            </div>
-            <div class="key-performance-indicator bordered">
-                <p>
-                    Priority Fee
-                    <span class="material-symbols-outlined icon">attach_money</span>
-                </p>
-                <h2 style="margin-bottom: 0;">{{ formatNumber(priorityFee) }}</h2>
-            </div>
+
+        <div v-if="bodyLoading" class="loading-container">
+            <div class="loading-spinner"></div>
         </div>
 
-        <!-- First Section -->
-        <section class="first-section ">
-            <div class="table-wrapper">
-                <table class="woo-order-table">
-                    <thead>
-                        <tr>
-                            <th>Lala ID</th>
-                            <th>Ordered By</th>
-                            <th>Service Type</th>
-                            <th>Payment Source</th>
-                            <th>Overall Expense</th>
-                            <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="order in dashboardTable" :key="order.wc_order_id">
-                
-                        <td style="vertical-align: center;">
-                            {{ order.lalamove_order_id }}
-                        </td>
-                        <td>{{ order.ordered_by}}</td>
-                        <td>{{ order.service_type }}</td>
-                        <td v-html=" order.payment_method"></td>
-                        <td>{{ order.overall_expense}}</td>
-                        <td>{{ order.status_name}}</td>
-                    </tr>
-                </tbody>
-            </table>    
+        <div v-else-if="noData" class="message-container">
+          <h1>{{message}}</h1>
         </div>
         
-        <ServiceCostBreakdown
-         class="bordered"
-         :chartLabel = "chartLabel"
-         :chartMotorcycle = "chartMotorcycle"
-         :chartMotorcycleVehicle = "chartMotorVehicle"
-         :chartVan = "chartVan"
-         :chartHeavyTruck = "chartHeavyTruck"
-         :chartTruck = "chartTruck"
-         v-if="showChart"/>
-        </section>
 
-        <!-- Second Section -->
-        <WalletBalanceTrend v-if="showChart" 
-        class="bordered WalletBalanceTrend"
-        :chartLabel = "chartLabel"
-        :chartWalletBalance = "chartWalletBalance"
-        />
-        <ShippingSpendingTrend  v-if="showChart"
-        class="bordered ShippingSpendingTrend"
-        :chartLabel = "chartLabel"
-        :chartTotalSpending = "chartTotalSpending" 
-        :chartNetSpending = "chartNetSpending" 
-        />
+        <div v-else class="spending-body">
+            <div class="key-performance-indicator-container">
+                <div class="key-performance-indicator bordered">
+                    <p>
+                        Total Spending
+                        <span class="material-symbols-outlined icon">payments</span>
+                    </p>
+                    <h2 style="margin-bottom: 0;">{{ formatNumber(totalSpending) }}</h2>
+                </div>
+                <div class="key-performance-indicator bordered">
+                    <p>
+                        Net Spending
+                        <span class="material-symbols-outlined icon">account_balance</span>
+                    </p>
+                    <h2 style="margin-bottom: 0;">{{ formatNumber(netSpending) }}</h2>
+                </div>
+                <div class="key-performance-indicator bordered">
+                    <p>
+                        Customer Spent
+                        <span class="material-symbols-outlined icon">account_circle</span>
+                    </p>
+                    <h2 style="margin-bottom: 0;">{{ formatNumber(customerSpent) }}</h2>
+                </div>
+                <div class="key-performance-indicator bordered">
+                    <p>
+                        Base Delivery Cost
+                        <span class="material-symbols-outlined icon">local_shipping</span>
+                    </p>
+                    <h2 style="margin-bottom: 0;">{{ formatNumber(baseDeliveryCost) }}</h2>
+                </div>
+                <div class="key-performance-indicator bordered">
+                    <p>
+                        Shipping Subsidy
+                        <span class="material-symbols-outlined icon">account_balance</span>
+                    </p>
+                    <h2 style="margin-bottom: 0;">{{ formatNumber(shippingSubsidy) }}</h2>
+                </div>
+                <div class="key-performance-indicator bordered">
+                    <p>
+                        Priority Fee
+                        <span class="material-symbols-outlined icon">attach_money</span>
+                    </p>
+                    <h2 style="margin-bottom: 0;">{{ formatNumber(priorityFee) }}</h2>
+                </div>
+            </div>
 
-        <!-- Third Section -->
-        <SubsidyVsCustomerPaid v-if="showChart"
-        class="bordered SubsidyVsCustomerPaid" 
-        :chartLabel = "chartLabel"
-        :chartTotalCustomerSpending = "chartTotalCustomerSpending" 
-        :chartTotalSubsidySpending = "chartTotalSubsidySpending" 
-        />
-        <AdditionalFeeFrequency  v-if="showChart" 
-        class="bordered AdditionalFeeFrequency"
-        :chartLabel = "chartLabel"
-        :chartSurchargeSpending = "chartSurchargeSpending" 
-        :chartPriorityFeeSpending = "chartPriorityFeeSpending" 
-        />
+            <!-- First Section -->
+            <section class="first-section ">
+                <div class="table-wrapper">
+                    <table class="woo-order-table">
+                        <thead>
+                            <tr>
+                                <th>Lala ID</th>
+                                <th>Ordered By</th>
+                                <th>Service Type</th>
+                                <th>Payment Source</th>
+                                <th>Overall Expense</th>
+                                <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="order in dashboardTable.slice(0, 10)" :key="order.wc_order_id">
+                    
+                            <td style="vertical-align: center;">
+                                {{ order.lalamove_order_id }}
+                            </td>
+                            <td>{{ order.ordered_by}}</td>
+                            <td>{{ order.service_type }}</td>
+                            <td v-html=" order.payment_method"></td>
+                            <td>{{ order.overall_expense}}</td>
+                            <td>{{ order.status_name}}</td>
+                        </tr>
+                    </tbody>
+                </table>    
+            </div>
+            
+            <ServiceCostBreakdown
+            class="bordered"
+            :chartLabel = "chartLabel"
+            :chartMotorcycle = "chartMotorcycle"
+            :chartMotorcycleVehicle = "chartMotorVehicle"
+            :chartVan = "chartVan"
+            :chartHeavyTruck = "chartHeavyTruck"
+            :chartTruck = "chartTruck"
+            v-if="showChart"/>
+            </section>
 
+            <!-- Second Section -->
+            <WalletBalanceTrend v-if="showChart" 
+            class="bordered WalletBalanceTrend"
+            :chartLabel = "chartLabel"
+            :chartWalletBalance = "chartWalletBalance"
+            />
+            <ShippingSpendingTrend  v-if="showChart"
+            class="bordered ShippingSpendingTrend"
+            :chartLabel = "chartLabel"
+            :chartTotalSpending = "chartTotalSpending" 
+            :chartNetSpending = "chartNetSpending" 
+            />
+
+            <!-- Third Section -->
+            <SubsidyVsCustomerPaid v-if="showChart"
+            class="bordered SubsidyVsCustomerPaid" 
+            :chartLabel = "chartLabel"
+            :chartTotalCustomerSpending = "chartTotalCustomerSpending" 
+            :chartTotalSubsidySpending = "chartTotalSubsidySpending" 
+            />
+            <AdditionalFeeFrequency  v-if="showChart" 
+            class="bordered AdditionalFeeFrequency"
+            :chartLabel = "chartLabel"
+            :chartSurchargeSpending = "chartSurchargeSpending" 
+            :chartPriorityFeeSpending = "chartPriorityFeeSpending" 
+            />
+        </div>
     </div>
 </template>
 
 <script setup>
 
-import {ref, computed} from 'vue';
+import {ref, computed, onMounted} from 'vue';
 import axios from 'axios';
 
 import AdditionalFeeFrequency from './Charts/Spending/AdditionalFeeFrequency.vue';
@@ -137,8 +150,11 @@ import ServiceCostBreakdown from './Charts/Spending/ServiceBreakdown.vue';
 import ShippingSpendingTrend from './Charts/Spending/ShippingSpendingTrend.vue';
 import SubsidyVsCustomerPaid from './Charts/Spending/SubsidyVsCustomerPaid.vue';
 import WalletBalanceTrend from './Charts/Spending/WalletBalanceTrend.vue';
-import ExcelDropDown from '../Controls/ExcelExport.vue';
+import ExcelExport from '../Controls/ExcelExport.vue';
 import DateRangePicker from '../Controls/DateRangePicker.vue';
+
+const loading = ref(true);
+const bodyLoading = ref(true);
 
 const dashboardTable = ref([]);
 const dashboardChart = ref([]);
@@ -169,7 +185,7 @@ const chartWalletBalance = ref([]);
 const showChart = ref(true);
 
 let data = computed(() => ({
-  KPI: [
+  spendingKPI: [
     {
       totalSpending: totalSpending.value,
       netSpending: netSpending.value,
@@ -179,7 +195,7 @@ let data = computed(() => ({
       priorityFee: priorityFee.value,
     },
   ],
-  ChartData: dashboardChart.value.map(entry => ({
+  spendingChartData: dashboardChart.value.map(entry => ({
     chartLabel: entry.chart_label,
     motorcycleCount: entry.motorcycle_count,
     motorVehicleCount: entry.motor_vehicle_count,
@@ -207,17 +223,14 @@ let data = computed(() => ({
   }))
 }));
 
-
 const fileName = ref();
-
 async function  handleDateRange({startDate, endDate}) {
 
-   fileName.value = startDate + " - " + endDate;
-   showChart.value = false;
-   await fetchSpendingDashboardData(startDate, endDate);
-   showChart.value = true;
-   await  fillChartData();
-}
+  showChart.value = false
+  await fetchSpendingDashboardData(startDate, endDate)
+  showChart.value = true
+  await fillChartData()
+};
 
 
 function fillChartData() {
@@ -272,8 +285,13 @@ function formatNumber(num) {
 }
 
 
+const noData = ref(false);
+const message = ref('');
 const fetchSpendingDashboardData = async (startDate, endDate) => {
   try {
+
+    bodyLoading.value = true;
+    
     const response = await axios.get(
       wooLalamoveAdmin.root + 'woo-lalamove/v1/dashboard-spending-data/?from=' + startDate + '&to=' + endDate,
       {
@@ -284,10 +302,7 @@ const fetchSpendingDashboardData = async (startDate, endDate) => {
       }
     );
 
-    dashboardTable.value = response.data.table.slice(0, 10);
-    
-    console.log('response', dashboardTable.value);
-
+    dashboardTable.value = response.data.table;
 
     totalSpending.value = response.data.kpi[0].total_spending || 0;
     netSpending.value = response.data.kpi[0].net_spending || 0;
@@ -296,17 +311,28 @@ const fetchSpendingDashboardData = async (startDate, endDate) => {
     shippingSubsidy.value = response.data.kpi[0].total_subsidy_spending || 0;
     priorityFee.value = response.data.kpi[0].priority_fee_spending || 0;
 
-
    dashboardChart.value = response.data.chart_data;
 
-   console.log(dashboardChart.value);
+    dashboardTable.value       = response.data.table || [];
+    noData.value = dashboardTable.value.length === 0;
+
+    bodyLoading.value = false;
+
+    message.value = noData.value ? "No results found" : ""; 
 
   } catch (error) {
     console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
+  } finally {
+    loading.value = false;
   }
 };
 
-
+onMounted(() =>{
+    const start = moment().subtract(30, 'days').format('YYYY-MM-DD');
+    const end = moment().format('YYYY-MM-DD');
+    console.log(start, '\n', end);
+    handleDateRange({startDate: start, endDate: end});
+});
 
 </script>
 
@@ -320,18 +346,52 @@ const fetchSpendingDashboardData = async (startDate, endDate) => {
 }
 
 .spending-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 50px auto auto auto;
-    grid-template-areas: 
-        "utility-actions utility-actions"
-        "key-performance-indicator key-performance-indicator"
-        "first-section first-section"
-        "WalletBalanceTrend ShippingSpendingTrend"
-        "SubsidyVsCustomerPaid AdditionalFeeFrequency";
-    width: 100%;
-    height: 100%;
-    gap: 1rem;
+
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+
+    .utility-actions {
+        grid-area: utility-actions;
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: center;
+        z-index: 100;    
+        
+        .action {
+            display: flex;
+            justify-content: center; 
+            align-items: center;
+            cursor: pointer;
+            height: 2rem;
+            width: 2rem ;
+            border-radius: 3%;
+            border: 2px solid $border-color;
+            background-color: $bg-high-light;
+            border-radius: 5px;
+        }
+
+        .restart {
+            font-size: $font-size-lg;
+        }
+    }
+
+
+    .spending-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows:  auto auto auto;
+        grid-template-areas: 
+            "key-performance-indicator key-performance-indicator"
+            "first-section first-section"
+            "WalletBalanceTrend ShippingSpendingTrend"
+            "SubsidyVsCustomerPaid AdditionalFeeFrequency";
+        width: 100%;
+        height: 100%;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
 
     .key-performance-indicator-container {
         grid-area: key-performance-indicator;
@@ -476,4 +536,26 @@ const fetchSpendingDashboardData = async (startDate, endDate) => {
         }
    }
 }
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #f16622;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 </style>
