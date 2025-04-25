@@ -37,32 +37,23 @@ function set_lalamove_order($order_id)
 
     // Retrieve data from $_SESSION
     $quotationID = $_SESSION['quotationID'] ?? null;
-    echo '<pre>Quotation ID: ' . $quotationID . '</pre>';
 
     $stopId0 = $_SESSION['stopId0'] ?? null;
-    echo '<pre>Stop ID 0: ' . $stopId0 . '</pre>';
 
     $stopId1 = $_SESSION['stopId1'] ?? null;
-    echo '<pre>Stop ID 1: ' . $stopId1 . '</pre>';
 
     $customerFName = $_SESSION['customerFName'] ?? null;
-    echo '<pre>Customer First Name: ' . $customerFName . '</pre>';
 
     $customerLName = $_SESSION['customerLName'] ?? null;
-    echo '<pre>Customer Last Name: ' . $customerLName . '</pre>';
 
     $customerPhoneNo = $_SESSION['customerPhoneNo'] ?? null;
-    echo '<pre>Customer Phone Number: ' . $customerPhoneNo . '</pre>';
 
     $additionalNotes = $_SESSION['additionalNotes'] ?? null;
-    echo '<pre>Additional Notes: ' . $additionalNotes . '</pre>';
 
     $proofOfDelivery = $_SESSION['proofOfDelivery'] ?? null;
     $proofOfDelivery = $proofOfDelivery ? true : false;
-    echo '<pre>Proof of Delivery: ' . $proofOfDelivery . '</pre>';
 
     $vehicleType = $_SESSION['serviceType'] ?? null;
-    echo '<pre>Vehicle Type: ' . $vehicleType . '</pre>';
 
     $priceBreakdownData = $_SESSION['priceBreakdown'] ?? null;
 
@@ -70,13 +61,9 @@ function set_lalamove_order($order_id)
         $priceBreakdown = json_decode($priceBreakdownData, true);
     }
 
-    var_dump($priceBreakdown);
-
     $scheduledOn = $_SESSION['scheduledOn'] ?? null;
-    echo '<pre>Schedule: ' . $scheduledOn . '</pre>';
 
     $dropOffLocation = $_SESSION['dropOffLocation'] ?? null;
-    echo '<pre>Drop Off Location: ' . $dropOffLocation . '</pre>';
 
     $customerFullName = $customerFName . " " . $customerLName;
 
@@ -100,11 +87,10 @@ function set_lalamove_order($order_id)
         get_option("lalamove_phone_number", "+634315873"),
         $customerFullName,
         $customerPhoneNo,
-        $additionalNotes,
+        $additionalNotes ?? 'none',
         $proofOfDelivery
     );
 
-    var_dump($lalamove_order );
 
     if (!isset($lalamove_order['data']['orderId'])) {
         error_log("[Lalamove] There's an error on placing an order: " . var_dump($lalamove_order));
@@ -112,8 +98,6 @@ function set_lalamove_order($order_id)
     }
     
     $lalamove_orderId = $lalamove_order['data']['orderId'];
-
-    var_dump($lalamove_orderId );
 
 
     $doesItExist = $wpdb->get_var($wpdb->prepare(
@@ -150,6 +134,8 @@ function set_lalamove_order($order_id)
             'service_type' => $vehicleType,
         ]);
 
+        
+
         $transaction_id = $wpdb->insert_id;
 
         if (!$transaction_id) {
@@ -170,8 +156,15 @@ function set_lalamove_order($order_id)
             $error_message = $wpdb->last_error;
             throw new Exception("Database insert error: " . $error_message);
         }
+
         
         $wpdb->query('COMMIT');
+
+        if ($wpdb->last_error) {
+            error_log("COMMIT Failed: " . $wpdb->last_error);
+        } else {
+            error_log("Transaction committed successfully.");
+        }
 
         unset($_SESSION['quotationID']);
         unset($_SESSION['stopId0']);
@@ -190,6 +183,7 @@ function set_lalamove_order($order_id)
         <script>
         var storedState = sessionStorage.getItem("SessionData"); 
         var SessionData = JSON.parse(storedState);
+        console.log("SAKSES");
         console.log("SessionData loaded from sessionStorage:", SessionData);
 
      
@@ -219,6 +213,7 @@ function set_lalamove_order($order_id)
        var storedState = sessionStorage.getItem("SessionData"); 
        var SessionData = JSON.parse(storedState);
        console.log("SessionData loaded from sessionStorage:", SessionData);
+       console.log("UNSAKSES");
 
     
        sessionStorage.removeItem("SessionData");
