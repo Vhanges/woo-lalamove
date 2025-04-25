@@ -99,7 +99,7 @@ function set_lalamove_order($order_id)
         get_bloginfo('name'),
         get_option("lalamove_phone_number", "+634315873"),
         $customerFullName,
-        "+6307457184",
+        $customerPhoneNo,
         $additionalNotes,
         $proofOfDelivery
     );
@@ -208,7 +208,7 @@ function set_lalamove_order($order_id)
             <div>
                 <strong>Please Contact Us.</strong> There's a problem on placing your shipment order
                 <br>
-                <i class='bi bi-telephone-fill'></i> <strong>Phone:</strong> <a href='tel:+1234567890'>+1234567890</a><br>
+                <i class='bi bi-telephone-fill'></i> <strong>Phone:</strong> <a href='tel:".get_option("lalamove_phone_number", "+634315873")."'>".get_option("lalamove_phone_number", "+634315873")."</a><br>
                 <i class='bi bi-envelope-fill'></i> <strong>Email:</strong> <a href='mailto:support@example.com'>support@example.com</a>
             </div>
         </div>

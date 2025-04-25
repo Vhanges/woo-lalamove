@@ -2,6 +2,39 @@ jq = jQuery.noConflict();
 
 jq(document).ready(function ($) {  
 
+  $('input[name="shipping_method[0]"]').each(function () {
+    if ($(this).val() == "your_shipping_method") {
+        $(this).prop("checked", false); 
+    }
+  });
+
+  $(document).ready(function() {
+    let phoneInput = $('#billing_phone');
+
+    // Add the pattern attribute for E.164 validation
+    phoneInput.attr('pattern', '^\\+[1-9]\\d{1,14}$');
+    phoneInput.attr('title', 'Please enter a valid phone number in E.164 format (e.g., +6412345678)');
+
+    phoneInput.on('input', function() {
+        let value = $(this).val();
+
+        // Ensure "+64" stays intact
+        if (!value.startsWith('+64')) {
+            value = '+64';
+        } else {
+            // Remove non-numeric characters after "+64"
+            value = '+64' + value.substring(3).replace(/\D/g, '');
+        }
+
+        $(this).val(value);
+      });
+  });
+
+
+
+
+
+
   function fieldsChecker (){
 
       let isFilled = true;
@@ -410,17 +443,16 @@ jq(document).ready(function ($) {
   }
 
   // Event listener for opening the modal
-  $(document).on("click", 'input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method', async function () {
+  $(document).on("click", 'input[name="shipping_method[0]"]', async function () {
     const selectedValue = $(this).val();
 
     if(fieldsChecker()){
-
       // Open the modal if shipping method is selected
+
       if (selectedValue === "your_shipping_method") {
         openModal();
         await fetchShippingData();
       }
-
     } 
     
     return;
@@ -853,7 +885,7 @@ jq(document).ready(function ($) {
              document.getElementsByName("billing_last_name")[0]?.value || 
              "";
 
-      window.customerPhoneNo = document.getElementById("shipping-phone")?.value || 
+      window.customerPhoneNo = "+64" + document.getElementById("shipping-phone")?.value || 
            document.getElementById("billing-phone")?.value || 
            document.getElementById("shipping_phone")?.value || 
            document.getElementById("billing_phone")?.value || 
@@ -1329,7 +1361,13 @@ jq(document).ready(function ($) {
       sessionStorage.removeItem("SessionData");
   
       closeModal(); 
-      $('input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method').prop("checked", false); // Uncheck the shipping method
+          
+      $('input[name="shipping_method[0]"]').each(function () {
+        if ($(this).val() == "your_shipping_method") {
+            $(this).prop("checked", false); // Uncheck all except the matched value
+        }
+      });
+
     }
   );
   
