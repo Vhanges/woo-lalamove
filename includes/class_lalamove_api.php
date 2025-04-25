@@ -241,7 +241,7 @@ class Class_Lalamove_Api
                         "stopId"  => $stopId1,
                         "name"    => $recipientName,  
                         "phone"   => $recipientPhone, 
-                        "remarks" => "YYYYYYYY",          
+                        "remarks" => $remarks,          
                     ]
                 ],
                 "isPODEnabled" => $isPODEnabled,        

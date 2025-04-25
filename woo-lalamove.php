@@ -114,7 +114,7 @@ if (!class_exists('Woo_Lalamove')) {
             ) $charset_collate;";
 
             $sql_status = "CREATE TABLE $status_table (
-                status_id INT NOT NULL
+                status_id INT NOT NULL,
                 status_name VARCHAR(100) NOT NULL,
                 description TEXT,
                 PRIMARY KEY (status_id)
@@ -140,8 +140,7 @@ if (!class_exists('Woo_Lalamove')) {
                 drop_off_location TEXT NOT NULL,
                 PRIMARY KEY (integration_id),
                 UNIQUE KEY unique_lalamove_order (lalamove_order_id),
-                FOREIGN KEY (transaction_id) REFERENCES $transaction_table(transaction_id),
-                FOREIGN KEY (wc_order_id) REFERENCES {$wpdb->prefix}wc_orders(ID) ON DELETE SET NULL
+                FOREIGN KEY (transaction_id) REFERENCES $transaction_table(transaction_id)
             ) $charset_collate;";
 
 
@@ -583,16 +582,17 @@ if (!class_exists('Woo_Lalamove')) {
     add_action('woocommerce_checkout_process', 'validate_phone_field');
 
     function validate_phone_field() {
-        $phone = isset($_POST['billing_phone']) ? trim($_POST['billing_phone']) : '';
-
-        // Define the regex pattern for the desired phone number format
+        $phone = isset($_POST['billing_phone']) ? preg_replace('/\s+/', '', trim($_POST['billing_phone'])) : '';
+    
+        // Lalamove E.164 validation regex (supports international phone numbers)
         $pattern = '/^\+[1-9]\d{1,14}$/';
-
-        if (!preg_match($pattern, $phone)) {
-            wc_add_notice(__('Please enter a valid phone number in the international format, e.g., +123456789.'), 'error');
+    
+        if (empty($phone) || !preg_match($pattern, $phone)) {
+            wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6312345678.'), 'error');
         }
     }
-
+    
+    
     
 
     require_once plugin_dir_path(__FILE__) . 'includes/Checkout_Delivery_Placement.php';

@@ -61,15 +61,10 @@ function your_shipping_method_init() {
              * Calculate shipping
              */
             public function calculate_shipping($package = array()) {
-                // Get base cost from instance settings
-                $base_cost = (float) $this->get_option('base_cost', 10);
                 
                 // Get dynamic cost from session
-                $dynamic_cost = (float) WC()->session->get('shipment_cost', 0);
+                $total_cost = (float) WC()->session->get('shipment_cost', 0);
                 
-                // Calculate total cost
-                $total_cost = $base_cost + $dynamic_cost;
-
                 $rate = array(
                     'id'       => $this->id,
                     'label'    => $this->title,

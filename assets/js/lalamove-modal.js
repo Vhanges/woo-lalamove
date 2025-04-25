@@ -2,6 +2,37 @@ jq = jQuery.noConflict();
 
 jq(document).ready(function ($) {  
 
+  $('input[name="shipping_method[0]"]').each(function () {
+    if ($(this).val() == "your_shipping_method") {
+        $(this).prop("checked", false); 
+    }
+  });
+
+  $('input[name="billing_phone"]').each(function () {
+    // Add validation attributes
+    $(this).attr({
+        'pattern': '^\\+[1-9]\\d{1,14}$',
+        'title': 'Please enter a valid phone number in E.164 format (e.g., +6312345678)',
+        'maxlength': '15'
+    });
+
+  });
+
+  $('#billing_phone').on('input', function () {
+      
+    let value = $(this).val();
+
+    // Ensure phone starts with "+"
+    
+    if (!value.startsWith('+')) {
+        value = '+63 ';
+    }
+
+    $(this).val(value);
+
+  });
+
+
   function fieldsChecker (){
 
       let isFilled = true;
@@ -410,17 +441,16 @@ jq(document).ready(function ($) {
   }
 
   // Event listener for opening the modal
-  $(document).on("click", 'input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method', async function () {
+  $(document).on("click", 'input[name="shipping_method[0]"]', async function () {
     const selectedValue = $(this).val();
 
     if(fieldsChecker()){
-
       // Open the modal if shipping method is selected
+
       if (selectedValue === "your_shipping_method") {
         openModal();
         await fetchShippingData();
       }
-
     } 
     
     return;
@@ -853,13 +883,20 @@ jq(document).ready(function ($) {
              document.getElementsByName("billing_last_name")[0]?.value || 
              "";
 
-      window.customerPhoneNo = document.getElementById("shipping-phone")?.value || 
-           document.getElementById("billing-phone")?.value || 
-           document.getElementById("shipping_phone")?.value || 
-           document.getElementById("billing_phone")?.value || 
-           document.getElementsByName("shipping_phone")[0]?.value || 
-           document.getElementsByName("billing_phone")[0]?.value || 
-           "";
+      window.customerPhoneNo = (function() {
+        let phone = document.getElementById("shipping-phone")?.value || 
+                    document.getElementById("billing-phone")?.value || 
+                    document.getElementById("shipping_phone")?.value || 
+                    document.getElementById("billing_phone")?.value || 
+                    document.getElementsByName("shipping_phone")[0]?.value || 
+                    document.getElementsByName("billing_phone")[0]?.value || 
+                    "";
+        // Remove all spaces in the number
+        phone = phone.replace(/\s/g, "");
+    
+        return phone;
+      })();
+          
     } catch (error) {
       console.error("Error loading quotation data:", error);
     }
@@ -912,6 +949,7 @@ jq(document).ready(function ($) {
           console.log("RESPONSE", response);
           if (response.success) {
             console.log("Quotation ID set in session successfully.");
+            console.log("PHONE NO: ", customerPhoneNo);
           } else {
             console.error(
               "Failed to set Quotation ID in session:",
@@ -1288,7 +1326,6 @@ jq(document).ready(function ($) {
         let coordinates = { lat, lng };
         let priceBreakdown = response.data.priceBreakdown;
 
-        console.log("OYYYYYYYYYYYYYYYY", serviceType);
 
         window.quotationData = {
           quotationID,
@@ -1329,7 +1366,13 @@ jq(document).ready(function ($) {
       sessionStorage.removeItem("SessionData");
   
       closeModal(); 
-      $('input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method').prop("checked", false); // Uncheck the shipping method
+          
+      $('input[name="shipping_method[0]"]').each(function () {
+        if ($(this).val() == "your_shipping_method") {
+            $(this).prop("checked", false); // Uncheck all except the matched value
+        }
+      });
+
     }
   );
   
