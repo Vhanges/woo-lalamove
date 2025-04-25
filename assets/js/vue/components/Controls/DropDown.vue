@@ -23,7 +23,7 @@
   const selectedStatus = ref(null);
   
   const selectedStatuesLabel = computed(() =>
-    selectedStatus.value ? selectedStatus.value : 'Filter by Statusessssssssss'
+    selectedStatus.value ? selectedStatus.value : 'Filter by Status'
   );
   
   const toggleDropdown = () => {

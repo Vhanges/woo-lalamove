@@ -9,7 +9,7 @@
                 :filename="fileName"
             />
             <DateRangePicker @dateRangeSelected = "handleDateRange"/>
-            <div class="action action-refresh">
+            <div @click = "toggleRefresh" class="action action-refresh">
                     <span class="material-symbols-outlined restart">restart_alt</span>
             </div>
         </div>
@@ -232,6 +232,9 @@ async function  handleDateRange({startDate, endDate}) {
   await fillChartData()
 };
 
+function toggleRefresh(){
+    window.location.reload();
+}
 
 function fillChartData() {
     if (!dashboardChart.value || !Array.isArray(dashboardChart.value)) {

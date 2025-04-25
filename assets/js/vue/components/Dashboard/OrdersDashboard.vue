@@ -9,7 +9,7 @@
                 :filename="fileName"
             />
             <DateRangePicker @dateRangeSelected = "handleDateRange"/>
-            <div class="action action-refresh">
+            <div @click = "toggleRefresh" class="action action-refresh">
                     <span class="material-symbols-outlined restart">restart_alt</span>
             </div>
         </div>
@@ -225,6 +225,9 @@ async function  handleDateRange({startDate, endDate}) {
 
 }
 
+function toggleRefresh(){
+    window.location.reload();
+}
 
 function fillChartData(){
     label.value = [];
@@ -243,7 +246,6 @@ function fillChartData(){
         rejected.value.push(parseInt(element.rejected_count, 10) || 0);
     });
 
-   
 }
 
 function formatNumber(num) {

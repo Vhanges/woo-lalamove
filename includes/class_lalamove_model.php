@@ -2,6 +2,8 @@
 
 namespace Sevhen\WooLalamove;
 
+use Exception;
+
 if (!defined('ABSPATH'))
     exit;
 
@@ -372,7 +374,7 @@ class Class_Lalamove_Model{
     
         switch ($eventType) {
             case "ORDER_STATUS_CHANGED":
-                $this->handle_order_status_changed($data);
+                $this->handle_order_status_changed($wpdb, $data);
                 break;
     
             case "DRIVER_ASSIGNED":
@@ -419,20 +421,87 @@ class Class_Lalamove_Model{
             $balance_id = $wpdb->insert_id;
     
             if (!$balance_id) {
-                throw new \Exception("Failed to insert balance data.");
+                throw new Exception("Failed to insert balance data.");
             }
     
             $wpdb->query('COMMIT');
             error_log('Wallet balance updated successfully.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $wpdb->query('ROLLBACK');
             error_log('Error updating wallet balance: ' . $e->getMessage());
         }
     }
     
-    private function handle_order_status_changed($data)
+    private function handle_order_status_changed($wpdb, $data)
     {
-        error_log('Processing ORDER_STATUS_CHANGED event: ' . print_r($data, true));
+
+        $lala_order_id = $data['order']['orderId'];
+        $status_id = 0;
+        $status = $data['order']['status'];
+        $allow_update = true;
+
+        switch($status){
+
+            case 'ASSIGNING_DRIVER':
+                $status_id = 2;
+             break;
+            case 'ON_GOING':
+                $status_id = 3;
+             break;
+            case 'PICKED_UP':
+                $status_id = 4;
+             break;
+            case 'COMPLETED':
+                $status_id = 5;
+             break;
+            case 'REJECTED':
+                $status_id = 6;
+             break;
+            case 'CANCELED':
+                $status_id = 7;
+             break;
+            case 'EXPIRED':
+                $status_id = 8;
+             break;
+            default:
+                $allow_update = false;
+
+        }
+
+
+
+        try {
+
+            $wpdb->query('START TRANSACTION');
+
+            if(!$allow_update){
+                throw new Exception("Unknown status received: ". $status);
+            }
+
+            $wpdb->update(
+                $this->order_table,
+                [
+                    'status_id' => $status_id
+                ],
+                [
+                    'lalamove_order_id' => $lala_order_id
+                ],
+                [
+                    '%d'
+                ],
+                [
+                    '%d'
+                ]
+            );
+
+            $wpdb->query('COMMIT');
+
+        } catch(Exception $e) {
+            $wpdb->query('ROLLBACK');
+            error_log('LALAMOVE: ' . $e->getMessage());
+        }
+
+        error_log(message: 'Processing ORDER_STATUS_CHANGED event: ' . print_r($data, true));
     }
     
     private function handle_driver_assigned($data)

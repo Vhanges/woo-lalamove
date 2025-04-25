@@ -7,6 +7,7 @@ const Orders = () => import('@views/Orders.vue');
 const PlaceOrder = () => import('@views/PlaceOrder.vue');
 const Settings = () => import('@views/Settings.vue');
 const Records = () => import('@views/Records.vue');
+const RecordsDetails = () => import('@views/RecordsDetails.vue');
 const Info = () => import('@views/Info.vue'); 
 
 const router = createRouter({
@@ -56,6 +57,12 @@ const router = createRouter({
       path: '/records',
       component: Records,
       name: 'records'
+    },
+    { 
+      path: '/records-details/:lala_id/:wc_id',
+      component: RecordsDetails,
+      name: 'records-details',
+      props: true,
     },
     { 
       path: '/info',

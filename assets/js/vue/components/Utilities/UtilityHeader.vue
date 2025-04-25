@@ -113,7 +113,9 @@
 </style>
 
 <script setup>
-import DropDown from '../Controls/DropDown.vue';
-import DateRangePicker from '../Controls/DateRangePicker.vue';
+import { defineAsyncComponent } from 'vue';
+
+const DropDown = defineAsyncComponent(() => import('../Controls/DropDown.vue'));
+const DateRangePicker = defineAsyncComponent(() => import('../Controls/DateRangePicker.vue'));
 
 </script>
