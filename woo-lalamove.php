@@ -588,7 +588,11 @@ if (!class_exists('Woo_Lalamove')) {
         $pattern = '/^\+[1-9]\d{1,14}$/';
     
         if (empty($phone) || !preg_match($pattern, $phone)) {
+<<<<<<< HEAD
             wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6312345678.'), 'error');
+=======
+            wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6412345678.'), 'error');
+>>>>>>> bd790ccd0b7b6bc3716508715702df429a4d5851
         }
     }
     
