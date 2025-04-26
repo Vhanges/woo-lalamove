@@ -744,7 +744,7 @@ jq(document).ready(function ($) {
           drops: "bottom", 
           showDropdowns: true,
           locale: {
-            format: "DD/MM/YYYY HH:mm:ss",
+            format: "DD/MM/YYYY HH:mm",
             applyLabel: "Apply", 
             cancelLabel: "Cancel",
           },

@@ -62,6 +62,21 @@ function set_lalamove_order($order_id)
     }
 
     $scheduledOn = $_SESSION['scheduledOn'] ?? null;
+    $wordpress_timezone = get_option('timezone_string') ?: 'Asia/Singapore'; // Default to SGT/PHT
+
+    $scheduledOn = $_SESSION['scheduledOn'] ?? null;
+    $wordpress_timezone = get_option('timezone_string') ?: 'Asia/Singapore'; // Default to SGT/PHT
+    
+    if ($scheduledOn) {
+        $date = new DateTime($scheduledOn, new DateTimeZone('UTC')); // Assume stored value is UTC
+        $date->setTimezone(new DateTimeZone($wordpress_timezone)); // Convert to WordPress timezone
+        $scheduledOn = $date->format('Y-m-d H:i:s'); // Convert DateTime object to string
+    } else {
+        error_log("LALAMOVE: No schedule date added");
+    }
+    
+    
+    
 
     $dropOffLocation = $_SESSION['dropOffLocation'] ?? null;
 
@@ -151,6 +166,11 @@ function set_lalamove_order($order_id)
             'scheduled_on' => $scheduledOn,
             'drop_off_location' => $dropOffLocation
         ]);
+
+        var_dump("Scheduled On". $scheduledOn);
+        var_dump("Ordered On". current_time('mysql'));
+
+
 
         if ($result === false) {
             $error_message = $wpdb->last_error;
