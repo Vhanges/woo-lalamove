@@ -216,6 +216,10 @@ jq(document).ready(function ($) {
       background-color: #d4551c;
     }
 
+    .custom-modal-button:disabled {
+      background-color: #d4551c;
+    }
+
     .pricing-item {
       display: flex;
       justify-content: space-between;
@@ -432,6 +436,9 @@ jq(document).ready(function ($) {
     $("#customModal .custom-modal-body").html(`
       <div class="loading-spinner"></div>
     `);
+    
+    $('#saveLocation').prop("disabled", true);
+
   }
 
   // Close the modal
@@ -473,9 +480,16 @@ jq(document).ready(function ($) {
 
   // Save button functionality
   $(document).on("click", "#saveLocation", function () {
+
+    $(this).prop("disabled", true);
+
     saveSessionData();
     alert("Shipping details saved!");
     closeModal();
+
+    setTimeout(function () {
+      $(this).prop("disabled", false); 
+    }, 1000);
 
   });
 
@@ -753,6 +767,7 @@ jq(document).ready(function ($) {
   });
 
   async function loadQuotationData() {
+
     try {
       window.siteUrl = window.location.origin;
 
@@ -1205,6 +1220,9 @@ jq(document).ready(function ($) {
       </div>
       <button type="button" id="saveLocation" class="custom-modal-button">Save</button>
     `);
+    
+    $('#saveLocation').prop("disabled", true);
+
 
     var isRouteOptimized = document.getElementById("optimizeRoute").checked;
 
@@ -1267,6 +1285,12 @@ jq(document).ready(function ($) {
           : SessionData.priceBreakdown.surcharge;
 
         $("#customModal .custom-modal-footer").empty();
+        
+
+        setTimeout(function () {
+          $('#saveLocation').prop("disabled", false); 
+        }, 1000);
+
         $("#customModal .custom-modal-footer").prepend(`
           <div class="total-wrapper">
             <div class="total-label">TOTAL:</div>
