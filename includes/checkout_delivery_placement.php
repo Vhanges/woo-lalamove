@@ -102,11 +102,7 @@ function set_lalamove_order($order_id)
         get_option("lalamove_phone_number", "+634315873"),
         $customerFullName,
         $customerPhoneNo,
-<<<<<<< HEAD
         $additionalNotes ?? 'none',
-=======
-        $additionalNotes,
->>>>>>> bd790ccd0b7b6bc3716508715702df429a4d5851
         $proofOfDelivery
     );
 

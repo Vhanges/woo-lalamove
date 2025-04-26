@@ -8,7 +8,6 @@ jq(document).ready(function ($) {
     }
   });
 
-<<<<<<< HEAD
   $('input[name="billing_phone"]').each(function () {
     // Add validation attributes
     $(this).attr({
@@ -34,35 +33,6 @@ jq(document).ready(function ($) {
   });
 
 
-=======
-  $(document).ready(function() {
-    let phoneInput = $('#billing_phone');
-
-    // Add the pattern attribute for E.164 validation
-    phoneInput.attr('pattern', '^\\+[1-9]\\d{1,14}$');
-    phoneInput.attr('title', 'Please enter a valid phone number in E.164 format (e.g., +6412345678)');
-
-    phoneInput.on('input', function() {
-        let value = $(this).val();
-
-        // Ensure "+64" stays intact
-        if (!value.startsWith('+64')) {
-            value = '+64';
-        } else {
-            // Remove non-numeric characters after "+64"
-            value = '+64' + value.substring(3).replace(/\D/g, '');
-        }
-
-        $(this).val(value);
-      });
-  });
-
-
-
-
-
-
->>>>>>> bd790ccd0b7b6bc3716508715702df429a4d5851
   function fieldsChecker (){
 
       let isFilled = true;
