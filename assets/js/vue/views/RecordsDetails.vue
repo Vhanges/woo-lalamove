@@ -1,22 +1,23 @@
 <template>
+
     <div class="details-wrapper">
-        <header v-if="status == 'assigning driver'">
+        <header v-if="status == 'ASSIGNING_DRIVER'">
 
             <div class="transaction-info" style="background-color: #FEF9E1; border: 2px solid #FFF2B1;">
                     <p>
-                        Status Assigning Driver  ●  231243215
+                        Assigning Driver  ●  {{ lalaOrderId }}
                     </p>
                     <p>
-                        Schedule Date: 10 Dec 2024 5:55PM
+                        Schedule Date: {{ scheduleAt }}
                     </p>
             </div>
 
             <div class="header-content">
 
-                <h2>Finding Nearby</h2>
+                <h3>Finding Nearby</h3>
                 <p>Please wait a moment</p>
 
-                <button class="action-button">
+                <button :click="addPriorityFee" class="action-button">
                     <span class="material-symbols-outlined">add</span>
                     Add Priority Fee
                 </button>
@@ -24,11 +25,43 @@
             </div>
             
         </header>
-        <header v-if="status == 'in transit'">
+        <header v-if="status == 'ON_GOING'">
+
+            <div class="transaction-info" style="background-color: #E0F0FD; border-color: 2px solid #5578B1; color: #5578B1;">
+                    <p>
+                        Awaiting Driver  ●  {{ lalaOrderId }}
+                    </p>
+                    <p>
+                        Schedule Date: {{ scheduleAt }} 
+                    </p>
+            </div>
+
+            <div class="header-content">
+
+                <h3>Driver Name</h3>
+                <p>Plate Number: 123124</p>
+                <p>Contact Number: 123124</p>
+
+                <div class="action-container">
+                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                        <span class="material-symbols-outlined header-icon">location_searching</span>
+                        Track Order
+                    </button>
+                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                        <span class="material-symbols-outlined header-icon">swap_driving_apps</span>
+                        Change Driver
+                    </button>
+                    <p class="delivery message">The driver is on its way to pick up the order</p>
+                </div>
+
+            </div>
+
+        </header>
+        <header v-if="status == 'PICKED_UP'">
 
             <div class="transaction-info" style="background-color: #FFEEEF; border-color: 2px solid #F16622; color: #F16622;">
                     <p>
-                        In Transit  ●  231243215
+                        Picked Up  ●  231243215
                     </p>
                     <p>
                         Schedule Date: 10 Dec 2024 5:55PM
@@ -37,79 +70,422 @@
 
             <div class="header-content">
 
-                <h2>Driver Name</h2>
+                <h3>Driver Name</h3>
                 <p>Plate Number: 123124</p>
                 <p>Contanct Number: 123124</p>
 
-                <div class="action-message">
+                <div class="action-container">
                     <button onclick="window.open('https://example.com', '_blank')" class="action-button">
-                        <span class="material-symbols-outlined">location_searching</span>
+                        <span class="material-symbols-outlined header-icon">location_searching</span>
                         Track Order
                     </button>
-                    <p class="delivery message">The Driver is now on transit</p>
+                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                        <span class="material-symbols-outlined header-icon">swap_driving_apps</span>
+                        Change Driver
+                    </button>
+                    <p class="delivery message">The driver picked up the order</p>
                 </div>
 
             </div>
 
         </header>
-        <header v-if="status == 'item collected'">
-            <h2>
-                item collected
-            </h2>
+        <header v-if="status == 'COMPLETED'">
+            <div class="transaction-info" style="background-color: #DBFFE3; border-color: 2px solid #05B32B; color: #05B32B;">
+                    <p>
+                        Completed ●  231243215
+                    </p>
+                    <p>
+                        Schedule Date: 10 Dec 2024 5:55PM
+                    </p>
+            </div>
+
+            <div class="header-content">
+
+                <h3>Driver Name</h3>
+                <p>Plate Number: 123124</p>
+                <p>Contanct Number: 123124</p>
+
+                <div class="action-container">
+                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                        <span class="material-symbols-outlined header-icon">location_searching</span>
+                        Track Order
+                    </button>
+                </div>
+
+            </div>
         </header>
-        <header v-if="status == 'delivered successfully'">
-            <h2>
-                delivered successfully
-            </h2>
+        <header v-if="status == 'REJECTED'">
+            <div class="transaction-info" style="background-color: #FFEEEF; border-color: 2px solid #CB3F49; color: #CB3F49;">
+                    <p>
+                        Rejected ●  231243215
+                    </p>
+                    <p>
+                        Schedule Date: 10 Dec 2024 5:55PM
+                    </p>
+            </div>
+-
+            <div class="header-content">
+
+                <h3>Driver Name</h3>
+                <p>Plate Number: 123124</p>
+                <p>Contanct Number: 123124</p>
+
+            </div>
         </header>
-        <header v-if="status == 'rejected'">
-            <h2>
-                rejected
-            </h2>
+        <header v-if="status == 'CANCELED'">
+            <div class="transaction-info" style="background-color: #FFEEEF; border-color: 2px solid #CB3F49; color: #CB3F49;">
+                    <p>
+                        Canceled ●  231243215
+                    </p>
+                    <p>
+                        Schedule Date: 10 Dec 2024 5:55PM
+                    </p>
+            </div>
+-
+            <div class="header-content">
+
+                <h3>Driver Name</h3>
+                <p>Plate Number: 123124</p>
+                <p>Contanct Number: 123124</p>
+
+            </div>
         </header>
-        <header v-if="status == 'ordered canceled'">
-            <h2>
-                canceled
-            </h2>
-        </header>
-        <header v-if="status == 'expired'">
-            <h2>
-                expired
-            </h2>
+        <header v-if="status == 'EXPIRED'">
+            <div class="transaction-info" style="background-color: #EDEDED; border-color: 2px solid #4C4C4C; color: #4C4C4C;">
+                    <p>
+                        Expired ●  231243215
+                    </p>
+                    <p>
+                        Schedule Date: 10 Dec 2024 5:55PM
+                    </p>
+            </div>  
+-
+            <div class="header-content">
+
+                <h3>Driver Name</h3>
+                <p>Plate Number: 123124</p>
+                <p>Contanct Number: 123124</p>
+
+            </div>
         </header>
 
-        <main>
-            <p>{{ lala_id }}</p><br>
-            <p>{{ wc_id }}</p>
-            <p>hello</p>
+        <div v-if="noData" class="no-record">
+            <h1>
+                No records found
+            </h1>
+        </div>
+
+        <main v-else>
+            <h3>ROUTE</h3>
+            <div class="location-wrapper">
+                <div class="box">
+                    <span class="material-symbols-outlined body-icon">brightness_1</span>
+                    <span class="location">
+                        <p>
+                            Pickup Location
+                        </p>
+                        <p>
+                            {{ senderAddress }}
+                        </p>
+                        <p>
+                            {{ senderName }} - {{ senderPhoneNo }}
+                        </p>
+                    </span>
+                </div>
+
+                    <div class="line"></div>
+
+                <div class="box">
+                    <span class="material-symbols-outlined body-icon">location_on</span>
+
+                    <span class="location">
+                        <p>
+                            Drop Off Location
+                        </p>
+                        <p>
+                            {{ customerAddress }}
+                        </p>
+                        <p>
+                            {{ customerName }} - {{ customerPhoneNo }}
+                        </p>
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="additional-info-wrapper">
+
+                
+                <div class="additional-info">
+                <strong>
+                    Placed By
+                </strong>
+                
+                <p>
+                    {{ senderName }}
+                </p>
+            </div>
+            <div class="additional-info">
+                <strong>
+                    Service Type
+                </strong>
+                
+                <p>
+                    dummy data
+                </p>
+            </div>
+            <div class="additional-info">
+                <strong>
+                    Additional Services
+                </strong>
+                
+                <p>
+                    dummy data
+                </p>
+            </div>
+
+
+        </div>
+
+
+        <div class="price-breakdown">
+            <h3>PRICE</h3>
+
+                <span v-if="basePrice" class="cost">
+                    <p>Base Price</p>
+                    <p class="cost-price">
+                        {{ basePrice }}
+                    </p>
+                </span>
+                <span v-if="extraMileage" class="cost">
+                    <p>Additional Distance Fee</p>
+                    <p class="cost-price">
+                        {{ extraMileage }}
+                    </p>
+                </span>
+                <span v-if="specialRequest" class="cost">
+                    <p>Special Request Fee</p>
+                    <p class="cost-price">
+                        {{ specialRequest }}
+                    </p>
+                </span>
+                <span v-if="priorityFee" class="cost">
+                    <p>Priority Fee</p>
+                    <p class="cost-price">
+                        {{ priorityFee }}
+                    </p>
+                </span>
+                <span v-if="surcharge" class="cost"> 
+                    <p>Surcharge</p>
+                    <p class="cost-price">
+                        {{ surcharge }}
+                    </p>
+                </span>
+                <span v-if="totalExcludedPriorityFee" class="cost">
+                    <p>Total Exluded Priority Fee</p>
+                    <p class="total-price">
+                        {{ totalExcludedPriorityFee }}
+                    </p>
+                </span>
+                <span  class="cost"> 
+                    <p>Total</p>
+                    <p class="total-price">
+                        {{ total }}
+                    </p>
+                </span>
+        </div>
+
+        <div v-if="podImage" class="pod">
+            <img src="{{podImage}}" alt="">
+        </div>
+
+
+
+
+            
         </main>
 
         <footer>
-            <h3>
-                Hello 
-            </h3>
-            <h3>
-                Hello 
-            </h3>
+            <div class="action-container">
+                    <button onclick="window.open('https://example.com', '_blank')" class="action-button" style="margin-right: auto;">
+                        <span class="material-symbols-outlined footer-icon">chevron_left</span>
+                        {{lala_id}}
+                    </button>
+                    <button v-if="isCancelAvailable" onclick="window.open('https://example.com', '_blank')" class="action-button">
+                        <span class="material-symbols-outlined footer-icon">close</span>
+                        Cancel
+                    </button>
+                    <button v-if="isOrderAgainAvailable" onclick="window.open('https://example.com', '_blank')" class="action-button">
+                        <span class="material-symbols-outlined footer-icon">reply</span>
+                        Order Again
+                    </button>
+            </div>
         </footer>
 
     </div>
 </template>
 
 <script setup>
-import {ref} from 'vue';
+import {ref, onMounted} from 'vue';
 import axios from 'axios';
 
 const status = ref();
+const isCancelAvailable = ref(true);
+const isOrderAgainAvailable = ref(true);
 
-status.value = 'in transit';
+const noData = ref(false);
+const loading = ref(true);
+
+const lalaOrderId = ref();
+const lalaQuotationId = ref();
+const scheduleData = ref();
+const shareLink = ref();
+
+// Customer & Sender Info
+
+const senderAddress = ref();
+const senderName = ref();
+const senderPhoneNo = ref();
+
+const customerAddress = ref();
+const customerName = ref();
+const customerPhoneNo = ref();
+
+// Service & Pricing Info
+const serviceType = ref();
+const addService = ref();
+
+const basePrice = ref();
+const extraMileage = ref();
+const surcharge = ref();
+const specialRequest = ref();
+const priorityFee = ref();
+const totalExcludedPriorityFee = ref();
+const total = ref();
+
+const podImage = ref();
+const deliveredAt = ref();
+
+// Driver-related data
+const driverId = ref();
+const driverName = ref();
+const plateNumber = ref();
+const contactNo = ref();
 
 
 
-const params = defineProps({
-    lala_id: Number,
-    wc_id: Number
+const props = defineProps({
+    lala_id: String,
+    wc_id: String
 });
+
+const fetchLalaOrderData = async (lala_id, wc_id) => {
+
+    
+    
+    try {
+        const orderResponse = await axios.get(
+            wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lala-order-details/?lala_id=' + lala_id,
+            {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+            },
+            }
+        );
+
+        
+        const order = orderResponse.data;
+        console.log("ORDER RESPONSE: ", order);
+        
+
+        if (order.data.errors) {
+            throw new Error('LALAMOVE: No data for this order');
+        }
+
+        noData.value = order.data.errors ? true : false;
+
+        status.value = order.data.status;
+
+        console.log("STATUS: ", status);
+        lalaOrderId.value = order.data.orderId;
+        lalaQuotationId.value = order.data.quotationId;
+        scheduleData.value = order.data.scheduleAt;
+
+
+        const stops = order.data.stops;
+        if (Array.isArray(stops) && stops.length > 0) {
+            const firstStop = stops[0] || {};
+            const lastStop = stops[stops.length - 1] || {};
+
+            senderAddress.value = firstStop.address || '';
+            senderName.value = firstStop.name || '';
+            senderPhoneNo.value = firstStop.phone || '';
+
+            customerAddress.value = lastStop.address || '';
+            customerName.value = lastStop.name || '';
+            customerPhoneNo.value = lastStop.phone || '';
+            podImage.value = lastStop.image || '';
+            deliveredAt.value = lastStop.deliveredAt || '';
+        }
+
+
+
+
+        // const quotationResponse = await axios.get(
+        //     wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lala-order-details/?quotation_id=' + lala_id,
+        //     {
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+        //     },
+        //     }
+        // );
+
+        const priceBreakdown = order.data.priceBreakdown;
+
+        basePrice.value = priceBreakdown.base;
+        extraMileage.value = priceBreakdown.extraMileage;
+        priorityFee.value = priceBreakdown.priorityFee;
+        surcharge.value = priceBreakdown.surcharge;
+        specialRequest.value = priceBreakdown.specialRequest;
+        totalExcludedPriorityFee.value = priceBreakdown.totalExcludedPriorityFee;
+        total.value = priceBreakdown.total;
+
+
+
+        const driverResponse = await axios.get(
+            wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lala-driver-details/?lala_id=' + lala_id + '&driver_id=' + driverId.value,
+            {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+            },
+            }
+            
+        );
+        
+        const driver = driverResponse.data;
+
+        
+
+
+    } catch (error) {
+      console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
+        noData.value = true;
+    } 
+
+};
+
+onMounted(() => {
+    fetchLalaOrderData(props.lala_id, props.wc_id);
+});
+
+
+
+
+
+
 
 </script>
 
@@ -123,6 +499,7 @@ const params = defineProps({
     flex-direction: column;
     height: 100%;
     background-color: $bg-light;
+    overflow-y: scroll;
 
     header {
         display: flex;
@@ -149,29 +526,119 @@ const params = defineProps({
             padding: 1rem;
             border-bottom: 2px solid $border-color;
 
-            .action-message {
-                display: flex;
-                flex-direction: row;
-                gap: 1rem;
-            }
-
         }
     }
     main{
         flex: 1;
         display: flex;
-        justify-content: center;
-        align-items: center;
+        justify-content: start;
+        align-items: start;
         flex-direction: column;
-        width: 100%;
+        width: 800px;
+        padding: 1%;
+        gap: 10px;
+
+        .location-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: start; 
+            gap: 5px; 
+            position: relative;
+            
+            .box {
+                height: fit-content;
+                background: transparent;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                gap: 1rem;
+
+                .location {
+                    max-width: fit-content;
+
+                    p {
+                        line-height: .5;
+                    }
+
+                    strong {
+                        line-height: .5;
+                    }
+                }
+
+            }
+
+            .line {
+                width: 2px; 
+                height: 35%; 
+                background: $txt-primary;
+                position: absolute; 
+                left: 12px; 
+                top: 50%; 
+                transform: translate(-100%, -50%);
+                z-index: 1; 
+            }
+
+        }
+
+        .additional-info-wrapper {
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+
+            .additional-info p {
+                margin-top: 0px;   
+            }
+            
+        }
+
+        .price-breakdown {
+            width: 100%;
+
+            .cost {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+
+                .cost-price {
+                    font-weight: $font-weight-bold;
+                    color: $header-active;
+                }
+
+                .total-price {
+                    font-weight: $font-weight-bold;
+                    font-size: $font-size-lg;
+                    color: $header-active;
+                }
+            }
+        }
+
+        .pod {
+            width: 20%; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pod img {
+            max-width: 100%;
+            height: auto;
+        }
 
 
+        
     }
     footer {
         display: flex;
-        justify-content: space-around;
+        justify-content: flex-end;  
         align-items: center;
-        width: 100%;
+        width: 800px;
+        gap: 1rem;
         margin: 1rem 1rem 6rem 1rem;
     }
 }
@@ -196,8 +663,46 @@ const params = defineProps({
     color: $bg-primary;
 }
 
-.material-symbols-outlined {
+.header-icon {
     font-size: $font-size-xs;
 }
 
+.footer-icon {
+    font-size: $font-size-md;
+}
+
+.body-icon {
+    font-size: $font-size-xl;
+    color: $bg-primary;
+}
+
+.cost {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+h3 {
+    color: $txt-primary;
+    margin-bottom: 5px;
+}
+strong {
+    color: $txt-primary;
+    margin-bottom: 5px;
+}
+
+.action-container {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
+
+.no-record {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 </style>

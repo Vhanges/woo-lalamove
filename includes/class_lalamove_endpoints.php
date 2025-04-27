@@ -81,10 +81,40 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
                         },
                     ],
                     'to' => [
-                            'validate_callback' => function($param, $request, $key) {
+                            'validate_callback' => function($param, $request, $key): bool {
                                 return strtotime($param) !== false; 
                             },
                         ],
+            ],
+            'permission_callback' => '__return_true'
+        ]); 
+
+        register_rest_route('woo-lalamove/v1', '/get-lala-order-details', [
+            'methods' => ['GET'],
+            'callback' => [$this, 'get_lala_order_details'],
+            'args' => [
+                    'lala_id' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+            ],
+            'permission_callback' => '__return_true'
+        ]); 
+        register_rest_route('woo-lalamove/v1', '/get-lala-driver-details', [
+            'methods' => ['GET'],
+            'callback' => [$this, 'get_lala_driver_details'],
+            'args' => [
+                    'lala_id' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+                    'driver_id' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
             ],
             'permission_callback' => '__return_true'
         ]); 
@@ -192,6 +222,36 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
     }
     
 
+    /**
+     * Callback for get_lala_order_details
+     * 
+     * @return $res
+     */
+    public function get_lala_order_details($data) {
+
+        $lala_id = $data['lala_id'];
+
+        $response = $this->lalamove_api->get_order_details($lala_id);
+
+        return $response ; 
+
+    }
+    
+    /**
+     * Callback for get_lala_driver_details
+     * 
+     * @return $res
+     */
+    public function get_lala_driver_details($data) {
+
+        $lala_id = $data['lala_id'];
+        $driver_id = $data['driver_id'];
+
+        $response = $this->lalamove_api->get_driver_details($lala_id, $driver_id);
+
+        return $response ; 
+
+    }
     
 
 }

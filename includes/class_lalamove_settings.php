@@ -48,7 +48,7 @@ class Class_Lalamove_Settings
         add_submenu_page(
             'woocommerce',                   // Parent slug (under WooCommerce)
             'Lalamove API',                  // Page title
-            'Lalamove',                      // Menu title
+            'Configure Lalamove',                      // Menu title
             'manage_options',                // Capability required
             'woo-lalamove-settings',         // Menu slug
             [$this, 'settings_page_html']    // Callback to render the page

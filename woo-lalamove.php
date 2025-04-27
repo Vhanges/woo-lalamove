@@ -162,7 +162,7 @@ if (!class_exists('Woo_Lalamove')) {
                 ('0', 'Pending', 'The order has been created but is waiting for further action or confirmation.'),
                 ('1', 'Processed', 'The order has been reviewed and confirmed for fulfillment.'),
                 ('2', 'Assigning Driver', 'A driver is being assigned to handle the delivery.'),
-                ('3', 'In Transit', 'The delivery is currently underway to its destination.'),
+                ('3', 'Awaiting Driver', 'The driver is on its way to pick up the order.'),
                 ('4', 'Item Collected', 'The driver has successfully picked up the item from the origin location.'),
                 ('5', 'Delivered Successfully', 'The delivery has been completed, and the item has reached its destination.'),
                 ('6', 'Rejected', 'The order was rejected by the drivers'),
@@ -265,7 +265,7 @@ if (!class_exists('Woo_Lalamove')) {
         public function woo_lalamove_add_admin_page()
         {
             add_menu_page(
-                'Lalamove Settings',
+                'Lalamove',
                 'Lalamove',
                 'manage_options',
                 'woo-lalamove',

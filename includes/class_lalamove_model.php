@@ -144,7 +144,7 @@ class Class_Lalamove_Model{
                     case 'assigning driver':
                         $activeDeliveries++;
                         break;
-                    case 'in transit':
+                    case 'awaiting driver':
                         $activeDeliveries++;
                         break;
                     case 'item collected':

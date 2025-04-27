@@ -898,7 +898,6 @@ jq(document).ready(function ($) {
              document.getElementsByName("billing_last_name")[0]?.value || 
              "";
 
-<<<<<<< HEAD
       window.customerPhoneNo = (function() {
         let phone = document.getElementById("shipping-phone")?.value || 
                     document.getElementById("billing-phone")?.value || 
@@ -913,15 +912,6 @@ jq(document).ready(function ($) {
         return phone;
       })();
           
-=======
-      window.customerPhoneNo = "+64" + document.getElementById("shipping-phone")?.value || 
-           document.getElementById("billing-phone")?.value || 
-           document.getElementById("shipping_phone")?.value || 
-           document.getElementById("billing_phone")?.value || 
-           document.getElementsByName("shipping_phone")[0]?.value || 
-           document.getElementsByName("billing_phone")[0]?.value || 
-           "";
->>>>>>> bd790ccd0b7b6bc3716508715702df429a4d5851
     } catch (error) {
       console.error("Error loading quotation data:", error);
     }
