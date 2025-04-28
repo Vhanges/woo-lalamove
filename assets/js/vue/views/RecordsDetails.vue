@@ -17,10 +17,16 @@
                 <h3>Finding Nearby</h3>
                 <p>Please wait a moment</p>
 
-                <button :click="addPriorityFee" class="action-button">
-                    <span class="material-symbols-outlined">add</span>
-                    Add Priority Fee
-                </button>
+                <div class="action-container">
+                    <button @click="openShareLink" class="action-button">
+                        <span class="material-symbols-outlined header-icon">location_searching</span>
+                        Track Order
+                    </button>
+                    <button @click="addPriorityFee" class="action-button">
+                        <span class="material-symbols-outlined header-icon">add</span>
+                        Add Priority Fee
+                    </button>
+                </div>
 
             </div>
             
@@ -38,9 +44,9 @@
 
             <div class="header-content">
 
-                <h3>Driver Name</h3>
-                <p>Plate Number: 123124</p>
-                <p>Contact Number: 123124</p>
+                <h3>{{ driverName }}</h3>
+                <p>Plate Number: {{ driverPlateNumber }}</p>
+                <p>Contact Number: {{ driverContactNo }}</p>
 
                 <div class="action-container">
                     <button onclick="window.open('https://example.com', '_blank')" class="action-button">
@@ -70,9 +76,9 @@
 
             <div class="header-content">
 
-                <h3>Driver Name</h3>
-                <p>Plate Number: 123124</p>
-                <p>Contanct Number: 123124</p>
+                <h3>{{ driverName }}</h3>
+                <p>Plate Number: {{ driverPlateNumber }}</p>
+                <p>Contact Number: {{ driverContactNo }}</p>
 
                 <div class="action-container">
                     <button onclick="window.open('https://example.com', '_blank')" class="action-button">
@@ -101,9 +107,9 @@
 
             <div class="header-content">
 
-                <h3>Driver Name</h3>
-                <p>Plate Number: 123124</p>
-                <p>Contanct Number: 123124</p>
+                <h3>{{ driverName }}</h3>
+                <p>Plate Number: {{ driverPlateNumber }}</p>
+                <p>Contact Number: {{ driverContactNo }}</p>
 
                 <div class="action-container">
                     <button onclick="window.open('https://example.com', '_blank')" class="action-button">
@@ -126,9 +132,8 @@
 -
             <div class="header-content">
 
-                <h3>Driver Name</h3>
-                <p>Plate Number: 123124</p>
-                <p>Contanct Number: 123124</p>
+                <h3>Ordered Rejected</h3>
+                <p>The order was rejected twice.</p>
 
             </div>
         </header>
@@ -144,9 +149,8 @@
 -
             <div class="header-content">
 
-                <h3>Driver Name</h3>
-                <p>Plate Number: 123124</p>
-                <p>Contanct Number: 123124</p>
+                <h3>Ordered Canceled</h3>
+                <p>The order has been canceled or rejected by the driver twice.</p>
 
             </div>
         </header>
@@ -162,9 +166,8 @@
 -
             <div class="header-content">
 
-                <h3>Driver Name</h3>
-                <p>Plate Number: 123124</p>
-                <p>Contanct Number: 123124</p>
+                <h3>Order Expired</h3>
+                <p>The order expired after the driver failed to accept it within two hours.</p>
 
             </div>
         </header>
@@ -309,7 +312,7 @@
             <div class="action-container">
                     <button onclick="window.open('https://example.com', '_blank')" class="action-button" style="margin-right: auto;">
                         <span class="material-symbols-outlined footer-icon">chevron_left</span>
-                        {{lala_id}}
+                        Return
                     </button>
                     <button v-if="isCancelAvailable" onclick="window.open('https://example.com', '_blank')" class="action-button">
                         <span class="material-symbols-outlined footer-icon">close</span>
@@ -328,6 +331,8 @@
 <script setup>
 import {ref, onMounted} from 'vue';
 import axios from 'axios';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 const status = ref();
 const isCancelAvailable = ref(true);
@@ -369,8 +374,8 @@ const deliveredAt = ref();
 // Driver-related data
 const driverId = ref();
 const driverName = ref();
-const plateNumber = ref();
-const contactNo = ref();
+const driverPlateNumber = ref();
+const driverContactNo = ref();
 
 
 
@@ -399,18 +404,20 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
         console.log("ORDER RESPONSE: ", order);
         
 
-        if (order.data.errors) {
+        if (!order.data || order.data.errors) {
             throw new Error('LALAMOVE: No data for this order');
         }
-
-        noData.value = order.data.errors ? true : false;
 
         status.value = order.data.status;
 
         console.log("STATUS: ", status);
         lalaOrderId.value = order.data.orderId;
         lalaQuotationId.value = order.data.quotationId;
-        scheduleData.value = order.data.scheduleAt;
+        driverId.value = order.data.driverId;
+        shareLink.value = order.data.shareLink;
+        scheduleData.value = order.data.scheduleAt ?? "None";
+
+        console.log("SHARELINK", shareLink.value);
 
 
         const stops = order.data.stops;
@@ -454,6 +461,7 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
 
 
 
+
         const driverResponse = await axios.get(
             wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lala-driver-details/?lala_id=' + lala_id + '&driver_id=' + driverId.value,
             {
@@ -466,8 +474,18 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
         );
         
         const driver = driverResponse.data;
-
         
+        if(driver.errors){
+            return;
+        } else {
+            console.log("DRIVER RESPONSE: ", driver);
+
+            driverName.value = driver.name;
+            driverContactNo.value = driver.phone;
+            driverPlateNumber.value = driver.plateNumber;
+        }
+
+
 
 
     } catch (error) {
@@ -477,6 +495,17 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
 
 };
 
+const openShareLink = () => {
+  if (shareLink.value) {
+    window.open(shareLink.value, '_blank');
+  } else {
+    toast.error('An error occured. Please try again later', { autoClose: 2000 });
+  }
+};
+
+const addPriorityFee = () => {
+    console.log("HELLLOOOOOOOOOO");
+};
 onMounted(() => {
     fetchLalaOrderData(props.lala_id, props.wc_id);
 });

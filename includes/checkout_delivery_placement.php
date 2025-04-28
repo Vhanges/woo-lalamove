@@ -36,6 +36,8 @@ function set_lalamove_order($order_id)
 
 
     // Retrieve data from $_SESSION
+    $quotationBody = $_SESSION['quotationBody'] ?? null;
+
     $quotationID = $_SESSION['quotationID'] ?? null;
 
     $stopId0 = $_SESSION['stopId0'] ?? null;
@@ -164,12 +166,9 @@ function set_lalamove_order($order_id)
             'lalamove_order_id' => $lalamove_orderId,
             'ordered_on' => current_time('mysql'),
             'scheduled_on' => $scheduledOn,
-            'drop_off_location' => $dropOffLocation
+            'drop_off_location' => $dropOffLocation,
+            'order_json_body' => json_encode($quotationBody)
         ]);
-
-        var_dump("Scheduled On". $scheduledOn);
-        var_dump("Ordered On". current_time('mysql'));
-
 
 
         if ($result === false) {
@@ -265,6 +264,7 @@ function set_quotation_data_session()
         ]);
         $_SESSION['dummy'] ='dummy';
 
+        $_SESSION['quotationBody'] = $_POST['quotationBody'];
         $_SESSION['quotationID'] = sanitize_text_field($_POST['quotationID']);
         $_SESSION['stopId0'] = sanitize_text_field($_POST['stopId0']);
         $_SESSION['stopId1'] = sanitize_text_field($_POST['stopId1']);

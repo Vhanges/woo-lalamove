@@ -926,6 +926,8 @@ jq(document).ready(function ($) {
       // Log the collected data
       console.log("Saving data...");
 
+      console.log("Quotation Body", window.body);
+
       SessionData.quotationID = window.quotationData.quotationID; 
       SessionData.coordinates.lat = window.quotationData.coordinates.lat;
       SessionData.coordinates.lng = window.quotationData.coordinates.lng;
@@ -947,6 +949,7 @@ jq(document).ready(function ($) {
         method: "POST",
         data: {
           action: "set_quotation_data_session",
+          quotationBody: window.body,
           quotationID:SessionData.quotationID,
           stopId0: SessionData.stops.stopID0,
           stopId1: SessionData.stops.stopID1,
