@@ -16,7 +16,7 @@ const router = createRouter({
     { 
       path: '/',
       component: PlaceOrder,
-      name: 'home'
+      name: 'records'
     },
     { 
       path: '/place-order',

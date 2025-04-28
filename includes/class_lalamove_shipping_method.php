@@ -1,5 +1,4 @@
 <?php
-if (!defined('ABSPATH')) exit;
 
 function your_shipping_method_init() {
     if (!class_exists('Class_Lalamove_Shipping_Method')) {

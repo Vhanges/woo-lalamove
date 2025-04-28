@@ -2,7 +2,7 @@
   <nav class="navbar">
     <div class="navbar-logo" />
 
-    <router-link 
+    <!-- <router-link 
       to="/place-order" 
       class="nav-item nav-item--order"
     >
@@ -14,7 +14,7 @@
       class="nav-item nav-item--woocommerce"
     >
       <span class="nav-item__label">WooCommerce Orders</span>
-    </router-link>
+    </router-link> -->
 
     <router-link 
       to="/records" 
@@ -30,22 +30,22 @@
       <span class="nav-item__label">Dashboard</span>
     </router-link>
 
-    <div class="nav-controls">
+    <!-- <div class="nav-controls">
       <router-link 
         to="/info" 
         class="navbar-icon navbar-icon--info"
       >
-      <span class="material-symbols-outlined icon">info</span> <!-- Information Symbol -->
+      <span class="material-symbols-outlined icon">info</span> 
       </router-link>
 
       <router-link 
         to="/settings" 
         class="navbar-icon navbar-icon--settings"
       >
-        <span class="material-symbols-outlined icon">settings</span> <!-- Information Symbol -->
+        <span class="material-symbols-outlined icon">settings</span> 
       </router-link>
   
-    </div>
+    </div> -->
 
   </nav>
 </template>

@@ -171,6 +171,7 @@ function set_lalamove_order($order_id)
         ]);
 
 
+
         if ($result === false) {
             $error_message = $wpdb->last_error;
             throw new Exception("Database insert error: " . $error_message);

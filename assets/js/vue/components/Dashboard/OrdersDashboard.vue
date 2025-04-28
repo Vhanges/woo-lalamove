@@ -306,7 +306,7 @@ const fetchOrdersDashboardData = async (startDate, endDate) => {
 
 onMounted(() =>{
     const start = moment().subtract(30, 'days').format('YYYY-MM-DD');
-    const end = moment().add(1, 'days').format('YYYY-MM-DD');
+    const end = moment().add(2, 'days').format('YYYY-MM-DD');
     console.log(start, '\n', end);
     handleDateRange({startDate: start, endDate: end});
 });

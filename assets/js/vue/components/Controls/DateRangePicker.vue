@@ -19,7 +19,7 @@
 <script setup>
 import { onMounted, ref, computed } from "vue";
 
-const startDate = ref(moment().subtract(30, "days")); 
+const startDate = ref(moment().subtract(3, "days")); 
 const endDate = ref(moment()); 
 
 const emit = defineEmits(['dateRangeSelected']);

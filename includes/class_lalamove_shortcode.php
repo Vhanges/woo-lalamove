@@ -313,3 +313,5 @@ public function render_qr_content() {
     }
 }
 
+
+

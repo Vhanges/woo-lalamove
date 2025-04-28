@@ -51,7 +51,6 @@
     "exceljs": "^4.4.0",
     "file-loader": "^6.2.0",
     "file-saver": "^2.0.5",
-    "leaflet": "^1.9.4",
     "sortablejs-vue3": "^1.2.11",
     "source-map-loader": "^5.0.0",
     "style-loader": "^4.0.0",

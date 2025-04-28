@@ -133,7 +133,7 @@ if (!class_exists('Woo_Lalamove')) {
                 integration_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 transaction_id BIGINT UNSIGNED NOT NULL,
                 wc_order_id BIGINT UNSIGNED,
-                order_status_id INT NOT NULL,
+                status_id INT NOT NULL,
                 lalamove_order_id BIGINT NOT NULL,
                 ordered_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 scheduled_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,

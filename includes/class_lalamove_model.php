@@ -521,3 +521,4 @@ class Class_Lalamove_Model{
     
 
 }
+

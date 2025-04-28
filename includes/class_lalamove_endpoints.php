@@ -255,3 +255,5 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
     
 
 }
+
+

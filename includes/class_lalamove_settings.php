@@ -331,3 +331,4 @@ class Class_Lalamove_Settings
               title="Please enter a valid phone number in E.164 format (e.g., +6312345678)">';
     }
 }
+
