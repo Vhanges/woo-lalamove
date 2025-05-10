@@ -15,8 +15,8 @@ const router = createRouter({
   routes: [
     { 
       path: '/',
-      component: PlaceOrder,
-      name: 'records'
+      component: Records,
+      name: 'records-default'
     },
     { 
       path: '/place-order',

@@ -517,7 +517,7 @@ const openShareLink = () => {
 };
 
 const cancelOrder = async (id) => { 
-    console.log("AHHHHH", id);
+
   try {
     if (!confirm('Are you sure you want to cancel this order?')) return;
 
@@ -535,13 +535,9 @@ const cancelOrder = async (id) => {
       }
     );
 
-    if (response.data.success) {
-      toast.success('Order canceled successfully!');
-      await fetchLalaOrderData(props.lala_id, props.wc_id); // Refresh order data
-    } else {
-      toast.error(response.data.message || 'Failed to cancel order');
-      console.log("LALA ID", props.lala_id);
-    }
+    toast.success('Order canceled successfully!');
+    await fetchLalaOrderData(props.lala_id, props.wc_id); 
+    
   } catch (error) {
     console.error('Cancel error:', error);
     toast.error(error.response?.data?.message || 'Failed to cancel order');
