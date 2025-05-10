@@ -131,12 +131,22 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
             'methods' => ['GET'],
             'callback' => [$this, 'records_data'],
             'args' => [
-                    'lala_id' => [
+                    'from' => [
                         'validate_callback' => function($param, $request, $key) {
                             return  $param; 
                         },
                     ],
-                    'driver_id' => [
+                    'to' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                        ],
+                    'status' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+                    'search_input' => [
                         'validate_callback' => function($param, $request, $key) {
                             return  $param; 
                         },

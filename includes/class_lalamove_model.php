@@ -116,9 +116,18 @@ class Class_Lalamove_Model{
             
             // **Conditionally apply search filtering**
             if (isset($search_input)) {
-                $query .= " AND (o.drop_off_location LIKE '%" . esc_sql($search_input) . "%' OR o.lalamove_order_id LIKE '%" . esc_sql($search_input) . "%')";
+                $like = '%' . $wpdb->esc_like($search_input) . '%';
+                $query .= $wpdb->prepare(
+                    " AND (
+                        o.drop_off_location LIKE %s OR 
+                        o.lalamove_order_id LIKE %s OR 
+                        o.wc_order_id LIKE %s OR
+                        t.service_type LIKE %s
+                    )",
+                    $like, $like, $like, $like
+                );
             }
-            
+
             $query .= " ORDER BY o.ordered_on DESC";
             
             $results['records'] = $wpdb->get_results($query, ARRAY_A);
