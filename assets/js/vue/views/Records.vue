@@ -155,11 +155,14 @@ async function handleUtilityData({ searchQuery, selectedOption, dateRange }) {
                 background-color:  $bg-gray;
                 font-weight: bold;
             }
-            
 
             tr:hover {
                 background-color: $bg-primary-light;
                 box-shadow: inset 2px 0 0 0 $bg-primary;
+            }
+
+            tbody {
+              max-height: 700px;
             }
 
             .selected-row{

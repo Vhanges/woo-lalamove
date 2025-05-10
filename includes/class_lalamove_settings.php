@@ -110,7 +110,7 @@ class Class_Lalamove_Settings
             'woo_lalamove_shipping_section',
             'Shipping Settings',
             function() { 
-                echo '<p>Enter your shipping address and phone number. The phone number must be in E.164 format (e.g., +6312345678).</p>'; 
+                echo '<p>Enter your shipping address and phone number. The phone number must be in E.164 format (e.g., +6412345678).</p>'; 
             },
             'woo-lalamove-settings'
         );
@@ -328,7 +328,7 @@ class Class_Lalamove_Settings
         $value = get_option('lalamove_phone_number', '');
         echo '<input type="tel" name="lalamove_phone_number" value="' . esc_attr($value) . '" class="regular-text" 
               pattern="^\+[1-9]\d{1,14}$" 
-              title="Please enter a valid phone number in E.164 format (e.g., +6312345678)">';
+              title="Please enter a valid phone number in E.164 format (e.g., +6412345678)">';
     }
 }
 

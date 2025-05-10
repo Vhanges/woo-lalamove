@@ -223,7 +223,7 @@ function print_waybill($order_ids, $bulk_printing = false) {
 			</tr>    
 			<tr>	
 				<td colspan="4" class="header" style="height: 10mm;">
-					'.$delivery_data['delivery_id'].'
+					'.$delivery_data['deliveryqwq_id'].'
 				</td>
 			</tr>
 			<tr>

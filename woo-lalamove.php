@@ -59,7 +59,7 @@ if (!class_exists('Woo_Lalamove')) {
             }
         }
         function modify_checkout_phone_field($fields) {
-            $fields['billing']['billing_phone']['placeholder'] = 'Ex. +6343554325';
+            $fields['billing']['billing_phone']['placeholder'] = 'Ex. +6443554325';
             $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '^\\+[1-9][0-9]{1,14}$';
             return $fields;
         }
@@ -589,7 +589,7 @@ if (!class_exists('Woo_Lalamove')) {
         $pattern = '/^\+[1-9]\d{1,14}$/';
     
         if (empty($phone) || !preg_match($pattern, $phone)) {
-            wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6312345678.'), 'error');
+            wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6412345678.'), 'error');
         }
     }
     

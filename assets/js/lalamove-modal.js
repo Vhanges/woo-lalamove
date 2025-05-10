@@ -12,7 +12,7 @@ jq(document).ready(function ($) {
     // Add validation attributes
     $(this).attr({
         'pattern': '^\\+[1-9]\\d{1,14}$',
-        'title': 'Please enter a valid phone number in E.164 format (e.g., +6312345678)',
+        'title': 'Please enter a valid phone number in E.164 format (e.g., +6412345678)',
         'maxlength': '15'
     });
 
@@ -25,7 +25,7 @@ jq(document).ready(function ($) {
     // Ensure phone starts with "+"
     
     if (!value.startsWith('+')) {
-        value = '+63 ';
+        value = '+64 ';
     }
 
     $(this).val(value);
