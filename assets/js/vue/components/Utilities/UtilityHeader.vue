@@ -1,7 +1,12 @@
 <template>
     <div class="utility-wrapper">
         <div class="first-section">
-            <input type="text" class="search-info" placeholder="Search by Order Info" />
+            <input
+                type="text" 
+                class="search-info" 
+                placeholder="Search by Order Info" 
+                @input="emitSearchData"
+            />
             <div class="action-button">
                 <div class="action action-refresh">
                     <span class="material-symbols-outlined">restart_alt</span>
@@ -17,12 +22,55 @@
             </div>
         </div>
         <div class="second-section">
-            <DropDown/>
-            <DateRangePicker/>
+            <DropDown 
+             :options = "status" 
+             @selectedOption="handleDropdownSelection"/>
+
+            <DateRangePicker @dateRangeSelected="handleDateRange"/>
         </div>
-            
     </div>
 </template>
+
+<script setup>
+import { defineAsyncComponent, defineEmits, ref } from 'vue';
+
+const DropDown = defineAsyncComponent(() => import('../Controls/DropDown.vue'));
+const DateRangePicker = defineAsyncComponent(() => import('../Controls/DateRangePicker.vue'));
+
+const emit = defineEmits(['searchData']);
+
+const status = [
+    { key: "ALL", name: "All order status" },
+    { key: "Assigning Driver", name: "Assigning" },
+    { key: "Awaiting Driver", name: "On Going" },
+    { key: "Item Collected", name: "Picked Up" },
+    { key: "Delivered Successfully", name: "Completed" },
+    { key: "Expired", name: "Expired" },
+    { key: "Rejected", name: "Rejected" },
+    { key: "Order Canceled", name: "Cancelled" }
+];
+
+const searchQuery = ref('');
+const selectedOption = ref('');
+const dateRange = ref({ startDate: null, endDate: null });
+
+const emitSearchData = (event) => {
+    searchQuery.value = event.target.value;
+    emit('searchData', { searchQuery: searchQuery.value, selectedOption: selectedOption.value, dateRange: dateRange.value });
+};
+
+const handleDropdownSelection = (option) => {
+    selectedOption.value = option;
+    emit('searchData', { searchQuery: searchQuery.value, selectedOption: selectedOption.value, dateRange: dateRange.value });
+};
+
+const handleDateRange = ({ startDate, endDate }) => {
+    dateRange.value = { startDate, endDate };
+    emit('searchData', { searchQuery: searchQuery.value, selectedOption: selectedOption.value, dateRange: dateRange.value });
+};
+</script>
+
+
 
 <style lang="scss" scoped>
 @use '@/css/scss/_variables.scss' as *;
@@ -112,10 +160,3 @@
 }
 </style>
 
-<script setup>
-import { defineAsyncComponent } from 'vue';
-
-const DropDown = defineAsyncComponent(() => import('../Controls/DropDown.vue'));
-const DateRangePicker = defineAsyncComponent(() => import('../Controls/DateRangePicker.vue'));
-
-</script>

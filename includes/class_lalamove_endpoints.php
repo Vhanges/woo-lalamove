@@ -38,7 +38,6 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
             'permission_callback' => '__return_true'
         ]); 
 
-        // Checkout Package
         register_rest_route('woo-lalamove/v1', '/lalamove-webhook', [
             'methods' => ['GET', 'POST'],
             'callback' => [$this, 'lalamove_webhook'],
@@ -62,6 +61,16 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
                         },
                     ],
                     'to' => [
+                            'validate_callback' => function($param, $request, $key) {
+                                return strtotime($param) !== false; 
+                            },
+                        ],
+                    'status' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return strtotime($param) !== false; 
+                        },
+                    ],
+                    'search_input' => [
                             'validate_callback' => function($param, $request, $key) {
                                 return strtotime($param) !== false; 
                             },
@@ -118,6 +127,52 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
             ],
             'permission_callback' => '__return_true'
         ]); 
+        register_rest_route('woo-lalamove/v1', '/records-data', [
+            'methods' => ['GET'],
+            'callback' => [$this, 'records_data'],
+            'args' => [
+                    'lala_id' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+                    'driver_id' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+            ],
+            'permission_callback' => '__return_true'
+        ]); 
+        register_rest_route('woo-lalamove/v1', '/cancel-order', [
+            'methods' => ['DELETE'],
+            'callback' => [$this, 'cancel_order'],
+            'args' => [
+                    'lala_id' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+                    'body' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+            ],
+            'permission_callback' => '__return_true'
+        ]); 
+        register_rest_route('woo-lalamove/v1', '/lalamove-order-body', [
+            'methods' => ['GET'],
+            'callback' => [$this, 'lalamove_order_body'],
+            'args' => [
+                    'lala_id' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+            ],
+            'permission_callback' => '__return_true'
+        ]); 
     }
 
     /**
@@ -148,6 +203,58 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
         global $wpdb;
 
         $response = $this->model->get_dashboard_spending_data($wpdb,$data);
+        return rest_ensure_response($response);
+
+
+    }
+    /**
+     * 
+     * Callback for records_data route
+     * 
+     * @param  $data
+     */
+
+    public function records_data($data)
+    {
+        global $wpdb;
+
+        $response = $this->model->get_records_data($wpdb,$data);
+        error_log("LALAMOVE". var_dump($response));
+        return rest_ensure_response($response);
+
+
+    }
+    /**
+     * 
+     * Callback for lalamove_order_body route
+     * 
+     * @param  $data
+     */
+
+    public function lalamove_order_body($data)
+    {
+        global $wpdb;
+
+        $response = $this->model->get_lalamove_order_body($wpdb,$data);
+        error_log("LALAMOVE". var_dump($response));
+        return rest_ensure_response($response);
+
+
+    }
+    /**
+     * 
+     * Callback for cancel_order route
+     * 
+     * @param  $data
+     */
+
+    public function cancel_order($data)
+    {
+        $lala_id = $data['lala_id'];
+        $body = $data['body'];
+
+        $response = $this->lalamove_api->cancel_order($lala_id, $body);
+        error_log("LALAMOVE". var_dump($response));
         return rest_ensure_response($response);
 
 
@@ -219,6 +326,7 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
         global $wpdb;
 
         $this->model->handle_webhook($wpdb, $request);
+
     }
     
 

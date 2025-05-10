@@ -593,6 +593,15 @@ if (!class_exists('Woo_Lalamove')) {
         }
     }
     
+
+    add_action('wp_ajax_my_webhook', 'log_webhook_data'); // For logged-in users
+    add_action('wp_ajax_nopriv_my_webhook', 'log_webhook_data'); // For public access
+    
+    function log_webhook_data() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        error_log('Webhook received: ' . print_r($data, true));
+        wp_die(); // End execution gracefully
+    }
     
     
 

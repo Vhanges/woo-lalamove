@@ -8,7 +8,7 @@
                         Assigning Driver  ●  {{ lalaOrderId }}
                     </p>
                     <p>
-                        Schedule Date: {{ scheduleAt }}
+                        Schedule Date: {{ scheduleData }}
                     </p>
             </div>
 
@@ -22,10 +22,14 @@
                         <span class="material-symbols-outlined header-icon">location_searching</span>
                         Track Order
                     </button>
-                    <button @click="addPriorityFee" class="action-button">
+                    <button v-if="isCancelAvailable" @click="cancelOrder(lalaOrderId)" class="action-button">
+                        <span class="material-symbols-outlined footer-icon">close</span>
+                        Cancel Order
+                    </button>
+                    <!-- <button @click="addPriorityFee" class="action-button">
                         <span class="material-symbols-outlined header-icon">add</span>
                         Add Priority Fee
-                    </button>
+                    </button> -->
                 </div>
 
             </div>
@@ -38,7 +42,7 @@
                         Awaiting Driver  ●  {{ lalaOrderId }}
                     </p>
                     <p>
-                        Schedule Date: {{ scheduleAt }} 
+                        Schedule Date: {{ scheduleData }} 
                     </p>
             </div>
 
@@ -49,13 +53,17 @@
                 <p>Contact Number: {{ driverContactNo }}</p>
 
                 <div class="action-container">
-                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                    <button @click="openShareLink"  class="action-button">
                         <span class="material-symbols-outlined header-icon">location_searching</span>
                         Track Order
                     </button>
-                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                    <!-- <button onclick="window.open('https://example.com', '_blank')" class="action-button">
                         <span class="material-symbols-outlined header-icon">swap_driving_apps</span>
                         Change Driver
+                    </button> -->
+                    <button v-if="isCancelAvailable"  @click="cancelOrder(lalaOrderId)" class="action-button">
+                        <span class="material-symbols-outlined footer-icon">close</span>
+                        Cancel Order
                     </button>
                     <p class="delivery message">The driver is on its way to pick up the order</p>
                 </div>
@@ -81,14 +89,14 @@
                 <p>Contact Number: {{ driverContactNo }}</p>
 
                 <div class="action-container">
-                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                    <button @click="openShareLink" class="action-button">
                         <span class="material-symbols-outlined header-icon">location_searching</span>
                         Track Order
                     </button>
-                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                    <!-- <button onclick="window.open('https://example.com', '_blank')" class="action-button">
                         <span class="material-symbols-outlined header-icon">swap_driving_apps</span>
                         Change Driver
-                    </button>
+                    </button> -->
                     <p class="delivery message">The driver picked up the order</p>
                 </div>
 
@@ -112,7 +120,7 @@
                 <p>Contact Number: {{ driverContactNo }}</p>
 
                 <div class="action-container">
-                    <button onclick="window.open('https://example.com', '_blank')" class="action-button">
+                    <button @click="openShareLink" class="action-button">
                         <span class="material-symbols-outlined header-icon">location_searching</span>
                         Track Order
                     </button>
@@ -234,10 +242,10 @@
                 </strong>
                 
                 <p>
-                    dummy data
+                    {{ serviceType }}
                 </p>
             </div>
-            <div class="additional-info">
+            <!-- <div class="additional-info">
                 <strong>
                     Additional Services
                 </strong>
@@ -245,7 +253,7 @@
                 <p>
                     dummy data
                 </p>
-            </div>
+            </div> -->
 
 
         </div>
@@ -310,18 +318,16 @@
 
         <footer>
             <div class="action-container">
-                    <button onclick="window.open('https://example.com', '_blank')" class="action-button" style="margin-right: auto;">
-                        <span class="material-symbols-outlined footer-icon">chevron_left</span>
-                        Return
-                    </button>
-                    <button v-if="isCancelAvailable" onclick="window.open('https://example.com', '_blank')" class="action-button">
-                        <span class="material-symbols-outlined footer-icon">close</span>
-                        Cancel
-                    </button>
-                    <button v-if="isOrderAgainAvailable" onclick="window.open('https://example.com', '_blank')" class="action-button">
+                <button @click="$router.push({ name: 'records' })" class="action-button" style="margin-right: auto;">
+                    <span class="material-symbols-outlined footer-icon">chevron_left</span>
+                    Return
+                </button>
+
+
+                    <!-- <button v-if="isOrderAgainAvailable" onclick="window.open('https://example.com', '_blank')" class="action-button">
                         <span class="material-symbols-outlined footer-icon">reply</span>
                         Order Again
-                    </button>
+                    </button> -->
             </div>
         </footer>
 
@@ -343,6 +349,7 @@ const loading = ref(true);
 
 const lalaOrderId = ref();
 const lalaQuotationId = ref();
+const lalaOrderBody = ref();
 const scheduleData = ref();
 const shareLink = ref();
 
@@ -381,14 +388,12 @@ const driverContactNo = ref();
 
 const props = defineProps({
     lala_id: String,
-    wc_id: String
+    wc_id: String,
 });
 
 const fetchLalaOrderData = async (lala_id, wc_id) => {
-
     
-    
-    try {
+    // try {
         const orderResponse = await axios.get(
             wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lala-order-details/?lala_id=' + lala_id,
             {
@@ -412,10 +417,10 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
 
         console.log("STATUS: ", status);
         lalaOrderId.value = order.data.orderId;
+        console.log("ORDER IDDDDDDD", lalaOrderId);
         lalaQuotationId.value = order.data.quotationId;
         driverId.value = order.data.driverId;
         shareLink.value = order.data.shareLink;
-        scheduleData.value = order.data.scheduleAt ?? "None";
 
         console.log("SHARELINK", shareLink.value);
 
@@ -437,18 +442,6 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
         }
 
 
-
-
-        // const quotationResponse = await axios.get(
-        //     wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lala-order-details/?quotation_id=' + lala_id,
-        //     {
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
-        //     },
-        //     }
-        // );
-
         const priceBreakdown = order.data.priceBreakdown;
 
         basePrice.value = priceBreakdown.base;
@@ -458,8 +451,6 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
         specialRequest.value = priceBreakdown.specialRequest;
         totalExcludedPriorityFee.value = priceBreakdown.totalExcludedPriorityFee;
         total.value = priceBreakdown.total;
-
-
 
 
         const driverResponse = await axios.get(
@@ -486,12 +477,34 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
         }
 
 
+        const lalaOrderBody = await axios.get(
+            wooLalamoveAdmin.root + 'woo-lalamove/v1/lalamove-order-body/?lala_id=' + lala_id ,
+            {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+            },
+            }
+        );
+
+        console.log("ORDER BODY", lalaOrderBody.data);
+
+        serviceType.value = lalaOrderBody.data[0].service_type;
+        scheduleData.value = lalaOrderBody.data[0].scheduled_on;
+        lalaOrderBody.value = lalaOrderBody.data[0].order_json_body;
 
 
-    } catch (error) {
-      console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
-        noData.value = true;
-    } 
+        console.log(serviceType.value);
+        console.log(scheduleData.value);
+        console.log(lalaOrderBody.value);
+
+
+
+
+    // } catch (error) {
+    //   console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
+    //     noData.value = true;
+    // } 
 
 };
 
@@ -500,6 +513,38 @@ const openShareLink = () => {
     window.open(shareLink.value, '_blank');
   } else {
     toast.error('An error occured. Please try again later', { autoClose: 2000 });
+  }
+};
+
+const cancelOrder = async (id) => { 
+    console.log("AHHHHH", id);
+  try {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+
+    const response = await axios.delete(
+      `${wooLalamoveAdmin.root}woo-lalamove/v1/cancel-order/`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+        },
+        params: {
+          lala_id: props.lala_id, 
+          body: lalaOrderBody,
+        }   
+      }
+    );
+
+    if (response.data.success) {
+      toast.success('Order canceled successfully!');
+      await fetchLalaOrderData(props.lala_id, props.wc_id); // Refresh order data
+    } else {
+      toast.error(response.data.message || 'Failed to cancel order');
+      console.log("LALA ID", props.lala_id);
+    }
+  } catch (error) {
+    console.error('Cancel error:', error);
+    toast.error(error.response?.data?.message || 'Failed to cancel order');
   }
 };
 

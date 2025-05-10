@@ -6,7 +6,7 @@
     </header>
 
     <nav >
-      <utilityNav />
+      <utilityNav @searchData = "handleUtilityData"/>
     </nav>
 
     <main>
@@ -19,21 +19,32 @@
                     <th>Schedule Date</th>
                     <th>Drop Off Location</th>
                     <th>Contact</th>
-                    <th>Quantity</th>
+                    <th>Service</th>
                     <th>Status</th>
-            </tr>
-            </thead>
-            <tbody>
-              
-              <tr @click="$router.push({ name: 'records-details', params: { lala_id: '21', wc_id: '21' } })" style="cursor: pointer;">
-                  <td>123</td>
-                  <td>123</td>
-                  <td>123</td>
-                  <td>123</td>
-                  <td>123</td>
-                  <td>123</td>
-                  <td>123</td>
                 </tr>
+            </thead>
+            <tbody v-if="showTable">
+              
+              <tr 
+                v-for="record in apiResponse.slice(0, 10)" 
+                :key="`${record.wc_order_id}-${record.lalamove_order_id}`"
+                @click="$router.push({ 
+                  name: 'records-details', 
+                  params: { 
+                    lala_id: record.lalamove_order_id, 
+                    wc_id: record.wc_order_id 
+                  }
+                })" 
+                style="cursor: pointer;"
+              >
+                <td>{{ record.wc_order_id }}</td>
+                <td>{{ record.ordered_on }}</td>
+                <td>{{ record.scheduled_on }}</td>
+                <td>{{ record.drop_off_location }}</td>
+                <td>{{ record.ordered_by || 'N/A' }}</td>
+                <td>{{ record.service_type || 'N/A' }}</td>
+                <td>{{ record.status_name }}</td>
+              </tr>
 
             </tbody>
         </table>    
@@ -43,25 +54,60 @@
     </main>
     
   </div>
-  <RecordDetails/>
   
 </template>
 
 
 <script setup>
 import { ref, defineAsyncComponent } from 'vue';
+import axios from 'axios';
 
-const utilityNav = defineAsyncComponent(
-  () => import ('../components/Utilities/UtilityHeader.vue'),
-);
-// const RecordDetails = defineAsyncComponent(
-//   () => import ('../components/Records/RecordsDetails.vue'),
-// );
+const utilityNav = defineAsyncComponent(() => import('../components/Utilities/UtilityHeader.vue'));
 
-async function toggleDrawer($lalaId, $wc_id){
+let debounceTimer;
+const apiResponse = ref([]); 
+const isLoading = ref(false); 
+const showTable = ref(false);
 
-}
+async function handleUtilityData({ searchQuery, selectedOption, dateRange }) {
+    console.log("Search Query:", searchQuery);
+    console.log("Selected Option:", selectedOption);
+    console.log("Date Range:", dateRange);
+
+
+
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+        try {
+            const response = await axios.get(
+                `${wooLalamoveAdmin.root}woo-lalamove/v1/records-data/?from=${dateRange.startDate}&to=${dateRange.endDate}&status=${selectedOption}&search_input=${searchQuery}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': wooLalamoveAdmin.api_nonce,
+                    },
+                }
+            );
+
+            apiResponse.value = response.data;
+            console.log("API Response:", apiResponse.value);
+
+            console.log("API Response:", apiResponse.value.wc_order_id);
+
+            showTable.value = true;
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            isLoading.value = false; 
+            showTable.value = true;
+        }
+    }, 2000);
+};
 </script>
+
+
+
 
 <style lang="scss" scoped>
 @use "@/css/scss/_variables.scss" as *;

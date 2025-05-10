@@ -80,6 +80,65 @@ class Class_Lalamove_Model{
             return new WP_REST_Response(['message' => 'An error occurred while fetching orders.'], 500);
         }
     }
+    protected function get_records_data($wpdb, $data){
+        $wpdb->query('START TRANSACTION');  
+
+        try{
+
+            $from = $data['from'];
+            $to = $data['to'];
+            $status = isset($data['status']) ? $data['status'] : null;
+            $search_input = isset($data['search_input']) ? $data['search_input'] : null;
+            $results = [];
+            
+            $query = "SELECT
+                        o.wc_order_id,
+                        o.lalamove_order_id,
+                        o.ordered_on,
+                        o.scheduled_on,
+                        o.drop_off_location,
+                        o.order_json_body,
+                        s.status_name,
+                        t.ordered_by,
+                        t.service_type
+                    FROM $this->order_table AS o
+                    INNER JOIN $this->status_table AS s 
+                        ON o.status_id = s.status_id
+                    INNER JOIN $this->transaction_table AS t 
+                        ON o.transaction_id = t.transaction_id
+                    WHERE o.ordered_on BETWEEN '$from' AND '$to'";
+            
+            // **Conditionally apply status filtering**
+            if (isset($status) && $status !== 'ALL' && $status !== '') {
+                $query .= " AND s.status_name = '$status'";
+            }
+            
+            
+            // **Conditionally apply search filtering**
+            if (isset($search_input)) {
+                $query .= " AND (o.drop_off_location LIKE '%" . esc_sql($search_input) . "%' OR o.lalamove_order_id LIKE '%" . esc_sql($search_input) . "%')";
+            }
+            
+            $query .= " ORDER BY o.ordered_on DESC";
+            
+            $results['records'] = $wpdb->get_results($query, ARRAY_A);
+
+
+
+            // Commit transaction
+            $wpdb->query('COMMIT');
+
+            wp_send_json($wpdb->get_results($query, ARRAY_A));
+            exit;
+            
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            $wpdb->query('ROLLBACK');
+            // Log the error
+            error_log('Error fetching records data ' . $e->getMessage());
+            return new WP_REST_Response(['message' => 'An error occurred while fetching data.'], 500);
+        }
+    }
 
     protected function get_dashboard_orders_data($wpdb, $data){
         $wpdb->query('START TRANSACTION');  
@@ -329,6 +388,44 @@ class Class_Lalamove_Model{
         } 
     }
 
+    protected function get_lalamove_order_body ($wpdb, $data){
+        
+        
+        $wpdb->query('START TRANSACTION');  
+        
+        try{
+            
+            $lala_id = $data['lala_id'];
+            
+            $results = [];
+            
+            $query = "SELECT
+                        o.scheduled_on,
+                        o.order_json_body,
+                        t.service_type
+                    FROM $this->order_table AS o
+                    INNER JOIN $this->status_table AS s 
+                        ON o.status_id = s.status_id
+                    INNER JOIN $this->transaction_table AS t 
+                        ON o.transaction_id = t.transaction_id
+                    WHERE o.lalamove_order_id = $lala_id";
+            
+            // Commit transaction
+            $wpdb->query('COMMIT');
+
+            wp_send_json($wpdb->get_results($query, ARRAY_A));
+            exit;
+            
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            $wpdb->query('ROLLBACK');
+            // Log the error
+            error_log('Error fetching records data ' . $e->getMessage());
+            return new WP_REST_Response(['message' => 'An error occurred while fetching data.'], 500);
+        }
+
+
+    } 
 
     protected function handle_webhook($wpdb, $request){
           
@@ -351,11 +448,10 @@ class Class_Lalamove_Model{
             error_log('Invalid or incomplete webhook payload received: ' . $payload);
             return;
         }
-    
         // Validate webhook signature
         $signature = $requestBody['signature'];
         $timestamp = $requestBody['timestamp'];
-        $body = json_encode($requestBody['data'] ?? [], JSON_UNESCAPED_SLASHES);
+        $body = json_encode(value: $requestBody['data'] ?? [], flags: JSON_UNESCAPED_SLASHES);
         $httpVerb = 'POST';
         $path = '/wp-json/woo-lalamove/v1/lalamove-webhook';
         $rawSignature = "{$timestamp}\r\n{$httpVerb}\r\n{$path}\r\n\r\n{$body}";
@@ -431,6 +527,7 @@ class Class_Lalamove_Model{
             error_log('Error updating wallet balance: ' . $e->getMessage());
         }
     }
+
     
     private function handle_order_status_changed($wpdb, $data)
     {

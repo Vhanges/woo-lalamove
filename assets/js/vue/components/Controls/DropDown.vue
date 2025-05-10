@@ -1,89 +1,56 @@
 <template>
-    <div class="filter-status-dropdown">
-      <span @click="toggleDropdown" class="dropdown-trigger">{{ selectedStatuesLabel }}</span>
-      <div v-if="isOpen" class="markets">
-        <span
-          v-for="market in markets"
-          :key="market.locode"
-          :data-value="market.locode"
-          :class="['market', { active: selectedStatus === market.name }]"
-          @click.stop="selectMarket(market.name, market.services)"
-        >
-          {{ market.name }}
-        </span>
+  <div class="filter-dropdown">
+      <span @click="toggleDropdown" class="dropdown-trigger">{{ selectedItemLabel }}</span>
+      <div v-if="isOpen" class="dropdown-data">
+          <span
+              v-for="item in options"
+              :key="item.key"
+              :data-value="item.key"
+              :class="['dropdown-item', { active: selectedItem === item.name }]"
+              @click.stop="selectItem(item.name, item.details)"
+          >
+              {{ item.name }}
+          </span>
       </div>
-    </div>
-  </template>
-  
-  <script setup>
-  import { ref, computed, onMounted } from 'vue';
-  
-  const markets = ref([]);
-  const isOpen = ref(false);
-  const selectedStatus = ref(null);
-  
-  const selectedStatuesLabel = computed(() =>
-    selectedStatus.value ? selectedStatus.value : 'Filter by Status'
-  );
-  
-  const toggleDropdown = () => {
-    isOpen.value = !isOpen.value;
-  };
-  
-  const selectMarket = (name, services) => {
-    selectedStatus.value = name;
-    isOpen.value = false;
-    marketServices(services);
-  };
-  
-  const marketServices = (services) => {
-    const sortedServices = services.sort((a, b) => a.load.value - b.load.value);
-    eventBus.emit('market-services', sortedServices);
-    console.log('Market Services:', sortedServices);
-  };
-  
-  const fetchMarkets = async () => {
-    try {
-      // Replace with API or use fallback data
-      markets.value = [
-        {
-          locode: 'MKT001',
-          name: 'Market One',
-          services: [
-            { name: 'Service A', load: { value: 10 } },
-            { name: 'Service B', load: { value: 5 } },
-          ],
-        },
-        {
-          locode: 'MKT002',
-          name: 'Market Two',
-          services: [
-            { name: 'Service C', load: { value: 20 } },
-            { name: 'Service D', load: { value: 15 } },
-          ],
-        },
-        {
-          locode: 'MKT003',
-          name: 'Market Three',
-          services: [
-            { name: 'Service E', load: { value: 8 } },
-            { name: 'Service F', load: { value: 12 } },
-          ],
-        },
-      ];
-    } catch (error) {
-      console.error('Error fetching markets:', error);
-      markets.value = []; // Fallback data
-    }
-  };
-  
-  onMounted(fetchMarkets);
-  </script>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, defineProps, defineEmits } from 'vue';
+
+// Define props to accept dynamic array data
+const props = defineProps({
+  options: {
+      type: Array,
+      required: true
+  }
+});
+
+// Define emits to notify the parent of selection
+const emit = defineEmits(['itemSelected']);
+
+const isOpen = ref(false);
+const selectedItem = ref(null);
+
+const selectedItemLabel = computed(() => 
+  selectedItem.value ? selectedItem.value : 'Select an Option'
+);
+
+const toggleDropdown = () => {
+  isOpen.value = !isOpen.value;
+};
+
+const selectItem = (name, details) => {
+  selectedItem.value = name;
+  isOpen.value = false;
+  emit('itemSelected', { name, details }); 
+};
+</script>
   
   <style lang="scss" scoped>
   @use '@/css/scss/_variables.scss' as *;
   
-  .filter-status-dropdown {
+  .filter-dropdown {
     display: flex;
     flex-direction: column;
     height: 2rem;
@@ -106,28 +73,28 @@
     font-size: $font-size-sm;
   }
   
-  .markets {
+  .dropdown-data {
     display: flex;
     flex-direction: column;
-    max-height: 8rem; 
+    max-height: fit-content; 
     width: 100%;
     background-color: $bg-high-light;
     border: 2px solid $border-color;
     border-radius: 3%;
   }
   
-  .market {
+  .dropdown-item {
     padding: 2%;
     font-size: $font-size-sm;
   }
   
-  .market:hover {
+  .dropdown-item:hover {
     border-left: 2px solid $bg-primary;
     background-color: $border-color;
     color: $txt-primary;
   }
   
-  .market.active {
+  .dropdown-item.active {
     border-left: 2px solid $bg-primary;
     background-color: $border-color;
     color: $txt-primary;

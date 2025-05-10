@@ -291,6 +291,76 @@ class Class_Lalamove_Api
         return json_decode($response, true);
     }
 
+        
+/**
+ * Cancel Order
+ * Cancels an existing order based on the provided ID.
+ * @param string $lala_id The ID of the order to cancel.
+ * @param mixed $body Request body (not used in this implementation but kept for interface consistency).
+ * @return array Response from the cancellation request.
+ */
+public function cancel_order($lala_id, $body)
+{
+    // Generate timestamp in milliseconds
+    $timestamp = round(microtime(true) * 1000);
+    
+    // Prepare empty JSON body and API path
+    $braces = "{}";
+    $path = "/v3/orders/{$lala_id}";
+
+    // Generate signature components
+    $rawSignature = "{$timestamp}\r\nDELETE\r\n{$path}\r\n\r\n{$braces}";
+    $signature = hash_hmac('sha256', $rawSignature, $this->api_secret);
+    $token = "{$this->api_key}:{$timestamp}:{$signature}";
+
+    // Configure cURL request
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+        CURLOPT_URL => "https://{$this->base_url}{$path}",
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'DELETE',
+        CURLOPT_POSTFIELDS => $braces,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            "Authorization: hmac {$token}",
+            'Market: ' . get_option('lalamove_market', 'PH')
+        ],
+    ]);
+
+    // Execute request and handle response
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $cancelResponse = json_decode($response, true) ?? [];
+
+    // Error handling
+    if (curl_errno($curl)) {
+        error_log('cURL Error: ' . curl_error($curl));
+        $cancelResponse['curl_error'] = curl_error($curl);
+    }
+    curl_close($curl);
+
+    // Add status code to response
+    $cancelResponse['status_code'] = $httpCode;
+
+    error_log("CANCEL". print_r($cancelResponse, true));
+
+    // Diagnostic logging
+    error_log("Cancel Request Details:
+        URL: https://{$this->base_url}{$path}
+        Timestamp: {$timestamp}
+        ORDER ID: {$lala_id}
+        Signature: {$signature}
+        Full Token: hmac {$token}
+    ");
+
+    return $cancelResponse;
+}
+
 
    public function get_driver_details($orderId, $driverId)
    {
