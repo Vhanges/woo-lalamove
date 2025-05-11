@@ -9,27 +9,53 @@ jq(document).ready(function ($) {
   });
 
   $('input[name="billing_phone"]').each(function () {
-    // Add validation attributes
     $(this).attr({
-        'pattern': '^\\+[1-9]\\d{1,14}$',
-        'title': 'Please enter a valid phone number in E.164 format (e.g., +6412345678)',
-        'maxlength': '15'
+      'type': 'tel',
+      'inputmode': 'numeric',
+      'pattern': '^\\+[1-9]\\d{1,14}$',
+      'title': 'Please enter a valid phone number in E.164 format (e.g., +63211234567)',
+      'maxlength': '15',
+      'required': true
     });
-
   });
 
-  $('#billing_phone').on('input', function () {
-      
-    let value = $(this).val();
+  $('input[name="billing_phone"]').on('blur', function () {
+      var input = $(this).val();
+      var phoneNumber = libphonenumber.parsePhoneNumberFromString(input, 'NZ'); // Replace 'NZ' with dynamic country code if needed
 
-    // Ensure phone starts with "+"
-    
-    if (!value.startsWith('+')) {
-        value = '+64 ';
+      if (!phoneNumber || !phoneNumber.isValid()) {
+          alert("Invalid phone number. Please enter a valid one in +63 format.");
+          $(this).addClass('error'); // Add error class for styling
+      } else {
+          $(this).removeClass('error');
+          $(this).val(phoneNumber.format('E.164')); // Format the phone number to E.164
+      }
+  });
+
+  const prefix = '+63';
+  const $phone = $('#billing_phone');
+
+  $phone.on('focus', function() {
+    let val = $(this).val();
+    if (!val.startsWith(prefix)) {
+      $(this).val(prefix);
     }
+    this.setSelectionRange(prefix.length, prefix.length);
+  });
 
-    $(this).val(value);
+  $phone.on('keydown', function(e) {
+    const pos = this.selectionStart;
+    if ((e.key === 'Backspace'  && pos <= prefix.length) ||
+        (e.key === 'Delete'     && pos <  prefix.length)) {
+      e.preventDefault();
+    }
+  });
 
+  $phone.on('blur', function() {
+    let val = $(this).val();
+    if (!val.startsWith(prefix)) {
+      $(this).val(prefix);
+    }
   });
 
 
@@ -411,6 +437,10 @@ jq(document).ready(function ($) {
     #additionalNotes { 
       border: 2px solid #EDEDED;
       border-radius: 5px;
+    }
+
+    input.error {
+      border: 4px solid red;
     }
 
     @media (max-width: 450px) {

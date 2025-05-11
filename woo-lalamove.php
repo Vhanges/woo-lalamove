@@ -59,7 +59,7 @@ if (!class_exists('Woo_Lalamove')) {
             }
         }
         function modify_checkout_phone_field($fields) {
-            $fields['billing']['billing_phone']['placeholder'] = 'Ex. +6443554325';
+            $fields['billing']['billing_phone']['placeholder'] = 'Ex. +6343554325';
             $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '^\\+[1-9][0-9]{1,14}$';
             return $fields;
         }
@@ -317,6 +317,9 @@ if (!class_exists('Woo_Lalamove')) {
                 wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), null, true);
                 // Enqueue Moment.js
                 wp_enqueue_script('moment-js', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js', array('jquery'), null, true);
+
+                // Enqueue Phone Number Validation JS
+                wp_enqueue_script( 'libphonenumber-js', 'https://cdn.jsdelivr.net/npm/libphonenumber-js@1.10.24/bundle/libphonenumber{-max.js', array(), null, true );
 
                 // Enqueue Date Range Picker JS
                 wp_enqueue_script('daterangepicker-js', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js', array('jquery', 'moment-js'), null, true);
@@ -589,7 +592,7 @@ if (!class_exists('Woo_Lalamove')) {
         $pattern = '/^\+[1-9]\d{1,14}$/';
     
         if (empty($phone) || !preg_match($pattern, $phone)) {
-            wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6412345678.'), 'error');
+            wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6312345678.'), 'error');
         }
     }
     

@@ -3,7 +3,7 @@
       <span class="material-symbols-outlined icon edit-location-icon">edit_location_alt</span> 
       <div class="label">Pick at &quot;Location Name&quot;</div>
       <p class="address">Unit C-D Ortiga Center High.sdaffffffffffffffsaddddddddf..</p>
-      <p class="contact">+644315873</p>
+      <p class="contact">+634315873</p>
     </div>
 </template>
 
