@@ -304,6 +304,129 @@ public function render_qr_content() {
         $orderStatus = $orderStatus ?? null;
     
         echo '
+            <style>
+                /* Tracking Status Styles */
+                .tracking-container {
+                    max-width: 1200px;
+                    margin: 2rem auto;
+                    padding: 0 1rem;
+                }
+
+                .return-link {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    color: #1A4DAF;
+                    text-decoration: none;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    transition: background-color 0.2s;
+                }
+
+                .return-link:hover {
+                    background-color: rgba(26, 77, 175, 0.1);
+                }
+
+                .tracking-title {
+                    text-align: center;
+                    margin: 2rem 0;
+                    color: #1a1a1a;
+                    font-weight: 600;
+                }
+
+                .status-container {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    position: relative;
+                    padding: 2rem 0;
+                }
+
+                .status-step {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    z-index: 1;
+                }
+
+                .status-indicator {
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    transition: transform 0.3s ease;
+                }
+
+                .status-label {
+                    margin-top: 1rem;
+                    font-size: 0.9rem;
+                    color: #666;
+                    text-align: center;
+                    white-space: nowrap;
+                }
+
+                .status-connector {
+                    flex: 1;
+                    height: 2px;
+                    background: #e0e0e0;
+                    margin: 0 -1%;
+                }
+
+                /* Delivery Details Styles */
+                .delivery-grid {
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 2rem;
+                    max-width: 1200px;
+                    margin: 2rem auto;
+                    padding: 0 1rem;
+                }
+
+                .delivery-info-section {
+                    background: #ffffff;
+                    padding: 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+                }
+
+                .info-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 1rem 0;
+                    border-bottom: 1px solid #eee;
+                }
+
+                .address-section {
+                    margin-top: 1.5rem;
+                }
+
+                .address-title {
+                    color: #1a1a1a;
+                    font-size: 1.1rem;
+                    margin-bottom: 0.5rem;
+                }
+
+                .pod-image {
+                    width: 100%;
+                    height: auto;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }
+
+                @media (min-width: 768px) {
+                    .delivery-grid {
+                        grid-template-columns: 1fr 1fr;
+                    }
+                    
+                    .status-indicator {
+                        width: 64px;
+                        height: 64px;
+                    }
+                }
+            </style>
         <div class="delivery-details w-100 h-100 d-flex flex-column justify-content-center p-5" style="background-color: #FCFCFC; border: 1px solid #D9D9D9; padding: 10px; margin-bottom: 20px;">
             '.short_code_delivery_status($orderStatus).'
             '.short_code_delivery_location($estimatedTime).'

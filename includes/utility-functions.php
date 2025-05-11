@@ -384,218 +384,136 @@ function format_travel_time($seconds) {
 
 
 function short_code_delivery_status($orderStatus){
+    // Keep original PHP logic intact
+    $packed_class = 'background-color: #FFCB2F; color: #0D0C0C;';
+    $preparing_class = 'background-color: #FFCB2F; color: #0D0C0C;';
+    $shipped_class = 'background-color: #FFCB2F; color: #0D0C0C;';
+    $delivered_class = 'background-color: #FFCB2F; color: #0D0C0C;';
 
-	$packed_class = 'background-color: #FFCB2F; color: #0D0C0C;';
-	$preparing_class = 'background-color: #FFCB2F; color: #0D0C0C;';
-	$shipped_class = 'background-color: #FFCB2F; color: #0D0C0C;';
-	$delivered_class = 'background-color: #FFCB2F; color: #0D0C0C;';
+    $preparing_class = ($orderStatus === 'processing') ? 'background-color: #1A4DAF; color: #FCFCFC;' : 'background-color: #FFCB2F; color: #0D0C0C;';
 
-	$preparing_class = ($orderStatus === 'processing') ? 'background-color: #1A4DAF; color: #FCFCFC;' : 'background-color: #FFCB2F; color: #0D0C0C;';
+    switch($orderStatus){
+        case 'packed':
+            $packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
+            $preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
+            $shipped_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
+            $delivered_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
+            break;
+        case 'out-for-deliver':
+            $packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
+            $preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
+            $shipped_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
+            $delivered_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
+            break;
+        case 'delivered':
+            $packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
+            $preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
+            $shipped_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
+            $delivered_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
+            break;
+    }
 
-	switch($orderStatus){
+    $html = '
+    <div class="tracking-container">
+        <a href="/my-account/orders" class="return-link">
+            <span class="material-symbols-outlined">chevron_left</span>
+            Return to Orders
+        </a>
 
-		case 'packed':
-			$packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
-			$preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
-			$shipped_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
-			$delivered_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
-		break;
+        <h2 class="tracking-title">Tracking Details</h2>
 
-		case 'out-for-deliver':
-			$packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
-			$preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
-			$shipped_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
-			$delivered_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
-
-			
-		break;
-		case 'delivered':
-			$packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
-			$preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
-			$shipped_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
-			$delivered_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
-
-		break;
-	}
-
-
-	$html = '        
-                <div class="return-button ">
-                    <a href="/my-account/orders" class="d-flex align-items-center" style="text-decoration: none; color: inherit;">
-                    <span class="material-symbols-outlined">chevron_left</span> Return to Orders</a>
+        <div class="status-container">
+            <div class="status-step">
+                <div class="status-indicator" style="'. $preparing_class .'">
+                    <span class="material-symbols-outlined">orders</span>
                 </div>
-
-                <div class="d-flex flex-column w-100 ">
-                    <div class="d-flex flex-column justify-content-center align-items-center mt-3">
-                        <p class="h5 font-weight-bold">Tracking Details</p>
-
-                        <div class="status-container w-100 d-flex flex-row align-items-center justify-content-center mt-3">
-
-                            <span class="d-flex flex-column" >
-                                <div class="preparing-indicator d-flex flex-row align-items-center justify-content-center" style="'. $preparing_class .' border-radius: 100%; height: 50px; width: 50px;">
-                                    <span class="material-symbols-outlined">orders</span> 
-                                </div>
-                                
-                            </span>
-
-                                <hr style="width: 5vw; height: 2px; background-color: #ODOCOC;">
-
-                            <span class="d-flex flex-column" >
-                                <div class="packed-indicator d-flex flex-row align-items-center justify-content-center" style="'. $packed_class .' border-radius: 100%; height: 50px; width: 50px;">
-                                    <span class="material-symbols-outlined">package</span> 
-                                </div>
-                                
-                            </span>
-
-                                <hr style="width: 5vw; height: 2px; background-color: #ODOCOC;">
-
-
-                            <span class="d-flex flex-column" >
-                                <div class="shipped-indicator d-flex flex-row align-items-center justify-content-center" style="'.$shipped_class.' border-radius: 100%; height: 50px; width: 50px;">
-                                    <span class="material-symbols-outlined">local_shipping</span>
-                                </div>
-                                
-                            </span>
-
-                                <hr style="width: 5vw; height: 2px; background-color: #ODOCOC;">
-
-                            <span class="d-flex flex-column" >
-                                <div class="delivered-indicator d-flex flex-row align-items-center justify-content-center" style="'. $delivered_class .' border-radius: 100%; height: 50px; width: 50px;">
-                                    <span class="material-symbols-outlined">home</span> 
-                                </div>
-                                
-                            </span>
-                        </div>
-
-                        <div class="status-label d-flex flex-row align-items-center justify-content-center mt-1" style="gap: 5vw;">
-                            <p style="text-align: center;">Preparing</p>
-                            <p style="text-align: center;">Packed</p>
-                            <p style="text-align: center;">Shipped</p>
-                            <p style="text-align: center;">Delivered</p>
-                        </div>
-                    </div>
+                <span class="status-label">Preparing</span>
+            </div>
+            
+            <div class="status-connector"></div>
+            
+            <div class="status-step">
+                <div class="status-indicator" style="'. $packed_class .'">
+                    <span class="material-symbols-outlined">package</span>
                 </div>
-                <div class=""></div>
-            ';
+                <span class="status-label">Packed</span>
+            </div>
+            
+            <div class="status-connector"></div>
+            
+            <div class="status-step">
+                <div class="status-indicator" style="'.$shipped_class.'">
+                    <span class="material-symbols-outlined">local_shipping</span>
+                </div>
+                <span class="status-label">Shipped</span>
+            </div>
+            
+            <div class="status-connector"></div>
+            
+            <div class="status-step">
+                <div class="status-indicator" style="'. $delivered_class .'">
+                    <span class="material-symbols-outlined">home</span>
+                </div>
+                <span class="status-label">Delivered</span>
+            </div>
+        </div>
+    </div>';
 
-	return $html;
+    return $html;
 }
 
 function short_code_delivery_location($ETA){
-	$html = '
-		<div class="d-flex flex-column align-items-center mt-3 mb-5">
-			<p>Estimated Time to arrive in <strong>'. $ETA .'</strong></p>
-			<div id="map" style="height: 350px; width: 100%; z-index: 1"></div>
-		</div>
-		<script>
-			document.addEventListener("DOMContentLoaded", function() {
-				var map = L.map("map").setView([51.505, -0.09], 13);
-
-				L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-					attribution: \'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors\'
-				}).addTo(map);
-
-				L.marker([51.505, -0.09]).addTo(map)
-					.bindPopup("A pretty CSS3 popup.<br> Easily customizable.")
-					.openPopup();
-			});
-		</script>
-	';
-
-	return $html;
+    return '
+    <div class="eta-container">
+        <p class="eta-text" style="text-align: center;">Estimated arrival in <strong>'. $ETA .'</strong></p>
+    </div>';
 }
 
 function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, $senderAddress, $recipientAddress, $driver_name, $driver_phone, $driver_plate_number){
-	$html = '
-    <div class="delivery-details d-flex justify-content-between col-12 p-0">
-        <div class="col-4 p-0">
-            <div class="delivery-info d-flex flex-column mb-3">
+    $driverInfo = '';
+    if (isset($driver_name)) {
+        $driverInfo = '
+            <div class="info-row">
+                <span>Courier Name:</span>
+                <span>'. $driver_name .'</span>
+            </div>
+            <div class="info-row">
+                <span>Courier Number:</span>
+                <span>'. $driver_phone .'</span>
+            </div>
+            <div class="info-row">
+                <span>License Plate:</span>
+                <span>'. $driver_plate_number .'</span>
+            </div>';
+    }
 
-                <span class="d-flex flex-row">
-                    <p>
-                    <strong>
-                        Lalamove Order ID: 
-                    </strong>
-                    </p>
-                    <p class="ml-auto">'. $lalamove_order_id .'</p>
-                </span>
+    return '
+    <div class="delivery-grid">
+        <div class="delivery-info-section">
+            <div class="info-row">
+                <span>Lalamove Order ID:</span>
+                <span>'. $lalamove_order_id .'</span>
+            </div>
+            <div class="info-row">
+                <span>Tracking Link:</span>
+                <a href="'. $shareLink .'" target="_blank" class="tracking-link">View Tracking</a>
+            </div>
+            '. $driverInfo .'
+            
+            <div class="address-section">
+                <h3 class="address-title">Pickup Location</h3>
+                <p class="address-text">'. $senderAddress .'</p>
+            </div>
+            
+            <div class="address-section">
+                <h3 class="address-title">Delivery Location</h3>
+                <p class="address-text">'. $recipientAddress .'</p>
+            </div>
+        </div>
 
-                <span class="d-flex flex-row">
-                    <p>
-                    <strong>
-                        Lalamove Link: 
-                    </strong>
-                    </p>
-                    <a href="'. $shareLink .'"  target="_blank" rel="noopener noreferrer" class="ml-auto">Click Here</a>
-                </span>
-';
-
-	if (isset($driver_name)) {
-		$html .= '
-					<span class="d-flex flex-row">
-						<p>
-						<strong>
-							Courier Name: 
-						</strong>
-						</p>
-						<p class="ml-auto">'. $driver_name .'</p>
-					</span>
-
-					<span class="d-flex flex-row">
-						<p>
-						<strong>
-							Courier Number: 
-						</strong>
-						</p>
-						<p class="ml-auto">'. $driver_phone .'</p>
-					</span>
-
-					<span class="d-flex flex-row">
-						<p>
-						<strong>
-							Courier Plate#: 
-						</strong>
-						</p>
-						<p class="ml-auto">'. $driver_plate_number .'</p>
-					</span>
-		';
-	}
-
-	$html .= '
-				</div>
-				
-				<div class="delivery-pickup-loc d-flex flex-column mb-3">
-					<span class="d-flex flex-column">
-						<p>
-						<strong>
-							Pickup Location: 
-						</strong>
-						</p>
-						<p>'. $senderAddress .'</p>
-					</span>
-				</div>
-
-				<div class="delivery-drop-loc d-flex flex-column mb-3">
-					<span class="d-flex flex-column">
-						<p>
-						<strong>
-							Drop Off Location: 
-						</strong>
-						</p>
-						<p>'. $recipientAddress .'</p>
-					</span>
-				</div>
-
-			</div>    
-
-			<div class="col-7 p-0">
-				<p><strong>Proof of Delivery</strong> (POD)</p>
-				<img src="'. $podImage .'" alt="Proof of Delivery" class="img-fluid" style="width: auto; height: auto; max-height: 70%;">
-			</div>
-
-		</div>
-	';
-
-
-	return $html;
+        <div class="pod-section">
+            <h3 class="pod-title">Proof of Delivery</h3>
+            <img src="'. $podImage .'" class="pod-image" alt="Delivery confirmation">
+        </div>
+    </div>';
 }

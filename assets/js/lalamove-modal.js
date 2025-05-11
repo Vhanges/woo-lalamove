@@ -792,7 +792,7 @@ jq(document).ready(function ($) {
   }
 
   // Trigger data fetch when modal is opened
-  $(document).on("change", "#shipping_method_0_your_shipping_method", function () {
+  $(document).on("click", "#shipping_method_0_your_shipping_method", function () {
     fetchShippingData();
   });
 
@@ -1066,6 +1066,30 @@ jq(document).ready(function ($) {
     }
   }
 
+
+  function resetSessionData() {
+
+    SessionData = {
+        quotationID: null,
+        coordinates: {},
+        serviceType: null,
+        stops: {}, 
+        scheduleDate: null,
+        additionalNotes: "",
+        optimizeRoute: null,
+        proofOfDelivery: null,
+        priceBreakdown: {},
+    };
+
+    sessionStorage.removeItem("SessionData");
+
+    $('input[name="shipping_method[0]"][value="your_shipping_method"]')
+        .prop('checked', false)
+        .trigger('change');
+
+   }
+
+
   
   // Initialize the Leaflet map and conditionally fetch user location
   function initMap() {
@@ -1297,6 +1321,13 @@ jq(document).ready(function ($) {
       contentType: "application/json",
       data: JSON.stringify(body),
       success: function (response) {
+
+        if(response.errors){
+          console.error("Error in response:", response.errors);
+          alert("Error: " + response.errors[0].message);
+          return;
+        }
+
         console.log("Response received:", response);
 
         console.log("Price Breakdown ", SessionData.priceBreakdown);
@@ -1405,33 +1436,58 @@ jq(document).ready(function ($) {
     });
   }
 
+    
   $(document).on(
     "change",
-    `
-      #shipping-address_1, #shipping-address_2, #shipping-city, #shipping-state, #shipping-postcode, #shipping-country,
-      #shipping_address_1, #shipping_address_2, #shipping_city, #shipping_state, #shipping_postcode, #shipping_country,
-      #billing-address_1, #billing-address_2, #billing-city, #billing-state, #billing-postcode, #billing-country,
-      #billing_address_1, #billing_address_2, #billing_city, #billing_state, #billing_postcode, #billing_country
-    `,
-    function () {
-     
+    // Properly formatted single selector string
+    '#shipping-address_1, #shipping-address_2, #shipping-city, #shipping-state, #shipping-postcode, #shipping-country, ' +
+    '#billing-address_1, #billing-address_2, #billing-city, #billing-state, #billing-postcode, #billing-country, ' +
+    '#shipping_address_1, #shipping_address_2, #shipping_city, #shipping_state, #shipping_postcode, #shipping_country, ' +
+    '#billing_address_1, #billing_address_2, #billing_city, #billing_state, #billing_postcode, #billing_country, ' +
+    'input[name^="shipping_"], input[name^="billing_"], ' +
+    'select[name^="shipping_"], select[name^="billing_"]',
+    
+    function() {
       if (SessionData.quotationID === null) {
         return;
       }
-  
-      // Clear the session data
-      sessionStorage.removeItem("SessionData");
-  
-      closeModal(); 
-          
-      $('input[name="shipping_method[0]"]').each(function () {
-        if ($(this).val() == "your_shipping_method") {
-            $(this).prop("checked", false); // Uncheck all except the matched value
-        }
-      });
+
+      resetSessionData();
+        
+      saveSessionData();
+
+      closeModal();        
 
     }
   );
+
+  // Prevent order submission if Lalamove is selected but not configured
+  $(document.body).on('click', '#place_order', function(e) {
+      const isLalamoveSelected = $('input[name="shipping_method[0]"][value="your_shipping_method"]:checked').length > 0;
+      
+      if (isLalamoveSelected) {
+          // Check if session data exists
+          if (!SessionData.quotationID || 
+              typeof SessionData.quotationID === 'undefined' || 
+              SessionData.quotationID === null
+          ) {
+              // Show alert with custom message
+              alert('Please configure your Lalamove shipping details before placing the order.');
+
+
+
+              resetSessionData();
+                
+              saveSessionData();
+              
+              // Prevent form submission
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              return false;
+          }
+      }
+  });
+  
   
     
 });
