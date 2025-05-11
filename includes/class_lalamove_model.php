@@ -149,6 +149,7 @@ class Class_Lalamove_Model{
         }
     }
 
+
     protected function get_dashboard_orders_data($wpdb, $data){
         $wpdb->query('START TRANSACTION');  
 

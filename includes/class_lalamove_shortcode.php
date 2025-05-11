@@ -249,6 +249,8 @@ public function render_qr_content() {
      */
     public function render_order_details() {
 
+
+
         global $wpdb;
 
         $orderID = $_GET['order_id'] ?? null;
@@ -259,12 +261,18 @@ public function render_qr_content() {
         $lalamove_order_id = $data[0]['lalamove_order_id'] ?? null;
         $details = $this->lalamove_api->get_order_details($lalamove_order_id);
 
+        if(!isset($details)){
+            echo '<div class="delivery" style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+                         <p style="font-size: 18px; color: #6c757d;">This order did not avail the shipment method of Lalamove.</p>
+                  </div>';
+            return;
+        }
+
 
         $driverId = $details['data']['driverId'] ?? null;
 
         if($driverId != null){
             $driver_data = $this->lalamove_api->get_driver_details($lalamove_order_id, $driverId);
-            var_dump($driver_data);
         }
 
         $driver_name = $driver_data['data']['name'] ?? null;
@@ -427,10 +435,15 @@ public function render_qr_content() {
                     }
                 }
             </style>
-        <div class="delivery-details w-100 h-100 d-flex flex-column justify-content-center p-5" style="background-color: #FCFCFC; border: 1px solid #D9D9D9; padding: 10px; margin-bottom: 20px;">
-            '.short_code_delivery_status($orderStatus).'
+        <div class="delivery-details w-100 h-100 d-flex flex-column justify-content-center " style="background-color: #FCFCFC; padding: 12rem; border: 1px solid #D9D9D9; margin-bottom: 20px;">
+
+        <button onclick="window.history.back();" 
+            onmouseover="this.style.border="1px solid black";" 
+            style="float: left; background-color: transparent; border: none; padding: 8px 12px; width: fit-content; cursor: pointer; border-radius: 5px;">
+            ← Return
+        </button>
             '.short_code_delivery_location($estimatedTime).'
-            '.short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, $senderAddress, $recipientAddress, $driver_name, $driver_phone, $driver_plate_number).'
+            '.short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, $senderAddress, $recipientAddress, $driver_name, $driver_phone, $driver_plate_number, $orderID).'
         </div>
             ';
     }

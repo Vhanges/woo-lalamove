@@ -180,19 +180,31 @@ if (!class_exists('Woo_Lalamove')) {
             }
         }
 
+        function customer_delivery_status_button($actions, $order) {
+            // Ensure $order is a valid WC_Order object
+            if (!($order instanceof WC_Order)) {
+                return $actions;
+            }
 
-        function customer_delivery_status_button($actions, $order)
-        {
             $order_id = $order->get_id();
-            // Build URL to a custom order details page, e.g. with the slug "order-details"
+
+            // Check if Lalamove ID exists
+            if (get_lala_id($order_id) === null) {
+                return $actions;
+            }
+
+            // Build URL to the custom order details page
             $url = add_query_arg('order_id', $order_id, site_url('/delivery-status/'));
 
+            // Add custom button action
             $actions['custom_button'] = array(
-                'url' => $url,
+                'url'  => $url,
                 'name' => __('Track Order', 'woocommerce-lalamove-extension'),
             );
+
             return $actions;
         }
+
 
         public function enqueue_vue_assets($hook)
         {

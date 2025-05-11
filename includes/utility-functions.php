@@ -93,7 +93,7 @@ function get_order_details($order_id) {
             $weight = $product->get_weight();
 
             // Accumulate totals
-            $total_weight += $weight * $quantity;
+            $total_weight += floatval($weight) * $quantity;
             $total_quantity += $quantity;
 
             // Store individual product details
@@ -223,7 +223,7 @@ function print_waybill($order_ids, $bulk_printing = false) {
 			</tr>    
 			<tr>	
 				<td colspan="4" class="header" style="height: 10mm;">
-					'.$delivery_data['deliveryqwq_id'].'
+					'.$delivery_data['delivery_id'].'
 				</td>
 			</tr>
 			<tr>
@@ -380,88 +380,6 @@ function format_travel_time($seconds) {
 }
 
 
-
-
-
-function short_code_delivery_status($orderStatus){
-    // Keep original PHP logic intact
-    $packed_class = 'background-color: #FFCB2F; color: #0D0C0C;';
-    $preparing_class = 'background-color: #FFCB2F; color: #0D0C0C;';
-    $shipped_class = 'background-color: #FFCB2F; color: #0D0C0C;';
-    $delivered_class = 'background-color: #FFCB2F; color: #0D0C0C;';
-
-    $preparing_class = ($orderStatus === 'processing') ? 'background-color: #1A4DAF; color: #FCFCFC;' : 'background-color: #FFCB2F; color: #0D0C0C;';
-
-    switch($orderStatus){
-        case 'packed':
-            $packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
-            $preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
-            $shipped_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
-            $delivered_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
-            break;
-        case 'out-for-deliver':
-            $packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
-            $preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
-            $shipped_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
-            $delivered_class =  'background-color: #FFCB2F; color: #0D0C0C;' ;
-            break;
-        case 'delivered':
-            $packed_class = 'background-color: #1A4DAF; color: #FCFCFC;' ;
-            $preparing_class = 'background-color: #1A4DAF; color: #FCFCFC;';
-            $shipped_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
-            $delivered_class =  'background-color: #1A4DAF; color: #FCFCFC;' ;
-            break;
-    }
-
-    $html = '
-    <div class="tracking-container">
-        <a href="/my-account/orders" class="return-link">
-            <span class="material-symbols-outlined">chevron_left</span>
-            Return to Orders
-        </a>
-
-        <h2 class="tracking-title">Tracking Details</h2>
-
-        <div class="status-container">
-            <div class="status-step">
-                <div class="status-indicator" style="'. $preparing_class .'">
-                    <span class="material-symbols-outlined">orders</span>
-                </div>
-                <span class="status-label">Preparing</span>
-            </div>
-            
-            <div class="status-connector"></div>
-            
-            <div class="status-step">
-                <div class="status-indicator" style="'. $packed_class .'">
-                    <span class="material-symbols-outlined">package</span>
-                </div>
-                <span class="status-label">Packed</span>
-            </div>
-            
-            <div class="status-connector"></div>
-            
-            <div class="status-step">
-                <div class="status-indicator" style="'.$shipped_class.'">
-                    <span class="material-symbols-outlined">local_shipping</span>
-                </div>
-                <span class="status-label">Shipped</span>
-            </div>
-            
-            <div class="status-connector"></div>
-            
-            <div class="status-step">
-                <div class="status-indicator" style="'. $delivered_class .'">
-                    <span class="material-symbols-outlined">home</span>
-                </div>
-                <span class="status-label">Delivered</span>
-            </div>
-        </div>
-    </div>';
-
-    return $html;
-}
-
 function short_code_delivery_location($ETA){
     return '
     <div class="eta-container">
@@ -469,8 +387,9 @@ function short_code_delivery_location($ETA){
     </div>';
 }
 
-function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, $senderAddress, $recipientAddress, $driver_name, $driver_phone, $driver_plate_number){
+function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, $senderAddress, $recipientAddress, $driver_name, $driver_phone, $driver_plate_number, $order_id){
     $driverInfo = '';
+	$order_status = get_order_status($order_id);
     if (isset($driver_name)) {
         $driverInfo = '
             <div class="info-row">
@@ -486,6 +405,28 @@ function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, 
                 <span>'. $driver_plate_number .'</span>
             </div>';
     }
+
+	$confirmation_button = '';
+	$success_message = '';
+
+	if(isset($_GET['delivery_confirmed'])) {
+		$success_message = '
+		<div class="alert alert-success mt-3">
+			'. esc_html__('Delivery confirmed successfully!', 'your-text-domain') .'
+		</div>';
+	}
+
+	if($order_status != 'completed') {
+		$confirmation_button = '
+		<form class="mt-4" method="post">
+			<input type="hidden" name="order_id" value="'. esc_attr($order_id) .'">
+			'. wp_nonce_field('confirm_delivery', 'delivery_nonce', true, false) .'
+			<button type="submit" class="btn btn-primary w-100 py-2">
+				<i class="bi bi-check-circle me-2"></i>
+				'. esc_html__('Confirm Delivery Received', 'your-text-domain') .'
+			</button>
+		</form>';
+	}
 
     return '
     <div class="delivery-grid">
@@ -514,6 +455,65 @@ function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, 
         <div class="pod-section">
             <h3 class="pod-title">Proof of Delivery</h3>
             <img src="'. $podImage .'" class="pod-image" alt="Delivery confirmation">
+            '. $confirmation_button .'
+			
         </div>
     </div>';
+}
+
+function get_order_status($order_id) {
+	// Ensure WooCommerce is loaded
+	if ( ! function_exists( 'wc_get_order' ) ) {
+		return;
+	}
+
+	// Get the order object
+	$order = wc_get_order( $order_id );
+
+	if ( $order instanceof WC_Order ) {
+		return $order->get_status();
+	}
+}
+
+add_action('init', 'handle_delivery_confirmation');
+function handle_delivery_confirmation() {
+    if (!isset($_POST['delivery_nonce']) || 
+        !wp_verify_nonce($_POST['delivery_nonce'], 'confirm_delivery')) {
+        return;
+    }
+
+    $order_id = intval($_POST['order_id']);
+
+	error_log("Order Status: " . print_r(get_order_status($order_id), true));
+    $order = wc_get_order($order_id);
+    if ($order && is_a($order, 'WC_Order')) {
+        $order->update_status('completed');
+		
+        $order->add_order_note(__('Customer confirmed delivery reception', 'your-text-domain'));
+        
+        wp_safe_redirect(esc_url_raw(add_query_arg('delivery_confirmed', '1', wp_get_referer())));
+        exit;
+    }
+}
+
+function get_lala_id($order_id) {
+    global $wpdb;
+
+    try {
+        // Prepare the SQL query correctly
+        $query = $wpdb->prepare(
+            "SELECT lalamove_order_id FROM {$wpdb->prefix}wc_lalamove_orders WHERE wc_order_id = %d",
+            $order_id
+        );
+
+        // Fetch the result (single value)
+        $result = $wpdb->get_var($query);
+
+        return $result ? $result : null; // Return null if no result found
+
+    } catch (Exception $e) {
+        // Log the error
+        error_log('Error fetching Lalamove order ID: ' . $e->getMessage());
+        return null;
+    }
 }
