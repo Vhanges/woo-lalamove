@@ -12,11 +12,22 @@
                     <span class="material-symbols-outlined">restart_alt</span>
                 </div>
                 <div class="pagination-button">
-                    <div class="action action-previous">
-                        <span class="material-symbols-outlined">chevron_left</span>
+                    <div 
+                    class="action action-previous"
+                    :class="{ 'disabled': currentPage === 1 }"
+                    @click="previousPage"
+                    >
+                    <span class="material-symbols-outlined">chevron_left</span>
                     </div>
-                    <div class="action action-next">
-                        <span class="material-symbols-outlined">chevron_right</span>
+                    <div class="page-indicator">
+                    Page {{ currentPage }} of {{ totalPages }}
+                    </div>
+                    <div 
+                    class="action action-next"
+                    :class="{ 'disabled': currentPage >= totalPages }"
+                    @click="nextPage"
+                    >
+                    <span class="material-symbols-outlined">chevron_right</span>
                     </div>
                 </div>
             </div>
@@ -32,12 +43,29 @@
 </template>
 
 <script setup>
-import { defineAsyncComponent, ref } from 'vue';
+import { defineAsyncComponent, ref, computed } from 'vue';
 
 const DropDown = defineAsyncComponent(() => import('../Controls/DropDown.vue'));
 const DateRangePicker = defineAsyncComponent(() => import('../Controls/DateRangePicker.vue'));
 
-const emit = defineEmits(['searchData']);
+const props = defineProps({
+  totalItems: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  itemsPerPage: {
+    type: Number,
+    default: 10
+  },
+  currentPage: {
+    type: Number,
+    default: 1
+  }
+});
+
+
+const emit = defineEmits(['update:currentPage', 'searchData']);
 
 const status = [
     { key: "ALL", name: "All order status" },
@@ -53,6 +81,24 @@ const status = [
 const searchQuery = ref('');
 const selectedOption = ref('');
 const dateRange = ref({ startDate: null, endDate: null });
+
+const totalPages = computed(() => 
+  Math.ceil(props.totalItems / props.itemsPerPage)
+);
+
+// Previous and Next functions
+const previousPage = () => {
+  if (props.currentPage > 1) {
+    emit('update:currentPage', props.currentPage - 1);
+  }
+};
+
+const nextPage = () => {
+  if (props.currentPage < totalPages.value) {
+    emit('update:currentPage', props.currentPage + 1);
+  }
+};
+
 
 const emitSearchData = (event) => {
     searchQuery.value = event.target.value;
@@ -157,6 +203,15 @@ const handleDateRange = ({ startDate, endDate }) => {
     color: $txt-secondary;
     cursor: pointer;
     }
+}
+
+.page-indicator {
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  font-size: 0.9em;
+  color: $txt-secondary;
+  margin: 0 0.5rem;
 }
 </style>
 
