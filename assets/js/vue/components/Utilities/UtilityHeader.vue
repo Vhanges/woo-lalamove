@@ -8,7 +8,7 @@
                 @input="emitSearchData"
             />
             <div class="action-button">
-                <div class="action action-refresh">
+                <div class="action action-refresh" @click="refresData">
                     <span class="material-symbols-outlined">restart_alt</span>
                 </div>
                 <div class="pagination-button">
@@ -103,6 +103,10 @@ const nextPage = () => {
 const emitSearchData = (event) => {
     searchQuery.value = event.target.value;
     emit('searchData', { searchQuery: searchQuery.value, selectedOption: selectedOption.value, dateRange: dateRange.value });
+};
+
+const refresData = () => {
+    emit('searchData', { searchQuery: searchQuery.value, selectedOption: selectedOption.value, dateRange: dateRange.value, refreshData: true });
 };
 
 const handleDropdownSelection = (option) => {

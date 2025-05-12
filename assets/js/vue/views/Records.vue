@@ -108,13 +108,20 @@ const paginatedData = computed(() => {
   return apiResponse.value.slice(start, end);
 });
 
-async function handleUtilityData({ searchQuery, selectedOption, dateRange }) {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
+
+async function handleUtilityData({ searchQuery, selectedOption, dateRange, refreshData }) {
+  
+  if (refreshData) {
+    currentPage.value = 1; 
+    fetchData(); 
+  }
+
+  // Inner function to handle API requests
+  async function fetchData() {
     try {
       isLoading.value = true;
       isTimeout.value = false; // Reset timeout state on new request
-      
+
       const response = await axios.get(
         `${wooLalamoveAdmin.root}woo-lalamove/v1/records-data/?from=${dateRange.startDate}&to=${dateRange.endDate}&status=${selectedOption}&search_input=${searchQuery}`,
         {
@@ -128,15 +135,22 @@ async function handleUtilityData({ searchQuery, selectedOption, dateRange }) {
 
       apiResponse.value = response.data;
     } catch (error) {
-      if(error.code === 'ECONNABORTED') {
+      if (error.code === 'ECONNABORTED') {
         isTimeout.value = true;
       }
       console.error("Error fetching data:", error);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Debounce logic
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    await fetchData(); // Calling the inner function
   }, 2000);
-};
+}
+
 </script>
 
 <style lang="scss" scoped>
