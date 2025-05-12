@@ -33,9 +33,10 @@
             </div>
         </div>
         <div class="second-section">
-            <DropDown 
-             :options = "status" 
-             @selectedOption="handleDropdownSelection"/>
+            <ExcelExport
+                :data="data"
+                :filename="filename"
+            />
 
             <DateRangePicker @dateRangeSelected="handleDateRange"/>
         </div>
@@ -47,6 +48,7 @@ import { defineAsyncComponent, ref, computed } from 'vue';
 
 const DropDown = defineAsyncComponent(() => import('../Controls/DropDown.vue'));
 const DateRangePicker = defineAsyncComponent(() => import('../Controls/DateRangePicker.vue'));
+const ExcelExport = defineAsyncComponent(() => import('../Controls/ExcelExport.vue'));
 
 const props = defineProps({
   totalItems: {
@@ -61,6 +63,14 @@ const props = defineProps({
   currentPage: {
     type: Number,
     default: 1
+  },
+  data: {
+    type: Object,
+    required: true
+  },
+  filename: {
+    type: String,
+    default: 'lalamove_dashboard_data.xlsx'
   }
 });
 

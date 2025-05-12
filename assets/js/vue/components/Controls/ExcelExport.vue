@@ -64,6 +64,17 @@ const columnLabelMap = {
   serviceType: 'Service Type',
   statusName: 'Status',
 
+  //Column Name for Records
+  dropOffLocation: 'Drop Off Location',
+  lalamoveOrderId: 'Lalamove Order ID',
+  orderJsonBody: 'Order JSON Body',
+  orderedBy: 'Ordered By',
+  orderedOn: 'Ordered On',
+  scheduledOn: 'Scheduled On',
+  serviceType: 'Service Type',
+  statusName: 'Status Name',
+  wcOrderId: 'WooCommerce Order ID',
+
 
 
 
@@ -88,6 +99,11 @@ async function exportToExcel(data) {
     if (data.ordersKPI?.length > 0) {
       const kpiSheet = workbook.addWorksheet('Orders KPI Report');
       addStyledTable(kpiSheet, data.ordersKPI, 'Orders KPI Report');
+    }
+
+    if (data.RecordsReport?.length > 0) {
+      const recordsReport = workbook.addWorksheet('Records Report');
+      addStyledTable(recordsReport, data.RecordsReport, 'Records Report');
     }
 
     if (data.ordersChartData?.length > 0) {

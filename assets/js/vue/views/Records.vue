@@ -9,6 +9,8 @@
       v-model:current-page="currentPage"
       :total-items="apiResponse.length"
       :items-per-page="itemsPerPage"
+      :data="data"
+      :filename="computedFilename"
       @searchData="handleUtilityData" 
       />
     </nav>
@@ -102,6 +104,27 @@ const headers = ref([
   'Service', 
 ]);
 
+
+
+let data = computed(() => {
+  return {
+    RecordsReport: apiResponse.value.map(apiResponse => ({
+      wcOrderId: apiResponse.wc_order_id,
+      lalamoveOrderId: apiResponse.lalamove_order_id,
+      dropOffLocation: apiResponse.drop_off_location,
+      orderedBy: apiResponse.ordered_by || 'N/A',
+      orderedOn: apiResponse.ordered_on,
+      scheduledOn: apiResponse.scheduled_on,
+      serviceType: apiResponse.service_type || 'N/A',
+      orderJsonBody: apiResponse.order_json_body || null,
+    })),
+  };
+});
+
+const computedFilename = computed(() => {
+  return 'Lalamove Records ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+});
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
@@ -134,6 +157,8 @@ async function handleUtilityData({ searchQuery, selectedOption, dateRange, refre
       );
 
       apiResponse.value = response.data;
+
+
     } catch (error) {
       if (error.code === 'ECONNABORTED') {
         isTimeout.value = true;
