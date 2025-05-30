@@ -50,6 +50,7 @@ const DropDown = defineAsyncComponent(() => import('../Controls/DropDown.vue'));
 const DateRangePicker = defineAsyncComponent(() => import('../Controls/DateRangePicker.vue'));
 const ExcelExport = defineAsyncComponent(() => import('../Controls/ExcelExport.vue'));
 
+
 const props = defineProps({
   totalItems: {
     type: Number,
@@ -68,10 +69,10 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  filename: {
-    type: String,
-    default: 'lalamove_dashboard_data.xlsx'
-  }
+  // filename: {
+  //   type: String,
+  //   default: 'lalamove_dashboard_data.xlsx'
+  // }
 });
 
 
@@ -91,6 +92,13 @@ const status = [
 const searchQuery = ref('');
 const selectedOption = ref('');
 const dateRange = ref({ startDate: null, endDate: null });
+const filename = computed(() => {
+  const { startDate, endDate } = dateRange.value;
+  if (startDate && endDate) {
+    return `Lalamove Records ${startDate} to ${endDate}`;
+  }
+});
+
 
 const totalPages = computed(() => 
   Math.ceil(props.totalItems / props.itemsPerPage)
@@ -126,6 +134,7 @@ const handleDropdownSelection = (option) => {
 
 const handleDateRange = ({ startDate, endDate }) => {
     dateRange.value = { startDate, endDate };
+
     emit('searchData', { searchQuery: searchQuery.value, selectedOption: selectedOption.value, dateRange: dateRange.value });
 };
 </script>

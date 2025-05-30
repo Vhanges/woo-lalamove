@@ -416,7 +416,7 @@ function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, 
 		</div>';
 	}
 
-	if($order_status != 'completed') {
+	if($order_status != 'completed' ||$order_status != 'cancelled') {
 		$confirmation_button = '
 		<form class="mt-4" method="post">
 			<input type="hidden" name="order_id" value="'. esc_attr($order_id) .'">
