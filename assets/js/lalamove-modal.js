@@ -2,7 +2,7 @@ jq = jQuery.noConflict();
 
 jq(document).ready(function ($) {  
 
-  $('input[name="shipping_method[0]"]').each(function () {
+  $('input[name="shipping_method[0]"], input[name="radio-control-0"]').each(function () {
     if ($(this).val() == "your_shipping_method") {
         $(this).prop("checked", false); 
     }
@@ -59,11 +59,10 @@ jq(document).ready(function ($) {
   });
 
 
-  function fieldsChecker (){
+  function fieldsChecker () {
+    let isFilled = true;
 
-      let isFilled = true;
-
-      const oldRequiredFields = [
+    const oldBillingFields = [
         "#billing_first_name",
         "#billing_last_name",
         "#billing_address_1",
@@ -72,33 +71,65 @@ jq(document).ready(function ($) {
         "#billing_country",
         "#billing_phone"
     ];
-    
-    const newRequiredFields = [
+    const newBillingFields = [
         "#billing-first_name",
         "#billing-last_name",
         "#billing-address_1",
         "#billing-city",
         "#billing-postcode",
         "#billing-country",
-        "#billing-phone",
+        "#billing-phone"
     ];
-    
+
+    const oldShippingFields = [
+        "#shipping_first_name",
+        "#shipping_last_name",
+        "#shipping_address_1",
+        "#shipping_city",
+        "#shipping_postcode",
+        "#shipping_country",
+        "#shipping_phone"
+    ];
+    const newShippingFields = [
+        "#shipping-first_name",
+        "#shipping-last_name",
+        "#shipping-address_1",
+        "#shipping-city",
+        "#shipping-postcode",
+        "#shipping-country",
+        "#shipping-phone"
+    ];
+
     function areFieldsFilled(fieldSelectors) {
         return fieldSelectors.every((selector) => {
             const fieldValue = $(selector).val();
-            return fieldValue && fieldValue.trim() !== ""; 
+            return fieldValue && fieldValue.trim() !== "";
         });
     }
-    
-    // Check if either old or new fields are valid
-    const oldFieldsValid = areFieldsFilled(oldRequiredFields);
-    const newFieldsValid = areFieldsFilled(newRequiredFields);
-    
-    if (!oldFieldsValid && !newFieldsValid) {
-        alert("Please fill in all required fields before proceeding.");
+
+    // Only check billing fields if #checkbox-control-3 is NOT checked
+    let billingValid = true;
+    let shippingValid = true;
+    if (!$('#checkbox-control-3').is(':checked')) {
+        const oldBillingValid = areFieldsFilled(oldBillingFields);
+        const newBillingValid = areFieldsFilled(newBillingFields);
+        billingValid = oldBillingValid || newBillingValid;
+        console.log("HEYHEYHEYJDFHLSKDJFH");
+    } else {
+      console.log("BOWM");
+      // Always check shipping fields
+      const oldShippingValid = areFieldsFilled(oldShippingFields);
+      const newShippingValid = areFieldsFilled(newShippingFields);
+      shippingValid = oldShippingValid || newShippingValid;
+
+    }
+
+
+    if (!billingValid || !shippingValid) {
+        alert("Please fill in all required billing or shipping fields before proceeding.");
         $('input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method').prop("checked", false);
         isFilled = false;
-    }  
+    }
 
     return isFilled;
   }
@@ -478,7 +509,7 @@ jq(document).ready(function ($) {
   }
 
   // Event listener for opening the modal
-  $(document).on("click", 'input[name="shipping_method[0]"]', async function () {
+  $(document).on("click", 'input[name="shipping_method[0]"], input[name="radio-control-0"]', async function () {
     const selectedValue = $(this).val();
 
     if(fieldsChecker()){
@@ -1083,7 +1114,7 @@ jq(document).ready(function ($) {
 
     sessionStorage.removeItem("SessionData");
 
-    $('input[name="shipping_method[0]"][value="your_shipping_method"]')
+    $('input[name="shipping_method[0]"][value="your_shipping_method"], input[name="radio-control-0"][value="your_shipping_method"]')
         .prop('checked', false)
         .trigger('change');
 
@@ -1463,7 +1494,7 @@ jq(document).ready(function ($) {
 
   // Prevent order submission if Lalamove is selected but not configured
   $(document.body).on('click', '#place_order', function(e) {
-      const isLalamoveSelected = $('input[name="shipping_method[0]"][value="your_shipping_method"]:checked').length > 0;
+      const isLalamoveSelected = $('input[name="shipping_method[0]"][value="your_shipping_method"]:checked, input[name="radio-control-0"][value="your_shipping_method"]:checked').length > 0;
       
       if (isLalamoveSelected) {
           // Check if session data exists

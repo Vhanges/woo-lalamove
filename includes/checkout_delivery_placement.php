@@ -4,13 +4,21 @@ exit;
 
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 
-add_action('woocommerce_thankyou', 'set_lalamove_order', 10, 1);
-function set_lalamove_order($order_id)
+// For classic checkout
+add_action('woocommerce_checkout_create_order', 'set_lalamove_order', 10, 1);
+
+// For new block based checkout
+add_action('woocommerce_store_api_checkout_order_processed', 'set_lalamove_order', 10, 1);
+function set_lalamove_order($order)
 {
 
     global $wpdb;
+    $shipping_method = $order->get_shipping_method();
+    $order_id = $order->get_id();
 
+    if($shipping_method !== "Lalamove Delivery") return;
 
+    
     WC()->session->__unset('shipment_cost');
 
 
