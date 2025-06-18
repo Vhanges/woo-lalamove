@@ -110,19 +110,20 @@ jq(document).ready(function ($) {
     // Only check billing fields if #checkbox-control-3 is NOT checked
     let billingValid = true;
     let shippingValid = true;
-    if (!$('#checkbox-control-3').is(':checked')) {
-        const oldBillingValid = areFieldsFilled(oldBillingFields);
-        const newBillingValid = areFieldsFilled(newBillingFields);
-        billingValid = oldBillingValid || newBillingValid;
-        console.log("HEYHEYHEYJDFHLSKDJFH");
-    } else {
-      console.log("BOWM");
-      // Always check shipping fields
-      const oldShippingValid = areFieldsFilled(oldShippingFields);
-      const newShippingValid = areFieldsFilled(newShippingFields);
-      shippingValid = oldShippingValid || newShippingValid;
+    // if (!$('#checkbox-control-3').is(':checked')) {
+    //     const oldBillingValid = areFieldsFilled(oldBillingFields);
+    //     const newBillingValid = areFieldsFilled(newBillingFields);
+    //     billingValid = oldBillingValid || newBillingValid;
+    //     console.log("HEYHEYHEYJDFHLSKDJFH");
+    // } else {
+    //   console.log("BOWM");
+    //   // Always check shipping fields
+    //   const oldShippingValid = areFieldsFilled(oldShippingFields);
+    //   const newShippingValid = areFieldsFilled(newShippingFields);
+    //   shippingValid = oldShippingValid || newShippingValid;
 
-    }
+    // }
+
 
 
     if (!billingValid || !shippingValid) {
@@ -346,16 +347,33 @@ jq(document).ready(function ($) {
       font-weight: bold;
       margin-bottom: 0.5rem;
     }
+
     #schedule-date {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
       width: 100%;
-      padding: 0.5rem;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+      background: #f9fafb;
+      color: #222;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+
+    #schedule-date:focus {
+      border-color: #f16622;
+      outline: none;
       background: #fff;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      margin-bottom: 1rem;
+      box-shadow: 0 0 0 2px rgba(241,102,34,0.15);
+    }
+
+    .schedule-date label,
+    .input-label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 600;
+      color: #333;
     }
 
     textarea {
@@ -581,9 +599,7 @@ jq(document).ready(function ($) {
 
           <!-- Delivery Date & Contact Information Section -->
           <p class="header">Delivery Date & Contact Information</p>
-          <div id="schedule-date">
-            <!-- Date schedule content goes here -->
-          </div>
+          <input type="datetime-local" id="schedule-date">
 
           <!-- Additional Notes Section -->
           <p class="header">ADDITIONAL NOTES</p>
@@ -766,54 +782,43 @@ jq(document).ready(function ($) {
       if (SessionData.scheduleDate) {
         startDate = moment(SessionData.scheduleDate, moment.ISO_8601);
       } else {
-        startDate = moment().add(1, "days");
+        startDate = moment().utc().add(1, "days").startOf("day").add(8, "hours").toISOString();
+        window.scheduleDate = startDate;
+        SessionData.scheduleDate = startDate;
       }
 
-      var endDate = moment().add(30, "days");
+      var endDate = moment().add(30, "days").startOf("day").add(16, "hours").format("YYYY-MM-DDTHH:00");
 
-      function cb(start, end) {
-        console.log("start:", start.format("MMMM D, YYYY hh:mm:ss A"));
-        window.scheduleDate = start.toISOString();
-        SessionData.scheduleDate = window.scheduleDate;
 
-        console.log("Selected schedule date:", window.scheduleDate);
-        $("#customModal #schedule-date").empty();
-        $("#customModal #schedule-date").append(`
-            <p style="margin: 0;">${start.format(
-          "MMMM D, YYYY hh:mm A"
-        )}</p>
-            <i class="bi bi-calendar" style="margin-left: auto;"></i>
-        `);
 
-      }
+      var $inputField = $('#schedule-date');
 
-      var date = jQuery.noConflict();
 
-      date("#schedule-date").daterangepicker(
-        {
-          startDate: startDate,
-          endDate: endDate,
-          minDate: moment().add(1, "days"), 
-          maxDate: moment().add(30, "days"), 
-          singleDatePicker: true, 
-          timePicker: true,
-          timePicker24Hour: false,
-          timePickerSeconds: false,
-          timePickerIncrement: 15,
-          autoApply: true,
-          opens: "right",
-          drops: "bottom", 
-          showDropdowns: true,
-          locale: {
-            format: "DD/MM/YYYY HH:mm",
-            applyLabel: "Apply", 
-            cancelLabel: "Cancel",
-          },
-        },
-        cb
-      );
+      // Set min and max attributes with jQuery
+      $inputField.attr({
+          min: startDate,
+          max: endDate
+      });
 
-      cb(startDate, endDate);
+      
+
+
+
+      // Handle change event
+      $inputField.on('change', function () {
+          let selectedDate = moment($(this).val());
+          let selectedHour = selectedDate.hour();
+
+          if (selectedHour < 8 || selectedHour > 16) {
+              alert("Please select a time between 08:00 AM and 04:00 PM.");
+              $(this).val(""); // Reset invalid selection
+          } else {
+              window.scheduleDate = selectedDate.startOf("hour").toISOString();
+              SessionData.scheduleDate = window.scheduleDate;
+
+              console.log("Selected schedule date:", window.scheduleDate);
+          }
+      });
     } catch (error) {
       console.error("Error fetching shipping data:", error);
       $("#customModal .custom-modal-body").html(`

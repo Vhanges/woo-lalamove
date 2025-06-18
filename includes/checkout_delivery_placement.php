@@ -5,37 +5,42 @@ exit;
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 
 // For classic checkout
-add_action('woocommerce_checkout_create_order', 'set_lalamove_order', 10, 1);
+add_action('woocommerce_checkout_order_processed', 'set_lalamove_order', 10, 1);
 
 // For new block based checkout
 add_action('woocommerce_store_api_checkout_order_processed', 'set_lalamove_order', 10, 1);
 function set_lalamove_order($order)
 {
 
+    $order = wc_get_order($order);
+
     global $wpdb;
     $shipping_method = $order->get_shipping_method();
+    $shipping_address = $order->get_address('shipping');
+
     $order_id = $order->get_id();
 
+    
     if($shipping_method !== "Lalamove Delivery") return;
-
+    
     
     WC()->session->__unset('shipment_cost');
-
-
-
+    
+    
+    
     $orders_table = $wpdb->prefix . 'wc_lalamove_orders';
     $transaction_table = $wpdb->prefix . 'wc_lalamove_transaction';
     $cost_details_table = $wpdb->prefix . 'wc_lalamove_cost_details';
     $status_table = $wpdb->prefix . 'wc_lalamove_status';
-
+    
     $isLalamoveOrderSet = $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM {$orders_table} WHERE wc_order_id = %d", $order_id 
     ));
-
+    
     if($isLalamoveOrderSet > 0){
         return;
     }
-
+    
     // Start a secure session
     session_start([
         'cookie_lifetime' => 20 * 60,
@@ -84,11 +89,14 @@ function set_lalamove_order($order)
     } else {
         error_log("LALAMOVE: No schedule date added");
     }
-    
-    
-    
 
-    $dropOffLocation = $_SESSION['dropOffLocation'] ?? null;
+    $dropOffLocation = $shipping_address['address_1'] . ', ' .
+                       $shipping_address['city'] . ', ' .
+                       $shipping_address['postcode'] . ', ' .
+                       $shipping_address['country'];
+
+    error_log("ADDRESS: ". $dropOffLocation);
+
 
     $customerFullName = $customerFName . " " . $customerLName;
 
@@ -201,7 +209,6 @@ function set_lalamove_order($order)
         unset($_SESSION['customerLName']);
         unset($_SESSION['customerPhoneNo']);
         unset($_SESSION['scheduledOn']);
-        unset($_SESSION['dropOffLocation']);
         unset($_SESSION['additionalNotes']);
         unset($_SESSION['proofOfDelivery']);
         unset($_SESSION['serviceType']);
@@ -281,7 +288,6 @@ function set_quotation_data_session()
         $_SESSION['customerLName'] = sanitize_text_field($_POST['customerLName']);
         $_SESSION['customerPhoneNo'] = sanitize_text_field($_POST['customerPhoneNo']);
         $_SESSION['scheduledOn'] = sanitize_text_field($_POST['scheduledOn']) ?? "";
-        $_SESSION['dropOffLocation'] = sanitize_text_field($_POST['dropOffLocation']) ?? "";
         $_SESSION['additionalNotes'] = sanitize_text_field($_POST['additionalNotes']);
         $_SESSION['proofOfDelivery'] = sanitize_text_field($_POST['proofOfDelivery']);
         $_SESSION['serviceType'] = sanitize_text_field($_POST['serviceType']);
