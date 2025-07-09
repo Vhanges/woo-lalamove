@@ -50,15 +50,16 @@ if (!class_exists('Woo_Lalamove')) {
 
                 require_once plugin_dir_path(__FILE__) . 'includes/Class_Lalamove_Shipping_Method.php';
 
-                register_activation_hook(__FILE__, callback: [$this, 'my_plugin_create_custom_table']);
+                register_activation_hook(__FILE__, callback: [$this, 'create_lalamove_tables']);
 
                 add_filter('woocommerce_billing_fields', [$this, 'make_phone_field_required'], 10, 2);
 
                 add_action('woocommerce_blocks_loaded', 'register_custom_cart_update_callback');
-                add_filter('woocommerce_checkout_fields',[$this, 'modify_checkout_phone_field'], 10, 1);
+                add_filter('woocommerce_checkout_fields', [$this, 'modify_checkout_phone_field'], 10, 1);
             }
         }
-        function modify_checkout_phone_field($fields) {
+        function modify_checkout_phone_field($fields)
+        {
             $fields['billing']['billing_phone']['placeholder'] = 'Ex. +6343554325';
             $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '^\\+[1-9][0-9]{1,14}$';
             return $fields;
@@ -69,7 +70,7 @@ if (!class_exists('Woo_Lalamove')) {
             return $fields;
         }
 
-        function my_plugin_create_custom_table()
+        function create_lalamove_tables()
         {
             global $wpdb;
             $charset_collate = $wpdb->get_charset_collate();
@@ -158,7 +159,7 @@ if (!class_exists('Woo_Lalamove')) {
                 return $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table;
             });
 
-            
+
             $sql_status_insert = "INSERT INTO $status_table (status_id, status_name, description) VALUES
                 ('0', 'Pending', 'The order has been created but is waiting for further action or confirmation.'),
                 ('1', 'Processed', 'The order has been reviewed and confirmed for fulfillment.'),
@@ -180,7 +181,8 @@ if (!class_exists('Woo_Lalamove')) {
             }
         }
 
-        function customer_delivery_status_button($actions, $order) {
+        function customer_delivery_status_button($actions, $order)
+        {
             // Ensure $order is a valid WC_Order object
             if (!($order instanceof WC_Order)) {
                 return $actions;
@@ -290,14 +292,14 @@ if (!class_exists('Woo_Lalamove')) {
 
         public function woo_lalamove_render_admin_page()
         {
-            ?>
+?>
 
             <div id="lalamove-app">
                 <!-- Content goes here -->
             </div>
             <!-- Add this hidden nonce field -->
             <input type="hidden" id="woo_lalamove_form_nonce" value="<?php echo wp_create_nonce('woo_lalamove_form_action'); ?>">
-            <?php
+<?php
         }
 
 
@@ -331,7 +333,7 @@ if (!class_exists('Woo_Lalamove')) {
                 wp_enqueue_script('moment-js', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js', array('jquery'), null, true);
 
                 // Enqueue Phone Number Validation JS
-                wp_enqueue_script( 'libphonenumber-js', 'https://cdn.jsdelivr.net/npm/libphonenumber-js@1.10.24/bundle/libphonenumber{-max.js', array(), null, true );
+                wp_enqueue_script('libphonenumber-js', 'https://cdn.jsdelivr.net/npm/libphonenumber-js@1.10.24/bundle/libphonenumber{-max.js', array(), null, true);
 
                 // Enqueue Date Range Picker JS
                 wp_enqueue_script('daterangepicker-js', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js', array('jquery', 'moment-js'), null, true);
@@ -361,6 +363,78 @@ if (!class_exists('Woo_Lalamove')) {
     }
 
     new Woo_Lalamove();
+
+    // add_filter('script_loader_tag', function($tag, $handle, $src) {
+    //     if ($handle === 'custom-plugin-script') {
+    //         return '<script type="module" src="' . esc_url($src) . '"></script>';
+    //     }
+    //     return $tag;
+    // }, 10, 3);
+
+    add_action( 'woocommerce_admin_order_data_after_shipping_address', function( $order ) {
+
+        $lat = get_post_meta( $order->get_id(), '_lalamove_lat', true );
+        $lng = get_post_meta( $order->get_id(), '_lalamove_lng', true );
+
+        if ( $lat && $lng ) {
+            echo '<p><strong>Delivery Coordinates:</strong><br>';
+            echo 'Latitude: ' . esc_html( $lat ) . '<br>';
+            echo 'Longitude: ' . esc_html( $lng ) . '</p>';
+        } else {
+            echo '<p><strong>Delivery Coordinates:</strong> Not available</p>';
+        }
+        
+    });
+
+
+    add_action('woocommerce_before_cart_totals', 'free_shipping_message');
+    add_action('woocommerce_before_checkout_form', 'free_shipping_message');
+
+    function free_shipping_message() {
+        $threshold = get_free_shipping_threshold();
+        $subtotal = WC()->cart->get_subtotal();
+
+        if ( $threshold && $subtotal < $threshold ) {
+            $remaining = wc_price( $threshold - $subtotal );
+            echo "<div class='woocommerce-message'>Add {$remaining} more to get <strong>Free Shipping</strong>!</div>";
+        } elseif ( $threshold ) {
+            echo "<div class='woocommerce-message'><strong>Congrats!</strong> You’ve unlocked Free Shipping 🎉</div>";
+        }
+    }
+
+
+    function get_free_shipping_threshold() {
+        $packages = WC()->shipping()->get_packages();
+
+        foreach ( $packages as $package ) {
+            $zone = WC_Shipping_Zones::get_zone_matching_package( $package );
+            $methods = $zone->get_shipping_methods();
+
+            foreach ( $methods as $method ) {
+                if ( $method->id === 'free_shipping' && isset( $method->min_amount ) ) {
+                    return (float) $method->min_amount;
+                }
+            }
+        }
+
+        return null; // fallback if not found
+    }
+
+
+    add_filter( 'woocommerce_package_rates', 'vhanges_hide_other_shipping_when_free', 100, 2 );
+    function vhanges_hide_other_shipping_when_free( $rates, $package ) {
+        $free = [];
+
+        foreach ( $rates as $rate_id => $rate ) {
+            if ( 'free_shipping' === $rate->method_id ) {
+                $free[ $rate_id ] = $rate;
+                break;
+            }
+        }
+
+        return ! empty( $free ) ? $free : $rates;
+    }
+
 
     // Fetch checkout product data for Lalamove modal order detail reference
     add_action('wp_ajax_get_shipping_data', 'get_shipping_data');
@@ -486,44 +560,42 @@ if (!class_exists('Woo_Lalamove')) {
         if (get_transient('wc_lalamove_table_created')) {
             echo '<div class="notice notice-success is-dismissible">
                     <p>WooCommerce Lalamove table was successfully created.</p>
-                </div>';    
+                </div>';
             delete_transient('wc_lalamove_table_created');
         }
     }
 
-    $add_custom_bulk_action = function ( array $bulk_actions ) {
-        return array_merge( $bulk_actions, [ 'bulk_print_waybill' => 'Print Waybill' ] );
+    $add_custom_bulk_action = function (array $bulk_actions) {
+        return array_merge($bulk_actions, ['bulk_print_waybill' => 'Print Waybill']);
     };
-    
 
-    $custom_bulk_action_handler = function ( string $redirect_to, string $action, array $ids ) {
+
+    $custom_bulk_action_handler = function (string $redirect_to, string $action, array $ids) {
         if ($action !== 'bulk_print_waybill') {
             return $redirect_to;
         }
-    
+
         // Generate URL to pass the IDs to a new page
         $url = admin_url('admin-ajax.php?action=bulk_print-waybill&ids=' . implode(',', $ids));
         return $url;
-    
     };
 
     // AJAX handler
     add_action('wp_ajax_bulk_print-waybill', function () {
-  
+
         $ids = explode(',', sanitize_text_field($_GET['ids']));
         print_waybill($ids, true);
-  
     });
-    
+
     $custom_bulk_action_notice = function () {
-        if ( isset( $_GET['bulk_action'] ) && 'custom-bulk-action-notice' === $_GET['bulk_action'] ) {
+        if (isset($_GET['bulk_action']) && 'custom-bulk-action-notice' === $_GET['bulk_action']) {
             print '<div class="updated" style="border-left-color: #d7f"><p>Custom Bulk Action Handler Fired</p></div>';
         }
     };
-    
-    add_filter( 'bulk_actions-woocommerce_page_wc-orders', $add_custom_bulk_action );
-    add_filter( 'handle_bulk_actions-woocommerce_page_wc-orders', $custom_bulk_action_handler, 10, 3 );
-    add_action( 'admin_notices', $custom_bulk_action_notice );
+
+    add_filter('bulk_actions-woocommerce_page_wc-orders', $add_custom_bulk_action);
+    add_filter('handle_bulk_actions-woocommerce_page_wc-orders', $custom_bulk_action_handler, 10, 3);
+    add_action('admin_notices', $custom_bulk_action_notice);
 
 
     add_action('woocommerce_admin_order_actions', function ($actions, $order) {
@@ -543,7 +615,8 @@ if (!class_exists('Woo_Lalamove')) {
     add_action('wp_ajax_print-waybill', 'handle_print_waybill_action');
 
     // Define the handler function
-    function handle_print_waybill_action() {
+    function handle_print_waybill_action()
+    {
 
         // Check if order_id is provided
         if (!isset($_GET['order_id'])) {
@@ -551,7 +624,7 @@ if (!class_exists('Woo_Lalamove')) {
             return;
         }
 
-        
+
         $order_id = intval($_GET['order_id']);
         print_waybill($order_id, false);
 
@@ -567,17 +640,17 @@ if (!class_exists('Woo_Lalamove')) {
         }
 
         wp_die();
-
     }
 
     add_action('admin_head', 'waybill_css');
-    function waybill_css() {
+    function waybill_css()
+    {
         wp_enqueue_style('material-symbols', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined', [], null);
         $waybill_order_action = 'print-waybill';
 
         echo '
             <style>
-                .wc-action-button-'.$waybill_order_action.'::after {
+                .wc-action-button-' . $waybill_order_action . '::after {
                     font-family: "Material Symbols Outlined" !important;
                     content: "print"; 
                     font-size: 16px; 
@@ -585,10 +658,10 @@ if (!class_exists('Woo_Lalamove')) {
                     margin: 0 !important;
                     color: white;
                 }
-                .wc-action-button-'.$waybill_order_action.'.'.$waybill_order_action.' {
+                .wc-action-button-' . $waybill_order_action . '.' . $waybill_order_action . ' {
                     border-color: #FF7937;
                 }
-                .wc-action-button-'.$waybill_order_action.'.'.$waybill_order_action.':hover {
+                .wc-action-button-' . $waybill_order_action . '.' . $waybill_order_action . ':hover {
                     border-color: #FF7937;
                 }
             </style>
@@ -597,30 +670,28 @@ if (!class_exists('Woo_Lalamove')) {
 
     add_action('woocommerce_checkout_process', 'validate_phone_field');
 
-    function validate_phone_field() {
+    function validate_phone_field()
+    {
         $phone = isset($_POST['billing_phone']) ? preg_replace('/\s+/', '', trim($_POST['billing_phone'])) : '';
-    
+
         // Lalamove E.164 validation regex (supports international phone numbers)
         $pattern = '/^\+[1-9]\d{1,14}$/';
-    
+
         if (empty($phone) || !preg_match($pattern, $phone)) {
             wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6312345678.'), 'error');
         }
     }
-    
+
 
     add_action('wp_ajax_my_webhook', 'log_webhook_data'); // For logged-in users
     add_action('wp_ajax_nopriv_my_webhook', 'log_webhook_data'); // For public access
-    
-    function log_webhook_data() {
+
+    function log_webhook_data()
+    {
         $data = json_decode(file_get_contents('php://input'), true);
         error_log('Webhook received: ' . print_r($data, true));
         wp_die(); // End execution gracefully
     }
-    
-    
 
     require_once plugin_dir_path(__FILE__) . 'includes/Checkout_Delivery_Placement.php';
-
-
 }

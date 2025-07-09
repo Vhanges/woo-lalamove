@@ -23,12 +23,12 @@
       <span class="nav-item__label">Records</span>
     </router-link>
 
-    <!-- <router-link 
+    <router-link 
       to="/dashboard" 
       class="nav-item nav-item--dashboard"
     >
       <span class="nav-item__label">Dashboard</span>
-    </router-link> -->
+    </router-link>
 
     <!-- <div class="nav-controls">
       <router-link 

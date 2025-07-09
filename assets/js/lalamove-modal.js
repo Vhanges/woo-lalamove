@@ -1,41 +1,45 @@
+// Enable this when script is turned into module
+// const jq = jQuery.noConflict();
 jq = jQuery.noConflict();
 
-jq(document).ready(function ($) {  
-
-  $('input[name="shipping_method[0]"], input[name="radio-control-0"]').each(function () {
-    if ($(this).val() == "your_shipping_method") {
-        $(this).prop("checked", false); 
+jq(document).ready(function ($) {
+  $('input[name="shipping_method[0]"], input[name="radio-control-0"]').each(
+    function () {
+      if ($(this).val() == "your_shipping_method") {
+        $(this).prop("checked", false);
+      }
     }
-  });
+  );
 
   $('input[name="billing_phone"]').each(function () {
     $(this).attr({
-      'type': 'tel',
-      'inputmode': 'numeric',
-      'pattern': '^\\+[1-9]\\d{1,14}$',
-      'title': 'Please enter a valid phone number in E.164 format (e.g., +63211234567)',
-      'maxlength': '15',
-      'required': true
+      type: "tel",
+      inputmode: "numeric",
+      pattern: "^\\+[1-9]\\d{1,14}$",
+      title:
+        "Please enter a valid phone number in E.164 format (e.g., +63211234567)",
+      maxlength: "15",
+      required: true,
     });
   });
 
-  $('input[name="billing_phone"]').on('blur', function () {
-      var input = $(this).val();
-      var phoneNumber = libphonenumber.parsePhoneNumberFromString(input, 'NZ'); // Replace 'NZ' with dynamic country code if needed
+  $('input[name="billing_phone"]').on("blur", function () {
+    var input = $(this).val();
+    var phoneNumber = libphonenumber.parsePhoneNumberFromString(input, "NZ"); // Replace 'NZ' with dynamic country code if needed
 
-      if (!phoneNumber || !phoneNumber.isValid()) {
-          alert("Invalid phone number. Please enter a valid one in +63 format.");
-          $(this).addClass('error'); // Add error class for styling
-      } else {
-          $(this).removeClass('error');
-          $(this).val(phoneNumber.format('E.164')); // Format the phone number to E.164
-      }
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      alert("Invalid phone number. Please enter a valid one in +63 format.");
+      $(this).addClass("error"); // Add error class for styling
+    } else {
+      $(this).removeClass("error");
+      $(this).val(phoneNumber.format("E.164")); // Format the phone number to E.164
+    }
   });
 
-  const prefix = '+63';
-  const $phone = $('#billing_phone');
+  const prefix = "+63";
+  const $phone = $("#billing_phone");
 
-  $phone.on('focus', function() {
+  $phone.on("focus", function () {
     let val = $(this).val();
     if (!val.startsWith(prefix)) {
       $(this).val(prefix);
@@ -43,68 +47,69 @@ jq(document).ready(function ($) {
     this.setSelectionRange(prefix.length, prefix.length);
   });
 
-  $phone.on('keydown', function(e) {
+  $phone.on("keydown", function (e) {
     const pos = this.selectionStart;
-    if ((e.key === 'Backspace'  && pos <= prefix.length) ||
-        (e.key === 'Delete'     && pos <  prefix.length)) {
+    if (
+      (e.key === "Backspace" && pos <= prefix.length) ||
+      (e.key === "Delete" && pos < prefix.length)
+    ) {
       e.preventDefault();
     }
   });
 
-  $phone.on('blur', function() {
+  $phone.on("blur", function () {
     let val = $(this).val();
     if (!val.startsWith(prefix)) {
       $(this).val(prefix);
     }
   });
 
-
-  function fieldsChecker () {
+  function fieldsChecker() {
     let isFilled = true;
 
     const oldBillingFields = [
-        "#billing_first_name",
-        "#billing_last_name",
-        "#billing_address_1",
-        "#billing_city",
-        "#billing_postcode",
-        "#billing_country",
-        "#billing_phone"
+      "#billing_first_name",
+      "#billing_last_name",
+      "#billing_address_1",
+      "#billing_city",
+      "#billing_postcode",
+      "#billing_country",
+      "#billing_phone",
     ];
     const newBillingFields = [
-        "#billing-first_name",
-        "#billing-last_name",
-        "#billing-address_1",
-        "#billing-city",
-        "#billing-postcode",
-        "#billing-country",
-        "#billing-phone"
+      "#billing-first_name",
+      "#billing-last_name",
+      "#billing-address_1",
+      "#billing-city",
+      "#billing-postcode",
+      "#billing-country",
+      "#billing-phone",
     ];
 
     const oldShippingFields = [
-        "#shipping_first_name",
-        "#shipping_last_name",
-        "#shipping_address_1",
-        "#shipping_city",
-        "#shipping_postcode",
-        "#shipping_country",
-        "#shipping_phone"
+      "#shipping_first_name",
+      "#shipping_last_name",
+      "#shipping_address_1",
+      "#shipping_city",
+      "#shipping_postcode",
+      "#shipping_country",
+      "#shipping_phone",
     ];
     const newShippingFields = [
-        "#shipping-first_name",
-        "#shipping-last_name",
-        "#shipping-address_1",
-        "#shipping-city",
-        "#shipping-postcode",
-        "#shipping-country",
-        "#shipping-phone"
+      "#shipping-first_name",
+      "#shipping-last_name",
+      "#shipping-address_1",
+      "#shipping-city",
+      "#shipping-postcode",
+      "#shipping-country",
+      "#shipping-phone",
     ];
 
     function areFieldsFilled(fieldSelectors) {
-        return fieldSelectors.every((selector) => {
-            const fieldValue = $(selector).val();
-            return fieldValue && fieldValue.trim() !== "";
-        });
+      return fieldSelectors.every((selector) => {
+        const fieldValue = $(selector).val();
+        return fieldValue && fieldValue.trim() !== "";
+      });
     }
 
     // Only check billing fields if #checkbox-control-3 is NOT checked
@@ -124,31 +129,34 @@ jq(document).ready(function ($) {
 
     // }
 
-
-
     if (!billingValid || !shippingValid) {
-        alert("Please fill in all required billing or shipping fields before proceeding.");
-        $('input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method').prop("checked", false);
-        isFilled = false;
+      alert(
+        "Please fill in all required billing or shipping fields before proceeding."
+      );
+      $(
+        'input[id="radio-control-0-your_shipping_method"], #shipping_method_0_your_shipping_method'
+      ).prop("checked", false);
+      isFilled = false;
     }
 
     return isFilled;
   }
 
-  var SessionData = { 
+  var SessionData = {
     quotationID: null,
-    coordinates:{},
+    coordinates: {},
     serviceType: null,
-    stops:{}, 
-    scheduleDate: null, 
-    additionalNotes: "", 
-    optimizeRoute: null, 
+    stops: {},
+    scheduleDate: null,
+    additionalNotes: "",
+    optimizeRoute: null,
     proofOfDelivery: null,
-    priceBreakdown: {}, 
+    priceBreakdown: {},
+    freeShipping: false,
+    canCheckout: false,
   };
 
   loadSessionData();
-
 
   // Custom Modal HTML
   const modalHtml = `
@@ -384,6 +392,12 @@ jq(document).ready(function ($) {
       border: 1px solid #ccc;
     }
 
+    .lalamove-message {
+      padding: 8px 12px;
+      border: 2px solid #f16622;
+      background-color: #FFECE3;
+    }
+
     .form-group {
       display: flex;
       justify-content: space-between;
@@ -515,9 +529,8 @@ jq(document).ready(function ($) {
     $("#customModal .custom-modal-body").html(`
       <div class="loading-spinner"></div>
     `);
-    
-    $('#saveLocation').prop("disabled", true);
 
+    $("#saveLocation").prop("disabled", true);
   }
 
   // Close the modal
@@ -527,21 +540,24 @@ jq(document).ready(function ($) {
   }
 
   // Event listener for opening the modal
-  $(document).on("click", 'input[name="shipping_method[0]"], input[name="radio-control-0"]', async function () {
-    const selectedValue = $(this).val();
+  $(document).on(
+    "click",
+    'input[name="shipping_method[0]"], input[name="radio-control-0"]',
+    async function () {
+      const selectedValue = $(this).val();
 
-    if(fieldsChecker()){
-      // Open the modal if shipping method is selected
+      if (fieldsChecker()) {
+        // Open the modal if shipping method is selected
 
-      if (selectedValue === "your_shipping_method") {
-        openModal();
-        await fetchShippingData();
+        if (selectedValue === "your_shipping_method") {
+          openModal();
+          await fetchShippingData();
+        }
       }
-    } 
-    
-    return;
-  });
 
+      return;
+    }
+  );
 
   // Event listener for closing the modal
   $(document).on("click", "#closeModal, .custom-modal", function (e) {
@@ -559,7 +575,6 @@ jq(document).ready(function ($) {
 
   // Save button functionality
   $(document).on("click", "#saveLocation", function () {
-
     $(this).prop("disabled", true);
 
     saveSessionData();
@@ -567,26 +582,49 @@ jq(document).ready(function ($) {
     closeModal();
 
     setTimeout(function () {
-      $(this).prop("disabled", false); 
+      $(this).prop("disabled", false);
     }, 1000);
-
   });
 
-  // Example AJAX call (replace with your actual logic) */ 
+  
+  async function fetchFreeShippingData() {
+
+    SessionData.freeShipping = true;
+
+    try {
+      $("#customModal .custom-modal-body").html(`
+         <!-- Map Container -->
+         <div id="map"></div>
+         
+         <div class="lalamove-message">
+            <p>Please drag the pin to the exact location where you want your order delivered before saving.</p>
+         </div>
+
+      `);
+
+      initMap();
+    }
+    catch {
+      $("#customModal .custom-modal-body").html(`
+        <p>Error loading shipping data.</p>
+      `);
+    }
+  }
+
   async function fetchShippingData() {
     try {
-
+      console.log("HIT");
 
       await loadQuotationData();
-      
+
       $("#customModal .custom-modal-body").html(`
          <!-- Map Container -->
          <div id="map"></div>
       `);
-        
+
       // Initialize the Leaflet map with enhanced geolocation accuracy
       initMap();
-          
+
       $("#customModal .custom-modal-body").append(`
         
         <!-- Delivery Form -->
@@ -636,7 +674,7 @@ jq(document).ready(function ($) {
         </form>
       `);
 
-      $("#additionalNotes").on("mouseleave", function() {
+      $("#additionalNotes").on("mouseleave", function () {
         console.log("Hovered: ", $(this).val());
         SessionData.additionalNotes = $(this).val();
       });
@@ -650,10 +688,11 @@ jq(document).ready(function ($) {
         pricingDetailsContent += `
           <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
             <p class="m-0 align-self-center justify-self-center">Base Fare</p>
-            <p class="m-0 align-self-center justify-self-center">${SessionData.priceBreakdown.currency +
-          " " +
-          SessionData.priceBreakdown.base
-          }</p>
+            <p class="m-0 align-self-center justify-self-center">${
+              SessionData.priceBreakdown.currency +
+              " " +
+              SessionData.priceBreakdown.base
+            }</p>
           </div>
         `;
       }
@@ -662,10 +701,11 @@ jq(document).ready(function ($) {
         pricingDetailsContent += `
           <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
             <p class="m-0 align-self-center justify-self-center">Additional Distance Fee</p>
-            <p class="m-0 align-self-center justify-self-center">${SessionData.priceBreakdown.currency +
-          " " +
-          SessionData.priceBreakdown.extraMileage
-          }</p>
+            <p class="m-0 align-self-center justify-self-center">${
+              SessionData.priceBreakdown.currency +
+              " " +
+              SessionData.priceBreakdown.extraMileage
+            }</p>
           </div>
         `;
       }
@@ -674,10 +714,11 @@ jq(document).ready(function ($) {
         pricingDetailsContent += `
           <div class="form-group m-0 d-flex justify-content-between align-items-between w-100">
             <p class="m-0 align-self-center justify-self-center">Surcharge</p>
-            <p class="m-0 align-self-center justify-self-center">${SessionData.priceBreakdown.currency +
-          " " +
-          SessionData.priceBreakdown.surcharge
-          }</p>
+            <p class="m-0 align-self-center justify-self-center">${
+              SessionData.priceBreakdown.currency +
+              " " +
+              SessionData.priceBreakdown.surcharge
+            }</p>
           </div>
         `;
       }
@@ -688,17 +729,17 @@ jq(document).ready(function ($) {
         totalContent += `
           <div class="total-wrapper w-100 d-inline-flex flex-column justify-content-end align-items-start gap-2 p-3" style="width: auto; height: 80px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #EDEDED;">
             <div class="text-dark" style="font-size: 14px; font-weight: 400;">TOTAL: </div>
-            <div class="text-dark" style="font-size: 20px; font-weight: 600;">${SessionData.priceBreakdown.currency +
-          " " +
-          SessionData.priceBreakdown.total
-          }</div>
+            <div class="text-dark" style="font-size: 20px; font-weight: 600;">${
+              SessionData.priceBreakdown.currency +
+              " " +
+              SessionData.priceBreakdown.total
+            }</div>
           </div>  
         `;
       }
 
       $("#customModal .modal-footer").prepend(totalContent);
       $("#customModal .pricing-details").append(pricingDetailsContent);
-
 
       $("#customModal .vehicle-wrapper").empty();
 
@@ -775,50 +816,7 @@ jq(document).ready(function ($) {
         );
       });
 
-      $(".vehicle-description").hide(); 
-
-
-      var startDate = null;
-      if (SessionData.scheduleDate) {
-        startDate = moment(SessionData.scheduleDate, moment.ISO_8601);
-      } else {
-        startDate = moment().utc().add(1, "days").startOf("day").add(8, "hours").toISOString();
-        window.scheduleDate = startDate;
-        SessionData.scheduleDate = startDate;
-      }
-
-      var endDate = moment().add(30, "days").startOf("day").add(16, "hours").format("YYYY-MM-DDTHH:00");
-
-
-
-      var $inputField = $('#schedule-date');
-
-
-      // Set min and max attributes with jQuery
-      $inputField.attr({
-          min: startDate,
-          max: endDate
-      });
-
-      
-
-
-
-      // Handle change event
-      $inputField.on('change', function () {
-          let selectedDate = moment($(this).val());
-          let selectedHour = selectedDate.hour();
-
-          if (selectedHour < 8 || selectedHour > 16) {
-              alert("Please select a time between 08:00 AM and 04:00 PM.");
-              $(this).val(""); // Reset invalid selection
-          } else {
-              window.scheduleDate = selectedDate.startOf("hour").toISOString();
-              SessionData.scheduleDate = window.scheduleDate;
-
-              console.log("Selected schedule date:", window.scheduleDate);
-          }
-      });
+      $(".vehicle-description").hide();
     } catch (error) {
       console.error("Error fetching shipping data:", error);
       $("#customModal .custom-modal-body").html(`
@@ -828,12 +826,15 @@ jq(document).ready(function ($) {
   }
 
   // Trigger data fetch when modal is opened
-  $(document).on("click", "#shipping_method_0_your_shipping_method", function () {
-    fetchShippingData();
-  });
+  $(document).on(
+    "click",
+    "#shipping_method_0_your_shipping_method",
+    function () {
+      fetchShippingData();
+    }
+  );
 
   async function loadQuotationData() {
-
     try {
       window.siteUrl = window.location.origin;
 
@@ -876,7 +877,6 @@ jq(document).ready(function ($) {
         },
       });
 
-
       const [Cebu, NCR_South, North_Central] = get_city;
       window.cebu = Cebu.services;
       window.ncr_south = NCR_South.services;
@@ -898,41 +898,47 @@ jq(document).ready(function ($) {
       window.shipping_phone_number = shippingData.data.store.phone_number;
 
       let customer_address = {
-        address_1: 
-          document.getElementById('shipping-address_1')?.value || 
-          document.getElementById('shipping_address_1')?.value || 
-          document.getElementById('billing-address_1')?.value || 
-          document.getElementById('billing_address_1')?.value || '',
-          
-        address_2: 
-          document.getElementById('shipping-address_2')?.value || 
-          document.getElementById('shipping_address_2')?.value || 
-          document.getElementById('billing-address_2')?.value || 
-          document.getElementById('billing_address_2')?.value || '',
-          
-        city: 
-          document.getElementById('shipping-city')?.value || 
-          document.getElementById('shipping_city')?.value || 
-          document.getElementById('billing-city')?.value || 
-          document.getElementById('billing_city')?.value || '',
-          
-        state: 
-          document.getElementById('shipping-state')?.value || 
-          document.getElementById('shipping_state')?.value || 
-          document.getElementById('billing-state')?.value || 
-          document.getElementById('billing_state')?.value || '',
-          
-        postcode: 
-          document.getElementById('shipping-postcode')?.value || 
-          document.getElementById('shipping_postcode')?.value || 
-          document.getElementById('billing-postcode')?.value || 
-          document.getElementById('billing_postcode')?.value || '',
-          
-        country: 
-          document.getElementById('shipping-country')?.value || 
-          document.getElementById('shipping_country')?.value || 
-          document.getElementById('billing-country')?.value || 
-          document.getElementById('billing_country')?.value || ''
+        address_1:
+          document.getElementById("shipping-address_1")?.value ||
+          document.getElementById("shipping_address_1")?.value ||
+          document.getElementById("billing-address_1")?.value ||
+          document.getElementById("billing_address_1")?.value ||
+          "",
+
+        address_2:
+          document.getElementById("shipping-address_2")?.value ||
+          document.getElementById("shipping_address_2")?.value ||
+          document.getElementById("billing-address_2")?.value ||
+          document.getElementById("billing_address_2")?.value ||
+          "",
+
+        city:
+          document.getElementById("shipping-city")?.value ||
+          document.getElementById("shipping_city")?.value ||
+          document.getElementById("billing-city")?.value ||
+          document.getElementById("billing_city")?.value ||
+          "",
+
+        state:
+          document.getElementById("shipping-state")?.value ||
+          document.getElementById("shipping_state")?.value ||
+          document.getElementById("billing-state")?.value ||
+          document.getElementById("billing_state")?.value ||
+          "",
+
+        postcode:
+          document.getElementById("shipping-postcode")?.value ||
+          document.getElementById("shipping_postcode")?.value ||
+          document.getElementById("billing-postcode")?.value ||
+          document.getElementById("billing_postcode")?.value ||
+          "",
+
+        country:
+          document.getElementById("shipping-country")?.value ||
+          document.getElementById("shipping_country")?.value ||
+          document.getElementById("billing-country")?.value ||
+          document.getElementById("billing_country")?.value ||
+          "",
       };
 
       window.customer_address =
@@ -948,149 +954,176 @@ jq(document).ready(function ($) {
 
       console.log("Customer Address:", window.customer_address);
 
-      window.customerFName = document.getElementById("shipping-first_name")?.value || 
-             document.getElementById("billing-first_name")?.value || 
-             document.getElementById("shipping_first_name")?.value || 
-             document.getElementById("billing_first_name")?.value || 
-             document.getElementsByName("shipping_first_name")[0]?.value || 
-             document.getElementsByName("billing_first_name")[0]?.value || 
-             "";
+      window.customerFName =
+        document.getElementById("shipping-first_name")?.value ||
+        document.getElementById("billing-first_name")?.value ||
+        document.getElementById("shipping_first_name")?.value ||
+        document.getElementById("billing_first_name")?.value ||
+        document.getElementsByName("shipping_first_name")[0]?.value ||
+        document.getElementsByName("billing_first_name")[0]?.value ||
+        "";
 
-      window.customerLName = document.getElementById("shipping-last_name")?.value || 
-             document.getElementById("billing-last_name")?.value || 
-             document.getElementById("shipping_last_name")?.value || 
-             document.getElementById("billing_last_name")?.value || 
-             document.getElementsByName("shipping_last_name")[0]?.value || 
-             document.getElementsByName("billing_last_name")[0]?.value || 
-             "";
+      window.customerLName =
+        document.getElementById("shipping-last_name")?.value ||
+        document.getElementById("billing-last_name")?.value ||
+        document.getElementById("shipping_last_name")?.value ||
+        document.getElementById("billing_last_name")?.value ||
+        document.getElementsByName("shipping_last_name")[0]?.value ||
+        document.getElementsByName("billing_last_name")[0]?.value ||
+        "";
 
-      window.customerPhoneNo = (function() {
-        let phone = document.getElementById("shipping-phone")?.value || 
-                    document.getElementById("billing-phone")?.value || 
-                    document.getElementById("shipping_phone")?.value || 
-                    document.getElementById("billing_phone")?.value || 
-                    document.getElementsByName("shipping_phone")[0]?.value || 
-                    document.getElementsByName("billing_phone")[0]?.value || 
-                    "";
+      window.customerPhoneNo = (function () {
+        let phone =
+          document.getElementById("shipping-phone")?.value ||
+          document.getElementById("billing-phone")?.value ||
+          document.getElementById("shipping_phone")?.value ||
+          document.getElementById("billing_phone")?.value ||
+          document.getElementsByName("shipping_phone")[0]?.value ||
+          document.getElementsByName("billing_phone")[0]?.value ||
+          "";
         // Remove all spaces in the number
         phone = phone.replace(/\s/g, "");
-    
+
         return phone;
       })();
-          
     } catch (error) {
       console.error("Error loading quotation data:", error);
     }
   }
 
-   // Function to save state to sessionStorage
-   function saveSessionData() {
-    
+  // Function to save state to sessionStorage
+  function saveSessionData() {
 
-    console.log("ADD NAWTS: ", additionalNotes);
+    if(SessionData.freeShipping){
 
-      // Log the collected data
-      console.log("Saving data...");
-
-      console.log("Quotation Body", window.body);
-
-      SessionData.quotationID = window.quotationData.quotationID; 
-      SessionData.coordinates.lat = window.quotationData.coordinates.lat;
-      SessionData.coordinates.lng = window.quotationData.coordinates.lng;
-      SessionData.serviceType = window.quotationData.serviceType;
-      SessionData.stops.stopID0 = window.quotationData.stops.stopID0;
-      SessionData.stops.stopID1 = window.quotationData.stops.stopID1;
-      SessionData.optimizeRoute = window.quotationData.optimizeRoute;
-      SessionData.proofOfDelivery = window.quotationData.proofOfDelivery;
-      SessionData.priceBreakdown = window.quotationData.priceBreakdown;
-
-      sessionStorage.setItem("SessionData", JSON.stringify(SessionData));
-      console.log("SessionData saved to sessionStorage:", SessionData);
-      console.log("Scheduled Date", window.quotationData.scheduleDate);
-      console.log("Drop Off Location", window.customer_address);
-
-      // Set the quotation ID as a session variable
+      
+      
       jQuery.ajax({
         url: pluginAjax.ajax_url,
         method: "POST",
         data: {
-          action: "set_quotation_data_session",
-          quotationBody: window.body,
-          quotationID:SessionData.quotationID,
-          stopId0: SessionData.stops.stopID0,
-          stopId1: SessionData.stops.stopID1,
-          customerFName: window.customerFName,
-          customerLName: window.customerLName,
-          scheduledOn: SessionData.scheduleDate,
-          dropOffLocation: window.customer_address,
-          customerPhoneNo: window.customerPhoneNo,
-          additionalNotes: SessionData.additionalNotes,
-          proofOfDelivery: window.quotationData.optimizeRoute,
-          serviceType: SessionData.serviceType,
-          priceBreakdown: JSON.stringify(SessionData.priceBreakdown),
+          action: "set_customer_free_shipment_session",
+          freeShipping: SessionData.freeShipping,
+          lat: SessionData.lat,
+          lng: SessionData.lng,
         },
-        success: function (response) {
+        success: function(response) {
           console.log("RESPONSE", response);
-          if (response.success) {
-            console.log("Quotation ID set in session successfully.");
-            console.log("PHONE NO: ", customerPhoneNo);
+          if(response.success) {
+            console.log("SUCESS");
+            SessionData.canCheckout = true;
           } else {
-            console.error(
-              "Failed to set Quotation ID in session:",
-              response.data.message
-            );
+            console.error("ERROR");
           }
         },
-        error: function (response, error, xhr) {
+        error: function(response, error, xhr) {
           console.log("RESPONSE", response);
           console.error("MAY MALI!!!", error);
           console.error("XHR Response Text:", xhr.responseText);
-        },
+        }
+
       });
 
-      let ajaxTimer;
-      clearTimeout(ajaxTimer);
-
-      (ajaxTimer = setTimeout(function () {
-        // Send the shipping cost to the server via AJAX
-        jQuery.ajax({
-          url: pluginAjax.ajax_url, 
-          method: "POST",
-          data: {
-            action: "update_shipping_rate", // Custom AJAX action
-            shipping_cost: quotationData.priceBreakdown.total||SessionData.priceBreakdown.total,
-          },
-          success: function (response) {
-            // Solution One
-            // if ( typeof wp !== 'undefined' && typeof wp.data !== 'undefined' ) {
-            //   wp.data.dispatch('wc/store/cart').invalidateResolutionForStore();
-            // }
-
-         
-            if (
-              typeof wc !== "undefined" &&
-              typeof wc.blocksCheckout !== "undefined"
-            ) {
-              var extensionCartUpdate = wc.blocksCheckout;
-              extensionCartUpdate.extensionCartUpdate({
-                namespace: "your_custom_namespace",
-                data: { shipping_cost: 100 },
-              });
-            }
-
-            $(document.body).trigger("update_checkout");
-            
-            console.log("Shipping rate updated successfully.");
-
-          },
-          error: function (error) {
-            console.error("Error updating shipping rate:", error);
-          },
-        });
-      })),
-        500;
+      return;
+    }
 
 
+
+    SessionData.quotationID = window.quotationData.quotationID;
+    SessionData.coordinates.lat = window.quotationData.coordinates.lat;
+    SessionData.coordinates.lng = window.quotationData.coordinates.lng;
+    SessionData.serviceType = window.quotationData.serviceType;
+    SessionData.stops.stopID0 = window.quotationData.stops.stopID0;
+    SessionData.stops.stopID1 = window.quotationData.stops.stopID1;
+    SessionData.optimizeRoute = window.quotationData.optimizeRoute;
+    SessionData.proofOfDelivery = window.quotationData.proofOfDelivery;
+    SessionData.priceBreakdown = window.quotationData.priceBreakdown;
+
+    sessionStorage.setItem("SessionData", JSON.stringify(SessionData));
+    console.log("SessionData saved to sessionStorage:", SessionData);
+    console.log("Scheduled Date", window.quotationData.scheduleDate);
+    console.log("Drop Off Location", window.customer_address);
+
+    // Set the quotation ID as a session variable
+    jQuery.ajax({
+      url: pluginAjax.ajax_url,
+      method: "POST",
+      data: {
+        action: "set_quotation_data_session",
+        quotationBody: window.body,
+        quotationID: SessionData.quotationID,
+        stopId0: SessionData.stops.stopID0,
+        stopId1: SessionData.stops.stopID1,
+        customerFName: window.customerFName,
+        customerLName: window.customerLName,
+        scheduledOn: SessionData.scheduleDate,
+        dropOffLocation: window.customer_address,
+        customerPhoneNo: window.customerPhoneNo,
+        additionalNotes: SessionData.additionalNotes,
+        proofOfDelivery: window.quotationData.optimizeRoute,
+        serviceType: SessionData.serviceType,
+        priceBreakdown: JSON.stringify(SessionData.priceBreakdown),
+      },
+      success: function (response) {
+        console.log("RESPONSE", response);
+        if (response.success) {
+          console.log("Quotation ID set in session successfully.");
+          console.log("PHONE NO: ", customerPhoneNo);
+        } else {
+          console.error(
+            "Failed to set Quotation ID in session:",
+            response.data.message
+          );
+        }
+      },
+      error: function (response, error, xhr) {
+        console.log("RESPONSE", response);
+        console.error("MAY MALI!!!", error);
+        console.error("XHR Response Text:", xhr.responseText);
+      },
+    });
+
+    let ajaxTimer;
+    clearTimeout(ajaxTimer);
+
+    (ajaxTimer = setTimeout(function () {
+      // Send the shipping cost to the server via AJAX
+      jQuery.ajax({
+        url: pluginAjax.ajax_url,
+        method: "POST",
+        data: {
+          action: "update_shipping_rate", // Custom AJAX action
+          shipping_cost:
+            quotationData.priceBreakdown.total ||
+            SessionData.priceBreakdown.total,
+        },
+        success: function (response) {
+          // Solution One
+          // if ( typeof wp !== 'undefined' && typeof wp.data !== 'undefined' ) {
+          //   wp.data.dispatch('wc/store/cart').invalidateResolutionForStore();
+          // }
+
+          if (
+            typeof wc !== "undefined" &&
+            typeof wc.blocksCheckout !== "undefined"
+          ) {
+            var extensionCartUpdate = wc.blocksCheckout;
+            extensionCartUpdate.extensionCartUpdate({
+              namespace: "your_custom_namespace",
+              data: { shipping_cost: 100 },
+            });
+          }
+
+          $(document.body).trigger("update_checkout");
+
+          console.log("Shipping rate updated successfully.");
+        },
+        error: function (error) {
+          console.error("Error updating shipping rate:", error);
+        },
+      });
+    })),
+      500;
   }
 
   // Function to load state from sessionStorage
@@ -1102,31 +1135,28 @@ jq(document).ready(function ($) {
     }
   }
 
-
   function resetSessionData() {
-
     SessionData = {
-        quotationID: null,
-        coordinates: {},
-        serviceType: null,
-        stops: {}, 
-        scheduleDate: null,
-        additionalNotes: "",
-        optimizeRoute: null,
-        proofOfDelivery: null,
-        priceBreakdown: {},
+      quotationID: null,
+      coordinates: {},
+      serviceType: null,
+      stops: {},
+      scheduleDate: null,
+      additionalNotes: "",
+      optimizeRoute: null,
+      proofOfDelivery: null,
+      priceBreakdown: {},
     };
 
     sessionStorage.removeItem("SessionData");
 
-    $('input[name="shipping_method[0]"][value="your_shipping_method"], input[name="radio-control-0"][value="your_shipping_method"]')
-        .prop('checked', false)
-        .trigger('change');
+    $(
+      'input[name="shipping_method[0]"][value="your_shipping_method"], input[name="radio-control-0"][value="your_shipping_method"]'
+    )
+      .prop("checked", false)
+      .trigger("change");
+  }
 
-   }
-
-
-  
   // Initialize the Leaflet map and conditionally fetch user location
   function initMap() {
     const defaultLat = 12.8797;
@@ -1141,9 +1171,11 @@ jq(document).ready(function ($) {
     let mapLat = SessionData.lat || defaultLat;
     let mapLng = SessionData.lng || defaultLng;
 
-      // Validate coordinates
+    // Validate coordinates
     if (typeof mapLat === "undefined" || typeof mapLng === "undefined") {
-      console.error("Invalid coordinates: mapLat or mapLng is undefined. Using defaults.");
+      console.error(
+        "Invalid coordinates: mapLat or mapLng is undefined. Using defaults."
+      );
       mapLat = defaultLat;
       mapLng = defaultLng;
     }
@@ -1159,7 +1191,7 @@ jq(document).ready(function ($) {
 
     const marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
 
-   // Fix map rendering issues
+    // Fix map rendering issues
     setTimeout(() => {
       map.invalidateSize();
     }, 300);
@@ -1170,9 +1202,19 @@ jq(document).ready(function ($) {
     // Update marker location on dragend
     marker.on("dragend", () => {
       console.log("Marker dragged to new location.");
-      if(isVehicleSelected === false) {
+      if (isVehicleSelected === false) {
         isVehicleSelected = window.serviceType ? true : false;
       }
+
+      const allShippingInputs = document.querySelectorAll(
+      'input[name="shipping_method[0]"]'
+      );
+
+      const isOnlyFreeShipping =
+      allShippingInputs.length === 1 &&
+      allShippingInputs[0].value.startsWith("free_shipping");
+
+
       const latlng = marker.getLatLng();
       mapLat = latlng.lat;
       mapLng = latlng.lng;
@@ -1181,11 +1223,10 @@ jq(document).ready(function ($) {
       SessionData.lng = mapLng;
       sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
 
-      triggerServiceEvents(mapLat, mapLng, isVehicleSelected);
+      triggerServiceEvents(mapLat, mapLng, isVehicleSelected, isOnlyFreeShipping);
     });
 
     marker.bindPopup("You").openPopup();
-  
 
     // If session data exists, skip geolocation fetching
     if (SessionData.lat && SessionData.lng) {
@@ -1231,7 +1272,12 @@ jq(document).ready(function ($) {
   }
 
   // Bind service-related events (using the provided lat and lng)
-  function bindServiceEvents(lat, lng, isVehicleSelected) {
+  function bindServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping = false) {
+
+    if (isOnlyFreeShipping) {
+      $("#saveLocation").prop("disabled", false);
+    }
+
     if (isVehicleSelected) {
       quotationAjax(lat, lng);
 
@@ -1257,25 +1303,83 @@ jq(document).ready(function ($) {
 
     // Bind the click event on vehicle elements
     $(document)
-    .off("click", ".vehicle")
-    .on("click", ".vehicle", function () {
-      $(".vehicle").css("border", "solid 2px #EDEDED");
-      $(this).css("border", "solid 2px #f16622");
-  
-      $(".vehicle-description").slideUp();
-  
-      const description = $(this).closest(".vehicle").find(".vehicle-description");
-  
-      description.slideDown();
-  
-      window.serviceType = $(this).attr("data-index");
-      quotationAjax(lat, lng);
+      .off("click", ".vehicle")
+      .on("click", ".vehicle", function () {
+        $(".vehicle").css("border", "solid 2px #EDEDED");
+        $(this).css("border", "solid 2px #f16622");
+
+        $(".vehicle-description").slideUp();
+
+        const description = $(this)
+          .closest(".vehicle")
+          .find(".vehicle-description");
+
+        description.slideDown();
+
+        window.serviceType = $(this).attr("data-index");
+        quotationAjax(lat, lng);
+      });
+
+    var startDate = null;
+    if (SessionData.scheduleDate) {
+      startDate = moment(SessionData.scheduleDate, moment.ISO_8601);
+    } else {
+      startDate = moment()
+        .utc()
+        .add(1, "days")
+        .startOf("day")
+        .add(8, "hours")
+        .toISOString();
+      window.scheduleDate = startDate;
+      SessionData.scheduleDate = startDate;
+    }
+
+    var endDate = moment()
+      .add(30, "days")
+      .startOf("day")
+      .add(16, "hours")
+      .format("YYYY-MM-DDTHH:00");
+
+    var $inputField = $("#schedule-date");
+
+    // Set min and max attributes with jQuery
+    $inputField.attr({
+      min: startDate,
+      max: endDate,
     });
-   }
+
+    // Handle change event
+    $inputField.on("change", function () {
+      let selectedDate = moment($(this).val());
+      let selectedHour = selectedDate.hour();
+
+      if (selectedHour < 8 || selectedHour > 16) {
+        alert("Please select a time between 08:00 AM and 04:00 PM.");
+        $(this).val(startDate);
+        window.scheduleDate = selectedDate.startOf("hour").toISOString();
+        SessionData.scheduleDate = window.scheduleDate;
+
+        if (isVehicleSelected) {
+          quotationAjax(lat, lng);
+        }
+
+        console.log("HIT");
+      } else {
+        window.scheduleDate = selectedDate.startOf("hour").toISOString();
+        SessionData.scheduleDate = window.scheduleDate;
+
+        if (isVehicleSelected) {
+          quotationAjax(lat, lng);
+        }
+
+        console.log("Selected schedule date:", window.scheduleDate);
+      }
+    });
+  }
 
   // Update the service events with the new coordinates
-  function triggerServiceEvents(lat, lng, isVehicleSelected) {
-    bindServiceEvents(lat, lng, isVehicleSelected);
+  function triggerServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping = false) {
+    bindServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping);
   }
 
   function filterServices(state) {
@@ -1302,7 +1406,6 @@ jq(document).ready(function ($) {
   }
 
   function quotationAjax(lat, lng) {
-    
     $("#customModal .custom-modal-footer").empty();
     $("#customModal .custom-modal-footer").prepend(`
       <div class="total-wrapper">
@@ -1313,9 +1416,8 @@ jq(document).ready(function ($) {
       </div>
       <button type="button" id="saveLocation" class="custom-modal-button">Save</button>
     `);
-    
-    $('#saveLocation').prop("disabled", true);
 
+    $("#saveLocation").prop("disabled", true);
 
     var isRouteOptimized = document.getElementById("optimizeRoute").checked;
 
@@ -1330,8 +1432,7 @@ jq(document).ready(function ($) {
               lat: window.shipping_lat.toString(),
               lng: window.shipping_lng.toString(),
             },
-            address:
-              window.sender_address.toString(),
+            address: window.sender_address.toString(),
           },
           {
             coordinates: {
@@ -1352,13 +1453,12 @@ jq(document).ready(function ($) {
     console.log("MERON NAMAN: ", body);
 
     let quotation = $.ajax({
-      url: window.siteUrl + '/wp-json/woo-lalamove/v1/get-quotation',
+      url: window.siteUrl + "/wp-json/woo-lalamove/v1/get-quotation",
       method: "POST",
       contentType: "application/json",
       data: JSON.stringify(body),
       success: function (response) {
-
-        if(response.errors){
+        if (response.errors) {
           console.error("Error in response:", response.errors);
           alert("Error: " + response.errors[0].message);
           return;
@@ -1385,10 +1485,9 @@ jq(document).ready(function ($) {
           : SessionData.priceBreakdown.surcharge;
 
         $("#customModal .custom-modal-footer").empty();
-        
 
         setTimeout(function () {
-          $('#saveLocation').prop("disabled", false); 
+          $("#saveLocation").prop("disabled", false);
         }, 1000);
 
         $("#customModal .custom-modal-footer").prepend(`
@@ -1399,10 +1498,8 @@ jq(document).ready(function ($) {
           <button type="button" id="saveLocation" class="custom-modal-button">Save</button>
         `);
 
-        
-       
         $("#customModal .pricing-details").empty();
-        
+
         let baseContent = `
           <div class="pricing-item">
             <p class="item-name">Base Fare</p>  
@@ -1421,11 +1518,11 @@ jq(document).ready(function ($) {
             <p class="item-value">${currency + " " + surcharge}</p>  
           </div>
         `;
-        
+
         $("#customModal .pricing-details").prepend(`
           <p class="header">Pricing Details</p>
         `);
-        
+
         if (base) {
           $("#customModal .pricing-details").append(baseContent);
         }
@@ -1435,7 +1532,6 @@ jq(document).ready(function ($) {
         if (surcharge) {
           $("#customModal .pricing-details").append(surchargeContent);
         }
-        
 
         const optimizeRoute = $("#optimizeRoute").is(":checked");
         const proofOfDelivery = $("#proofOfDelivery").is(":checked");
@@ -1450,7 +1546,6 @@ jq(document).ready(function ($) {
         let coordinates = { lat, lng };
         let priceBreakdown = response.data.priceBreakdown;
 
-
         window.quotationData = {
           quotationID,
           serviceType,
@@ -1460,11 +1555,10 @@ jq(document).ready(function ($) {
           stops,
           optimizeRoute,
           proofOfDelivery,
-          priceBreakdown
+          priceBreakdown,
         };
 
         console.log(window.quotationData);
-
       },
       error: function (xhr, status, error) {
         console.error("Error occurred:", status, error);
@@ -1472,58 +1566,90 @@ jq(document).ready(function ($) {
     });
   }
 
-    
   $(document).on(
     "change",
     // Properly formatted single selector string
-    '#shipping-address_1, #shipping-address_2, #shipping-city, #shipping-state, #shipping-postcode, #shipping-country, ' +
-    '#billing-address_1, #billing-address_2, #billing-city, #billing-state, #billing-postcode, #billing-country, ' +
-    '#shipping_address_1, #shipping_address_2, #shipping_city, #shipping_state, #shipping_postcode, #shipping_country, ' +
-    '#billing_address_1, #billing_address_2, #billing_city, #billing_state, #billing_postcode, #billing_country, ' +
-    'input[name^="shipping_"], input[name^="billing_"], ' +
-    'select[name^="shipping_"], select[name^="billing_"]',
-    
-    function() {
+    "#shipping-address_1, #shipping-address_2, #shipping-city, #shipping-state, #shipping-postcode, #shipping-country, " +
+      "#billing-address_1, #billing-address_2, #billing-city, #billing-state, #billing-postcode, #billing-country, " +
+      "#shipping_address_1, #shipping_address_2, #shipping_city, #shipping_state, #shipping_postcode, #shipping_country, " +
+      "#billing_address_1, #billing_address_2, #billing_city, #billing_state, #billing_postcode, #billing_country, " +
+      'input[name^="shipping_"], input[name^="billing_"], ' +
+      'select[name^="shipping_"], select[name^="billing_"]',
+
+    function () {
       if (SessionData.quotationID === null) {
         return;
       }
 
       resetSessionData();
-        
+
       saveSessionData();
 
-      closeModal();        
-
+      closeModal();
     }
   );
 
   // Prevent order submission if Lalamove is selected but not configured
-  $(document.body).on('click', '#place_order', function(e) {
-      const isLalamoveSelected = $('input[name="shipping_method[0]"][value="your_shipping_method"]:checked, input[name="radio-control-0"][value="your_shipping_method"]:checked').length > 0;
-      
-      if (isLalamoveSelected) {
-          // Check if session data exists
-          if (!SessionData.quotationID || 
-              typeof SessionData.quotationID === 'undefined' || 
-              SessionData.quotationID === null
-          ) {
-              // Show alert with custom message
-              alert('Please configure your Lalamove shipping details before placing the order.');
+  $(document.body).on("click", "#place_order", function (e) {
+    const allShippingInputs = document.querySelectorAll(
+      'input[name="shipping_method[0]"]'
+    );
+    const selected = document.querySelector(
+      'input[name="shipping_method[0]"][value="your_shipping_method"]:checked'
+    );
 
+    const isLalamoveSelected = selected !== null;
+    const isOnlyLalamove =
+      allShippingInputs.length === 1 &&
+      allShippingInputs[0].value === "your_shipping_method";
 
+    const isOnlyFreeShipping =
+      allShippingInputs.length === 1 &&
+      allShippingInputs[0].value.startsWith("free_shipping");
 
-              resetSessionData();
-                
-              saveSessionData();
-              
-              // Prevent form submission
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              return false;
-          }
-      }
+    console.log("Is is Free Shipping", isOnlyFreeShipping);
+    console.log("Is Lalamove selected?", isLalamoveSelected);
+    console.log("Is Lalamove the only available method?", isOnlyLalamove);
+
+    if(isOnlyFreeShipping){
+      validateShipmentOrder(e);
+      openModal();
+      fetchFreeShippingData();
+    }
+
+    if (isOnlyLalamove) {
+      validateShipmentOrder(e);
+      openModal();
+      fetchShippingData();
+    }
+    if (isLalamoveSelected) {
+      validateShipmentOrder(e);
+      openModal();
+      fetchShippingData();
+    }
   });
-  
-  
-    
+
+  function validateShipmentOrder(e) {
+
+    if(SessionData.canCheckout){
+      return;
+    }
+
+    if (
+      !SessionData.quotationID ||
+      typeof SessionData.quotationID === "undefined" ||
+      SessionData.quotationID === null
+    ) {
+      // Show alert with custom message
+      alert(
+        "Please configure your Lalamove shipping details before placing the order."
+      );
+
+      resetSessionData();
+      // Prevent form submission
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  }
 });

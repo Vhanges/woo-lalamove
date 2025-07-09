@@ -39,16 +39,16 @@ function your_shipping_method_init() {
             public function init_form_fields() {
                 $this->instance_form_fields = array(
                     'title' => array(
-                        'title'       => __('Title', 'your-text-domain'),
+                        'title'       => __('Title', 'woocommerce-lalamove-extension'),
                         'type'        => 'text',
-                        'description' => __('This controls the title which the user sees during checkout.', 'your-text-domain'),
-                        'default'     => __('Lalamove Delivery', 'your-text-domain'),
+                        'description' => __('This controls the title which the user sees during checkout.', 'woocommerce-lalamove-extension'),
+                        'default'     => __('Lalamove Delivery', 'woocommerce-lalamove-extension'),
                         'desc_tip'    => true,
                     ),
                     'base_cost' => array(
-                        'title'       => __('Base Cost', 'your-text-domain'),
+                        'title'       => __('Base Cost', 'woocommerce-lalamove-extension'),
                         'type'        => 'number',
-                        'description' => __('Base shipping cost (excluding dynamic fees)', 'your-text-domain'),
+                        'description' => __('Base shipping cost (excluding dynamic fees)', 'woocommerce-lalamove-extension'),
                         'default'     => 10,
                         'desc_tip'    => true,
                         'placeholder' => '0.00',
@@ -79,9 +79,9 @@ function your_shipping_method_init() {
 
 add_action('woocommerce_shipping_init', 'your_shipping_method_init');
 
-function add_your_shipping_method($methods) {
+function set_shipping_method($methods) {
     $methods['your_shipping_method'] = 'Class_Lalamove_Shipping_Method';
     return $methods;
 }
 
-add_filter('woocommerce_shipping_methods', 'add_your_shipping_method');
+add_filter('woocommerce_shipping_methods', 'set_shipping_method');

@@ -412,7 +412,7 @@ function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, 
 	if(isset($_GET['delivery_confirmed'])) {
 		$success_message = '
 		<div class="alert alert-success mt-3">
-			'. esc_html__('Delivery confirmed successfully!', 'your-text-domain') .'
+			'. esc_html__('Delivery confirmed successfully!', 'woocommerce-lalamove-extension') .'
 		</div>';
 	}
 
@@ -423,7 +423,7 @@ function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, 
 			'. wp_nonce_field('confirm_delivery', 'delivery_nonce', true, false) .'
 			<button type="submit" class="btn btn-primary w-100 py-2">
 				<i class="bi bi-check-circle me-2"></i>
-				'. esc_html__('Confirm Delivery Received', 'your-text-domain') .'
+				'. esc_html__('Confirm Delivery Received', 'woocommerce-lalamove-extension') .'
 			</button>
 		</form>';
 	}
@@ -489,7 +489,7 @@ function handle_delivery_confirmation() {
     if ($order && is_a($order, 'WC_Order')) {
         $order->update_status('completed');
 		
-        $order->add_order_note(__('Customer confirmed delivery reception', 'your-text-domain'));
+        $order->add_order_note(__('Customer confirmed delivery reception', 'woocommerce-lalamove-extension'));
         
         wp_safe_redirect(esc_url_raw(add_query_arg('delivery_confirmed', '1', wp_get_referer())));
         exit;

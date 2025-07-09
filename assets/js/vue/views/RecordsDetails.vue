@@ -75,7 +75,7 @@
 
             <div class="transaction-info" style="background-color: #FFEEEF; border-color: 2px solid #F16622; color: #F16622;">
                     <p>
-                        Picked Up  ●  231243215
+                        Picked Up  ●  {{ lalaOrderId }}
                     </p>
                     <p>
                         Schedule Date: 10 Dec 2024 5:55PM
@@ -106,7 +106,7 @@
         <header v-if="status == 'COMPLETED'">
             <div class="transaction-info" style="background-color: #DBFFE3; border-color: 2px solid #05B32B; color: #05B32B;">
                     <p>
-                        Completed ●  231243215
+                        Completed ●  {{ lalaOrderId }}
                     </p>
                     <p>
                         Schedule Date: 10 Dec 2024 5:55PM
@@ -131,7 +131,7 @@
         <header v-if="status == 'REJECTED'">
             <div class="transaction-info" style="background-color: #FFEEEF; border-color: 2px solid #CB3F49; color: #CB3F49;">
                     <p>
-                        Rejected ●  231243215
+                        Rejected ●  {{ lalaOrderId }}
                     </p>
                     <p>
                         Schedule Date: 10 Dec 2024 5:55PM
@@ -148,7 +148,7 @@
         <header v-if="status == 'CANCELED'">
             <div class="transaction-info" style="background-color: #FFEEEF; border-color: 2px solid #CB3F49; color: #CB3F49;">
                     <p>
-                        Canceled ●  231243215
+                        Canceled ●  {{ lalaOrderId }}
                     </p>
                     <p>
                         Schedule Date: 10 Dec 2024 5:55PM
@@ -165,7 +165,7 @@
         <header v-if="status == 'EXPIRED'">
             <div class="transaction-info" style="background-color: #EDEDED; border-color: 2px solid #4C4C4C; color: #4C4C4C;">
                     <p>
-                        Expired ●  231243215
+                        Expired ●  {{ lalaOrderId }}
                     </p>
                     <p>
                         Schedule Date: 10 Dec 2024 5:55PM
@@ -393,7 +393,7 @@ const props = defineProps({
 
 const fetchLalaOrderData = async (lala_id, wc_id) => {
     
-    // try {
+    try {
         const orderResponse = await axios.get(
             wooLalamoveAdmin.root + 'woo-lalamove/v1/get-lala-order-details/?lala_id=' + lala_id,
             {
@@ -417,7 +417,7 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
 
         console.log("STATUS: ", status);
         lalaOrderId.value = order.data.orderId;
-        console.log("ORDER IDDDDDDD", lalaOrderId);
+        console.log("ORDER ID", lalaOrderId.value);
         lalaQuotationId.value = order.data.quotationId;
         driverId.value = order.data.driverId;
         shareLink.value = order.data.shareLink;
@@ -501,10 +501,10 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
 
 
 
-    // } catch (error) {
-    //   console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
-    //     noData.value = true;
-    // } 
+    } catch (error) {
+      console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);
+        noData.value = true;
+    } 
 
 };
 
