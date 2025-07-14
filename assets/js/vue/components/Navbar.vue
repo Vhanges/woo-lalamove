@@ -2,7 +2,7 @@
   <nav class="navbar">
     <div class="navbar-logo" />
 
-    <!-- <router-link 
+    <router-link 
       to="/place-order" 
       class="nav-item nav-item--order"
     >
@@ -14,7 +14,7 @@
       class="nav-item nav-item--woocommerce"
     >
       <span class="nav-item__label">WooCommerce Orders</span>
-    </router-link> -->
+    </router-link>
 
     <router-link 
       to="/records" 

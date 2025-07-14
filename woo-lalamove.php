@@ -214,6 +214,7 @@ if (!class_exists('Woo_Lalamove')) {
                 return;
             }
 
+            // Core Plugin JS
             wp_enqueue_script(
                 'woo-lalamove',
                 plugin_dir_url(__FILE__) . 'assets/js/dist/bundle.js',
@@ -222,45 +223,77 @@ if (!class_exists('Woo_Lalamove')) {
                 true
             );
 
-            // Enqueue Material Symbols font
-            wp_enqueue_style('material-symbols', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
-
-            // Enqueue MapTiler SDK
-            wp_enqueue_script(
-                'maptiler-sdk',
-                'https://cdn.maptiler.com/maptiler-sdk-js/v3.0.0/maptiler-sdk.umd.min.js',
-                [],
-                '3.0.0',
-                true
+            wp_localize_script(
+                'woo-lalamove',
+                'wpApiSettings',
+                [
+                    'root'  => esc_url_raw(rest_url()),
+                    'nonce' => wp_create_nonce('wp_rest')
+                ]
             );
 
-            // Enqueue MapTiler SDK CSS
+
+            // Leaflet Core Styles & JS
             wp_enqueue_style(
-                'maptiler-sdk-css',
-                'https://cdn.maptiler.com/maptiler-sdk-js/v3.0.0/maptiler-sdk.css',
+                'leaflet-css',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
                 [],
-                '3.0.0'
+                '1.9.4'
             );
-
-            // Enqueue Leaflet plugin for MapTiler SDK Layers
             wp_enqueue_script(
-                'leaflet-maptilersdk',
-                'https://cdn.maptiler.com/leaflet-maptilersdk/v3.0.0/leaflet-maptilersdk.js',
-                ['maptiler-sdk'],
-                '3.0.0',
+                'leaflet-js',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+                [],
+                '1.9.4',
                 true
             );
 
-            // Enqueue Moment.js
-            wp_enqueue_script('moment-js', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js', array('jquery'), null, true);
+            // Leaflet Control Geocoder
+            wp_enqueue_style(
+                'leaflet-geocoder-css',
+                'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css',
+                [],
+                null
+            );
+            wp_enqueue_script(
+                'leaflet-geocoder-js',
+                'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js',
+                ['leaflet-js'],
+                null,
+                true
+            );
 
-            // Enqueue Date Range Picker JS
-            wp_enqueue_script('daterangepicker-js', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js', array('jquery', 'moment-js'), null, true);
+            // Optional: Material Symbols font (used in UI buttons or icons)
+            wp_enqueue_style(
+                'material-symbols',
+                'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined'
+            );
 
-            // Enqueue Date Range Picker CSS
-            wp_enqueue_style('daterangepicker-css', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css', array(), null);
+            // Moment.js (if needed in bundle)
+            wp_enqueue_script(
+                'moment-js',
+                'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js',
+                [],
+                null,
+                true
+            );
 
-            // Critical security nonce - MUST stay in
+            // Date Range Picker
+            wp_enqueue_script(
+                'daterangepicker-js',
+                'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js',
+                ['jquery', 'moment-js'],
+                null,
+                true
+            );
+            wp_enqueue_style(
+                'daterangepicker-css',
+                'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css',
+                [],
+                null
+            );
+
+            // Security Nonce & AJAX variables
             wp_localize_script('woo-lalamove', 'wooLalamoveAdmin', [
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('woo_lalamove_nonce'),
@@ -268,7 +301,7 @@ if (!class_exists('Woo_Lalamove')) {
                 'api_nonce' => wp_create_nonce('wp_rest'),
             ]);
 
-            // Enqueue CSS only on this admin page
+            // Admin page styles
             wp_enqueue_style(
                 'woo-lalamove-styles',
                 plugin_dir_url(__FILE__) . 'assets/css/admin.css',
