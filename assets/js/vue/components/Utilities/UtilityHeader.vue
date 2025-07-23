@@ -145,7 +145,7 @@ const handleDateRange = ({ startDate, endDate }) => {
 @use '@/css/scss/_variables.scss' as *;
 
 .search-info {
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
     background-color: $bg-high-light;
     border-radius: 5px;
     font-size: $font-size-sm;
@@ -217,7 +217,7 @@ const handleDateRange = ({ startDate, endDate }) => {
     padding: 0.5rem;
     border-radius: 3%;
     width: fit-content;
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
     background-color: $bg-high-light;
     border-radius: 5px;
 

@@ -594,7 +594,7 @@ onMounted(() => {
 
             width: 800px;
             padding: 1rem;
-            border-bottom: 2px solid $border-color;
+            border-bottom: 1px solid $border-color;
 
         }
     }

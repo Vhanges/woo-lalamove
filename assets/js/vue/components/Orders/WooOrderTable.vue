@@ -89,7 +89,7 @@ defineProps({
 @use "@/css/scss/_variables.scss" as *;
 
 .table-wrapper{
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
     width: 100%;
     border-radius: 5px;
     background-color: $bg-high-light;

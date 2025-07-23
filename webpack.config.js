@@ -84,9 +84,8 @@ module.exports = {
     },
     plugins: [
         new VueLoaderPlugin(),
-        ,
         new webpack.DefinePlugin({
-            __VUE_OPTIONS_API__: JSON.stringify(false), // Disabled Options API
+            __VUE_OPTIONS_API__: JSON.stringify(true), 
             __VUE_PROD_DEVTOOLS__: JSON.stringify(true),
             __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false)
         }),
@@ -95,7 +94,7 @@ module.exports = {
     mode: 'development',
     devtool: 'source-map',
     optimization: {
-        minimize: true,
+        minimize: true, 
         minimizer: [
             new CssMinimizerPlugin(),
             new TerserPlugin()

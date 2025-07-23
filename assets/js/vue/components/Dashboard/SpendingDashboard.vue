@@ -370,7 +370,7 @@ onMounted(() =>{
             height: 2rem;
             width: 2rem ;
             border-radius: 3%;
-            border: 2px solid $border-color;
+            border: 1px solid $border-color;
             background-color: $bg-high-light;
             border-radius: 5px;
         }
@@ -433,7 +433,7 @@ onMounted(() =>{
             height: 2rem;
             width: 2rem ;
             border-radius: 3%;
-            border: 2px solid $border-color;
+            border: 1px solid $border-color;
             background-color: $bg-high-light;
             border-radius: 5px;
         }
@@ -492,11 +492,11 @@ onMounted(() =>{
     background-color: #FCFCFC;
     padding: 1rem;
     border-radius: 0.5rem;
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
 }
 
 .table-wrapper{
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
     width: 100%;
     border-radius: 5px;
     background-color: $bg-high-light;

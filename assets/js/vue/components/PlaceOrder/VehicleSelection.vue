@@ -1,12 +1,17 @@
 <script setup>
 import { ref, useAttrs } from "vue";
 import { storeToRefs } from "pinia";
-import { useLalamoveStore } from "../../../store/lalamoveStore";
+import { useLalamoveStore } from "../../store/lalamoveStore";
 
 const lalamove = useLalamoveStore();
-const { services } = storeToRefs(lalamove);
-const isLoaded = ref(false);
+const { services, serviceType, isServicesLoading } = storeToRefs(lalamove);
 
+const selectedIndex = ref(null);
+
+const selectVehicle = (index) => {
+  selectedIndex.value = index;
+  serviceType.value = services.value[index].key;
+};
 
 const hoveredIndex = ref(null);
 const carouselTrack = ref(null);
@@ -18,6 +23,8 @@ const scrollLeft = () => {
 const scrollRight = () => {
   carouselTrack.value?.scrollBy({ left: 300, behavior: "smooth" });
 };
+
+
 
 const display_name = (vehicle) => {
   switch (vehicle) {
@@ -59,13 +66,27 @@ const display_name = (vehicle) => {
     </button>
 
     <div class="vehicle-content" ref="carouselTrack" v-dragscroll:nochilddrag>
+      <!-- Skeleton while loading -->
       <div
-        v-if="isLoaded"
+        v-if="isServicesLoading"
+        v-for="skeleton in 5"
+        :key="skeleton"
+        class="vehicle-skeleton"
+      ></div>
+      <!-- The skeleton loader is not properly being displayed -->
+      <div
+        v-else
         v-for="(service, index) in services"
         :key="index"
         class="vehicle"
         @mouseenter="hoveredIndex = index"
         @mouseleave="hoveredIndex = null"
+        @click="
+          () => {
+            selectVehicle(index);
+          }
+        "
+        :class="{ selected: selectedIndex === index }"
         v-bind="$attrs"
         data-dragscroll
       >
@@ -87,8 +108,6 @@ const display_name = (vehicle) => {
           </p>
         </div>
       </div>
-      <!-- Skeleton while loading -->
-      <div v-if="!isLoaded" v-for="index in 5" :key="index" class="vehicle-skeleton"></div>
     </div>
 
     <button class="nav-button right" @click="scrollRight">
@@ -103,7 +122,8 @@ const display_name = (vehicle) => {
 
 .carousel-wrapper {
   position: relative;
-  height: 100%;
+  height: 200px;
+  width: 600px;
 
   .nav-button {
     position: absolute;
@@ -211,11 +231,15 @@ const display_name = (vehicle) => {
   }
 }
 
+.vehicle.selected {
+  border: 2px solid $border-orange;
+}
+
 .vehicle-skeleton {
   max-width: 150px;
   min-width: 150px;
   border-radius: 5px;
-  height: 100%;
+  height: 250px;
   max-width: 100%;
   background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
   background-size: 200% 100%;
@@ -249,5 +273,4 @@ const display_name = (vehicle) => {
     transform: translateY(0);
   }
 }
-
 </style>

@@ -6,11 +6,31 @@
       id="additional_notes"
       cols="30"
       rows="5"
+      v-model="notes"
     ></textarea>
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import {storeToRefs} from 'pinia'
+import { useLalamoveStore } from '../../store/lalamoveStore';
+import { ref, watch } from "vue";
+
+let debounceTimer;
+
+const lalamove = useLalamoveStore();
+const {additionalNotes} = storeToRefs(lalamove);
+const notes = ref('');
+
+watch(notes, (newVal) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    additionalNotes.value = newVal;
+    console.log('Debounced update:', newVal);
+  }, 5000); // 5 Seconds delay
+});
+
+</script>
 
 <style lang="scss" scoped>
 @use "@/css/scss/_variables.scss" as *;

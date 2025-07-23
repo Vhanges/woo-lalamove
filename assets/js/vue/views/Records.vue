@@ -204,7 +204,7 @@ async function handleUtilityData({ searchQuery, selectedOption, dateRange, refre
 
   main {
     .table-wrapper {
-      border: 2px solid $border-color;
+      border: 1px solid $border-color;
       width: 100%;
       overflow: auto;
       max-height: 500px;

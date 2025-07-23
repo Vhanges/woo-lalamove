@@ -13,7 +13,7 @@
 .location {
     box-sizing: border-box;
     background-color: $bg-high-light;
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
     border-radius: 5px;
     height: 100%;
     display: grid;

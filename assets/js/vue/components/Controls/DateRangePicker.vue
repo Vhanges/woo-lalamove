@@ -84,7 +84,7 @@ onMounted(() => {
   width: fit-content;
   height: 2rem;
   align-items: center;
-  border: 2px solid $border-color;
+  border: 1px solid $border-color;
   border-radius: 5px;
   background-color: $bg-high-light;
   color: $txt-secondary;

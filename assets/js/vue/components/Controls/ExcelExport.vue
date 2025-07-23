@@ -321,7 +321,7 @@ function addStyledTable(worksheet, rows, sheetTitle) {
   gap: 0.5rem;
   cursor: pointer;
   user-select: none;
-  border: 2px solid $border-color;
+  border: 1px solid $border-color;
   border-radius: 5px;
   background-color: $bg-high-light;
 }

@@ -58,7 +58,7 @@ const selectItem = (name, details) => {
     gap: 0.5rem;
     cursor: pointer;
     user-select: none;
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
     border-radius: 5px;
     background-color: $bg-high-light;
   }
@@ -79,7 +79,7 @@ const selectItem = (name, details) => {
     max-height: fit-content; 
     width: 100%;
     background-color: $bg-high-light;
-    border: 2px solid $border-color;
+    border: 1px solid $border-color;
     border-radius: 3%;
   }
   
