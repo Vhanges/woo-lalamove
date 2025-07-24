@@ -222,6 +222,7 @@ jq(document).ready(function ($) {
         cursor: pointer;
       }
       .custom-modal-body {
+        box-sizing: border-box;
         margin: 20px 0;
         max-height: 500px;
         overflow-y: auto;
@@ -498,6 +499,7 @@ jq(document).ready(function ($) {
     }
 
     #additionalNotes { 
+      width: 100%;
       border: 2px solid #EDEDED;
       border-radius: 5px;
     }
@@ -599,6 +601,10 @@ jq(document).ready(function ($) {
          <div class="lalamove-message">
             <p>Please drag the pin to the exact location where you want your order delivered before saving.</p>
          </div>
+
+         <!-- Addtional Notes -->
+        <p class="header">ADDITIONAL NOTES</p>
+        <textarea id="additionalNotes" rows="4" placeholder="Enter any additional notes here..."></textarea>
 
       `);
 
@@ -1012,6 +1018,7 @@ jq(document).ready(function ($) {
           if(response.success) {
             console.log("SUCESS");
             SessionData.canCheckout = true;
+            console.log("CAN CHECKOUT ",SessionData.canCheckout);
           } else {
             console.error("ERROR");
           }
@@ -1590,66 +1597,45 @@ jq(document).ready(function ($) {
   );
 
   // Prevent order submission if Lalamove is selected but not configured
-  $(document.body).on("click", "#place_order", function (e) {
-    const allShippingInputs = document.querySelectorAll(
-      'input[name="shipping_method[0]"]'
-    );
-    const selected = document.querySelector(
-      'input[name="shipping_method[0]"][value="your_shipping_method"]:checked'
-    );
-
+ $(document.body).on("click", "#place_order", function (e) {
+    if (SessionData.canCheckout) return true;
+    
+    const allShippingInputs = document.querySelectorAll('input[name="shipping_method[0]"]');
+    const selected = document.querySelector('input[name="shipping_method[0]"][value="your_shipping_method"]:checked');
+    
     const isLalamoveSelected = selected !== null;
-    const isOnlyLalamove =
-      allShippingInputs.length === 1 &&
-      allShippingInputs[0].value === "your_shipping_method";
+    const isOnlyLalamove = allShippingInputs.length === 1 && allShippingInputs[0].value === "your_shipping_method";
+    const isOnlyFreeShipping = allShippingInputs.length === 1 && allShippingInputs[0].value.startsWith("free_shipping");
 
-    const isOnlyFreeShipping =
-      allShippingInputs.length === 1 &&
-      allShippingInputs[0].value.startsWith("free_shipping");
+    const shouldCheckLalamove = isLalamoveSelected || isOnlyLalamove;
 
-    console.log("Is is Free Shipping", isOnlyFreeShipping);
-    console.log("Is Lalamove selected?", isLalamoveSelected);
-    console.log("Is Lalamove the only available method?", isOnlyLalamove);
-
-    if(isOnlyFreeShipping){
-      validateShipmentOrder(e);
-      openModal();
-      fetchFreeShippingData();
+    if (isOnlyFreeShipping) {
+      if (!validateShipmentOrder(e)) {
+        openModal();
+        fetchFreeShippingData();
+      }
     }
 
-    if (isOnlyLalamove) {
-      validateShipmentOrder(e);
-      openModal();
-      fetchShippingData();
-    }
-    if (isLalamoveSelected) {
-      validateShipmentOrder(e);
-      openModal();
-      fetchShippingData();
+    if (shouldCheckLalamove) {
+      if (!validateShipmentOrder(e)) {
+        openModal();
+        fetchShippingData();
+      }
     }
   });
 
   function validateShipmentOrder(e) {
+    if (SessionData.canCheckout) return true;
 
-    if(SessionData.canCheckout){
-      return;
-    }
-
-    if (
-      !SessionData.quotationID ||
-      typeof SessionData.quotationID === "undefined" ||
-      SessionData.quotationID === null
-    ) {
-      // Show alert with custom message
-      alert(
-        "Please configure your Lalamove shipping details before placing the order."
-      );
-
+    if (!SessionData.quotationID || typeof SessionData.quotationID === "undefined") {
+      alert("Please configure your Lalamove shipping details before placing the order.");
       resetSessionData();
-      // Prevent form submission
       e.preventDefault();
       e.stopImmediatePropagation();
       return false;
     }
+
+    return true;
   }
+
 });
