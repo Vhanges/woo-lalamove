@@ -38,6 +38,20 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
             'permission_callback' => '__return_true'
         ]); 
 
+        // Get Quotation Details
+        register_rest_route('woo-lalamove/v1', '/get-quotation-details', [
+            'methods' => ['GET', 'POST'],
+            'callback' => [$this, 'get_quotation_details'],
+            'args' => [
+                'id' => [
+                    'validate_callback' => function($param, $request, $key) {
+                        return  $param; 
+                    },
+                ],
+            ],
+            'permission_callback' => '__return_true'
+        ]); 
+
         register_rest_route('woo-lalamove/v1', '/lalamove-webhook', [
             'methods' => ['GET', 'POST'],
             'callback' => [$this, 'lalamove_webhook'],
@@ -318,6 +332,13 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
         $body = $request->get_json_params();
 
         $response = $this->lalamove_api->get_quotation($body);
+        return rest_ensure_response($response);
+    }
+    public function get_quotation_details($data)
+    {   
+        $quotationID = $data['id'];
+
+        $response = $this->lalamove_api->get_quotation_details($quotationID);
         return rest_ensure_response($response);
     }
 

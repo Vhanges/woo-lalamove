@@ -99,8 +99,8 @@ function selectSuggestion(index, suggestion) {
 
   // Store coordinates
   addresses.value[index].coordinates = {
-    lat: suggestion.center.lat,
-    lng: suggestion.center.lng
+    lat: suggestion.center.lat.toString(),
+    lng: suggestion.center.lng.toString()
   };
 
   // Clear suggestions for that field

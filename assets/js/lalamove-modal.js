@@ -3,6 +3,7 @@
 jq = jQuery.noConflict();
 
 jq(document).ready(function ($) {
+  
   $('input[name="shipping_method[0]"], input[name="radio-control-0"]').each(
     function () {
       if ($(this).val() == "your_shipping_method") {
@@ -148,7 +149,6 @@ jq(document).ready(function ($) {
     serviceType: null,
     stops: {},
     scheduleDate: null,
-    additionalNotes: "",
     optimizeRoute: null,
     proofOfDelivery: null,
     priceBreakdown: {},
@@ -498,12 +498,6 @@ jq(document).ready(function ($) {
       border-radius: 5px;
     }
 
-    #additionalNotes { 
-      width: 100%;
-      border: 2px solid #EDEDED;
-      border-radius: 5px;
-    }
-
     input.error {
       border: 4px solid red;
     }
@@ -593,18 +587,17 @@ jq(document).ready(function ($) {
 
     SessionData.freeShipping = true;
 
+    await loadQuotationData(SessionData.freeShipping);
+
+
     try {
       $("#customModal .custom-modal-body").html(`
-         <!-- Map Container -->
-         <div id="map"></div>
-         
-         <div class="lalamove-message">
-            <p>Please drag the pin to the exact location where you want your order delivered before saving.</p>
-         </div>
-
-         <!-- Addtional Notes -->
-        <p class="header">ADDITIONAL NOTES</p>
-        <textarea id="additionalNotes" rows="4" placeholder="Enter any additional notes here..."></textarea>
+        <!-- Map Container -->
+        <div id="map"></div>
+        
+        <div class="lalamove-message">
+          <p>Please drag the pin to the exact location where you want your order delivered before saving.</p>
+        </div>
 
       `);
 
@@ -645,10 +638,6 @@ jq(document).ready(function ($) {
           <p class="header">Delivery Date & Contact Information</p>
           <input type="datetime-local" id="schedule-date">
 
-          <!-- Additional Notes Section -->
-          <p class="header">ADDITIONAL NOTES</p>
-          <textarea id="additionalNotes" rows="3" placeholder="Enter any additional notes here..."></textarea>
-
           <!-- Optimize Route Switch -->
           <div class="form-group">
             <div class="form-text">
@@ -680,10 +669,6 @@ jq(document).ready(function ($) {
         </form>
       `);
 
-      $("#additionalNotes").on("mouseleave", function () {
-        console.log("Hovered: ", $(this).val());
-        SessionData.additionalNotes = $(this).val();
-      });
 
       $("#optimizeRoute").prop("checked", SessionData.optimizeRoute);
       $("#proofOfDelivery").prop("checked", SessionData.proofOfDelivery);
@@ -840,14 +825,13 @@ jq(document).ready(function ($) {
     }
   );
 
-  async function loadQuotationData() {
+  async function loadQuotationData(freeShipping = false) {
     try {
       window.siteUrl = window.location.origin;
 
       let quotationID = SessionData.quotationID;
       let serviceType = SessionData.serviceType;
       let scheduleDate = SessionData.scheduleDate;
-      let additionalNotes = SessionData.additionalNotes;
       let coordinates = SessionData.coordinates;
       let stops = SessionData.stops;
       let optimizeRoute = SessionData.optimizeRoute;
@@ -858,7 +842,6 @@ jq(document).ready(function ($) {
         quotationID,
         serviceType,
         scheduleDate,
-        additionalNotes,
         coordinates,
         stops,
         optimizeRoute,
@@ -866,12 +849,23 @@ jq(document).ready(function ($) {
         priceBreakdown,
       };
 
-      // Fetch city data via AJAX
-      let get_city = await $.ajax({
-        url: window.siteUrl + "/wp-json/woo-lalamove/v1/get-city",
-        method: "GET",
-      });
+      if(!freeShipping){
+        // Fetch city data via AJAX
+        var get_city = await $.ajax({
+          url: window.siteUrl + "/wp-json/woo-lalamove/v1/get-city",
+          method: "GET",
+        });
 
+        const [Cebu, NCR_South, North_Central] = get_city;
+
+        window.cebu = Cebu.services;
+        window.ncr_south = NCR_South.services;
+        window.north_central = North_Central.services;
+        console.log("SERVICES", window.ncr_south);
+
+      }
+        
+      
       // Fetch checkout product data via AJAX
       let shippingData = await $.ajax({
         url: pluginAjax.ajax_url,
@@ -883,20 +877,15 @@ jq(document).ready(function ($) {
         },
       });
 
-      const [Cebu, NCR_South, North_Central] = get_city;
-      window.cebu = Cebu.services;
-      window.ncr_south = NCR_South.services;
-      window.north_central = North_Central.services;
-
       window.totalWeight = 0;
       window.quantity = 0;
 
-      console.log("SERVICES", window.ncr_south);
 
       shippingData.data.products.forEach((product) => {
         window.totalWeight += product.quantity * product.weight;
         window.quantity += product.quantity;
       });
+
 
       window.sender_address = shippingData.data.store.address;
       window.shipping_lat = shippingData.data.store.lat;
@@ -1002,23 +991,44 @@ jq(document).ready(function ($) {
 
     if(SessionData.freeShipping){
 
-      
-      
+
+      const quotationBody = {
+        data: {
+          scheduleAt: '',
+          serviceType: '',
+          language: '',
+          stops: [
+            {
+              coordinates: {
+                lat: SessionData.lat.toString(),
+                lng: SessionData.lng.toString(),
+              },
+              address: window.customer_address.toString(),
+            },
+          ],
+          isRouteOptimized: '',
+          item: {
+            quantity: window.quantity.toString(),
+            weight: window.totalWeight.toString(),
+          },
+        },
+      }; 
+
+      console.log("FREE SHIPPING HERE")
+
       jQuery.ajax({
         url: pluginAjax.ajax_url,
         method: "POST",
         data: {
           action: "set_customer_free_shipment_session",
           freeShipping: SessionData.freeShipping,
-          lat: SessionData.lat,
-          lng: SessionData.lng,
+          quotationBody: quotationBody,
         },
         success: function(response) {
           console.log("RESPONSE", response);
           if(response.success) {
             console.log("SUCESS");
             SessionData.canCheckout = true;
-            console.log("CAN CHECKOUT ",SessionData.canCheckout);
           } else {
             console.error("ERROR");
           }
@@ -1066,7 +1076,6 @@ jq(document).ready(function ($) {
         scheduledOn: SessionData.scheduleDate,
         dropOffLocation: window.customer_address,
         customerPhoneNo: window.customerPhoneNo,
-        additionalNotes: SessionData.additionalNotes,
         proofOfDelivery: window.quotationData.optimizeRoute,
         serviceType: SessionData.serviceType,
         priceBreakdown: JSON.stringify(SessionData.priceBreakdown),
@@ -1076,6 +1085,8 @@ jq(document).ready(function ($) {
         if (response.success) {
           console.log("Quotation ID set in session successfully.");
           console.log("PHONE NO: ", customerPhoneNo);
+          SessionData.canCheckout = true;
+
         } else {
           console.error(
             "Failed to set Quotation ID in session:",
@@ -1149,7 +1160,6 @@ jq(document).ready(function ($) {
       serviceType: null,
       stops: {},
       scheduleDate: null,
-      additionalNotes: "",
       optimizeRoute: null,
       proofOfDelivery: null,
       priceBreakdown: {},
@@ -1168,8 +1178,6 @@ jq(document).ready(function ($) {
   function initMap() {
     const defaultLat = 12.8797;
     const defaultLng = 121.774;
-
-    $(".modal-body #additionalNotes").append(SessionData.additionalNotes);
 
     //Verify if a service is already selected
     var isVehicleSelected = window.serviceType ? true : false;
@@ -1279,7 +1287,7 @@ jq(document).ready(function ($) {
   }
 
   // Bind service-related events (using the provided lat and lng)
-  function bindServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping = false) {
+  async function bindServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping = false) {
 
     if (isOnlyFreeShipping) {
       $("#saveLocation").prop("disabled", false);
@@ -1457,6 +1465,7 @@ jq(document).ready(function ($) {
       },
     };
 
+
     console.log("MERON NAMAN: ", body);
 
     let quotation = $.ajax({
@@ -1542,7 +1551,6 @@ jq(document).ready(function ($) {
 
         const optimizeRoute = $("#optimizeRoute").is(":checked");
         const proofOfDelivery = $("#proofOfDelivery").is(":checked");
-        const additionalNotes = $("#additionalNotes").val();
 
         let quotationID = response.data.quotationId;
         let serviceType = window.serviceType;
@@ -1557,7 +1565,6 @@ jq(document).ready(function ($) {
           quotationID,
           serviceType,
           scheduleDate,
-          additionalNotes,
           coordinates,
           stops,
           optimizeRoute,
@@ -1625,17 +1632,25 @@ jq(document).ready(function ($) {
   });
 
   function validateShipmentOrder(e) {
-    if (SessionData.canCheckout) return true;
+    if(SessionData.canCheckout){
+      return true;
+    }
 
-    if (!SessionData.quotationID || typeof SessionData.quotationID === "undefined") {
-      alert("Please configure your Lalamove shipping details before placing the order.");
+    if (
+      !SessionData.quotationID ||
+      typeof SessionData.quotationID === "undefined" ||
+      SessionData.quotationID === null
+    ) {
+      // Show alert with custom message
+      alert(
+        "Please configure your Lalamove shipping details before placing the order."
+      );
+
       resetSessionData();
+      // Prevent form submission
       e.preventDefault();
       e.stopImmediatePropagation();
       return false;
     }
-
-    return true;
   }
-
 });

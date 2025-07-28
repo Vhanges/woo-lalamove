@@ -139,9 +139,10 @@ if (!class_exists('Woo_Lalamove')) {
                 ordered_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 scheduled_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 drop_off_location TEXT NOT NULL,
+                remarks TEXT NOT NULL,
+                free_shipping INT,
                 order_json_body JSON NOT NULL,
                 PRIMARY KEY (integration_id),
-                UNIQUE KEY unique_lalamove_order (lalamove_order_id),
                 FOREIGN KEY (transaction_id) REFERENCES $transaction_table(transaction_id)
             ) $charset_collate;";
 

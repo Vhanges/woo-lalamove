@@ -1,118 +1,155 @@
 <?php
-
 if (!defined('ABSPATH')) {
     exit;
 }
 
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 
-add_action('woocommerce_checkout_order_processed', 'handle_lalamove_order', 10, 1);
-add_action('woocommerce_store_api_checkout_order_processed', 'handle_lalamove_order', 10, 1);
+// Remove original processing hooks
+remove_action('woocommerce_checkout_order_processed', 'handle_lalamove_order', 10);
+remove_action('woocommerce_store_api_checkout_order_processed', 'handle_lalamove_order', 10);
 
-function handle_lalamove_order($order_id)
-{
-    $order = wc_get_order($order_id);
+// Add validation and processing hooks
+add_action('woocommerce_after_checkout_validation', 'validate_lalamove_api', 20, 2);
+add_action('woocommerce_checkout_order_processed', 'process_lalamove_non_free_order', 10, 1);
+add_action('woocommerce_checkout_order_processed', 'process_lalamove_free_order', 10, 1);
+add_action('woocommerce_store_api_checkout_order_processed', 'process_lalamove_non_free_order', 10, 1);
+add_action('woocommerce_store_api_checkout_order_processed', 'process_lalamove_free_order', 10, 1);
 
-    if ( ! $order ) {
-        error_log("Order not found: $order_id");
-        return;
+/**
+ * Validate Lalamove API during checkout
+ */
+
+
+/**
+ * 
+ * TODO
+ * * Store the order body wether the shipping is paid or not
+ * 
+ */
+add_action( 'woocommerce_thankyou', 'show_on_hold_notice' );
+function show_on_hold_notice( $order_id ) {
+    $order = wc_get_order( $order_id );
+    if ( $order->get_status() === 'on-hold' ) {
+        echo '<div class="woocommerce-info">Your order is awaiting manual shipment due to a courier issue. Please <a href="/contact">contact support</a> to continue.</div>';
     }
+}
 
-    $shipping_methods = $order->get_shipping_methods();
+function validate_lalamove_api($data, $errors) {
 
-    foreach ( $shipping_methods as $item ) {
-        $method_id = $item->get_method_id();
+    $chosen_methods = WC()->session->get('chosen_shipping_methods', []);
+    $is_lalamove = false;
 
-        if ($method_id === 'your_shipping_method') {
-            set_lalamove_order($order_id, $order);
-            return;
-        } 
-        
-        if($method_id === 'free_shipping') {
-            set_lalamove_coordinates_in_order($order_id);
+    foreach ($chosen_methods as $method_id) {
+        if (strpos($method_id, 'your_shipping_method') !== false) {
+            $is_lalamove = true;
+            break;
         }
     }
- 
-}
-function set_lalamove_coordinates_in_order( $order_id ) {
-    start_secure_session(); 
-    $lat = $_SESSION['lat'] ?? null;
-    $lng = $_SESSION['lng'] ?? null;
 
-    if ( ! $lat || ! $lng ) {
-        error_log("⚠️ Lalamove coordinates missing in session for order ID: $order_id");
-        return;
-    }
-
-    update_post_meta( $order_id, '_lalamove_lat', sanitize_text_field( $lat ) );
-    update_post_meta( $order_id, '_lalamove_lng', sanitize_text_field( $lng ) );
-
-    error_log("✅ SAVED COORDINATES for Order #$order_id — Lat: $lat, Lng: $lng");
-
-    clear_lalamove_session_data();
-}
-
-
-
-function set_lalamove_order($order_id, $order)
-{
-    global $wpdb;
-
-    WC()->session->__unset('shipment_cost');
-
-    $table = (object) [
-        'orders'       => $wpdb->prefix . 'wc_lalamove_orders',
-        'transactions' => $wpdb->prefix . 'wc_lalamove_transaction',
-        'cost_details' => $wpdb->prefix . 'wc_lalamove_cost_details',
-    ];
-
-    if ((int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table->orders} WHERE wc_order_id = %d", $order_id))) {
-        return;
-    }
+    if (!$is_lalamove) return;
 
     start_secure_session();
     $session = load_lalamove_session_data();
+    $quotationID = $session['quotationID'] ?? '';
 
-    if (empty($session['quotationID'])) {
-        error_log('Lalamove: Quotation ID missing.');
-        return;
-    }
-
-    $scheduledOn = format_schedule_datetime($session['scheduledOn'] ?? null);
-    $dropOffLocation = format_shipping_address($order->get_address('shipping'));
-
-    $current_user = wp_get_current_user();
-    $orderedBy = $current_user->exists()
-        ? $current_user->display_name . "(" . $current_user->roles[0] . ")"
-        : $session['customerFName'] . " " . $session['customerLName'] . "(Guest)";
-
-    $lalamove_api = new Class_Lalamove_Api();
-
-    $lalamove_order = $lalamove_api->place_order(
-        $session['quotationID'],
-        $session['stopId0'],
-        $session['stopId1'],
-        get_bloginfo('name'),
-        get_option("lalamove_phone_number", "+634315873"),
-        $session['customerFName'] . " " . $session['customerLName'],
-        $session['customerPhoneNo'],
-        $session['additionalNotes'] ?? 'none',
-        !empty($session['proofOfDelivery'])
-    );
-
-    $lalamove_order_id = $lalamove_order['data']['orderId'] ?? null;
-
-    if (!$lalamove_order_id ||
-        (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table->orders} WHERE lalamove_order_id = %d", $lalamove_order_id))) {
-        error_log("Lalamove Order ID already exists or failed.");
+    // Validate session data
+    if (empty($quotationID)) {
+        $errors->add('lalamove_error', 
+            __('Shipping quotation missing. Please refresh the page and try again.', 'your-textdomain')
+        );
         return;
     }
 
     try {
+        
+        $api = new Class_Lalamove_Api();
+        
+        // Verify quotation is still valid with Lalamove
+        $api->get_quotation_details($quotationID); 
+        
+    } catch (Exception $e) {
+
+        $errors->add('lalamove_error', 
+            __($e->getMessage(), 'woo-lalamove-text-domain')
+        );
+
+    }
+}
+
+/**
+ * Process non-free (Lalamove) orders
+ */
+function process_lalamove_non_free_order($order_id) {
+    $order = wc_get_order($order_id);
+    if (!$order) return;
+
+    $is_lalamove = false;
+    foreach ($order->get_shipping_methods() as $item) {
+        if ($item->get_method_id() === 'your_shipping_method') {
+            $is_lalamove = true;
+            break;
+        }
+    }
+
+    if (!$is_lalamove) return;
+
+    start_secure_session();
+    $session = load_lalamove_session_data();
+
+    try {
+        global $wpdb;
+
+        // Verify critical session data
+        if (empty($session['quotationID']) || empty($session['stopId0']) || empty($session['stopId1'])) {
+            throw new Exception('Required Lalamove session data missing');
+        }
+
+        $scheduledOn = format_schedule_datetime($session['scheduledOn'] ?? null);
+        $dropOffLocation = format_shipping_address($order->get_address('shipping'));
+        $remarks = $order->get_customer_note();
+
+        $current_user = wp_get_current_user();
+        $orderedBy = $current_user->exists()
+            ? $current_user->display_name . "(" . $current_user->roles[0] . ")"
+            : $session['customerFName'] . " " . $session['customerLName'] . "(Guest)";
+
+        $lalamove_api = new Class_Lalamove_Api();
+
+        $lalamove_order = $lalamove_api->place_order(
+            $session['quotationID'],
+            $session['stopId0'],
+            $session['stopId1'],
+            get_bloginfo('name'),
+            get_option("lalamove_phone_number", "+634315873"),
+            $session['customerFName'] . " " . $session['customerLName'],
+            $session['customerPhoneNo'],
+            $remarks,
+            !empty($session['proofOfDelivery'])
+        );
+            
+        $lalamove_order_id = $lalamove_order['data']['orderId'] ?? null;
+
+        if (!$lalamove_order_id) {
+            throw new Exception('Lalamove order creation failed: No order ID returned');
+        }
+
+        $table = (object) [
+            'orders'       => $wpdb->prefix . 'wc_lalamove_orders',
+            'transactions' => $wpdb->prefix . 'wc_lalamove_transaction',
+            'cost_details' => $wpdb->prefix . 'wc_lalamove_cost_details',
+        ];
+
+        // Check for existing order
+        if ((int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table->orders} WHERE wc_order_id = %d", $order_id))) {
+            return;
+        }
+
         $wpdb->query('START TRANSACTION');
 
         $breakdown = $session['priceBreakdown'] ?? [];
 
+        // Insert cost details
         $wpdb->insert($table->cost_details, [
             'currency'       => $breakdown['currency'] ?? '',
             'base'           => $breakdown['base'] ?? 0,
@@ -124,29 +161,149 @@ function set_lalamove_order($order_id, $order)
 
         $cost_id = $wpdb->insert_id;
         if (!$cost_id) {
+            throw new Exception("Cost details insert failed");
+        }
+
+        // Insert transaction
+        $wpdb->insert($table->transactions, [
+            'cost_details_id' => $cost_id,
+            'ordered_by'     => $orderedBy,
+            'service_type'   => $session['serviceType'] ?? '',
+        ]);
+
+        $txn_id = $wpdb->insert_id;
+        if (!$txn_id) {
+            throw new Exception("Transaction insert failed");
+        }
+
+        // Insert order
+        $wpdb->insert($table->orders, [
+            'transaction_id'     => $txn_id,
+            'wc_order_id'        => $order_id,
+            'status_id'          => 1, // Pending status
+            'lalamove_order_id'  => $lalamove_order_id,
+            'ordered_on'         => current_time('mysql'),
+            'scheduled_on'       => $scheduledOn,
+            'drop_off_location'  => $dropOffLocation,
+            'remarks'            => $remarks ?? 'none',
+            'order_json_body'    => json_encode($session['quotationBody'] ?? []),
+        ]);
+
+        $wpdb->query('COMMIT');
+        error_log("Lalamove order created: {$lalamove_order_id} for WC order: {$order_id}");
+        
+    } catch (Exception $e) {
+        $wpdb->query('ROLLBACK');
+        
+        // Log error and update order status
+        error_log("Lalamove Order Failed [{$order_id}]: " . $e->getMessage());
+        $order->update_status('on-hold', '[Lalamove] ' . $e->getMessage());
+        
+        // Send admin notification
+        $message = sprintf(
+            __('Order #%s could not be processed by Lalamove. Reason: %s', 'your-textdomain'),
+            $order_id,
+            $e->getMessage()
+        );
+        wp_mail(get_option('admin_email'), __('Lalamove Order Failed', 'your-textdomain'), $message);
+    } finally {
+        // Clear session regardless of outcome
+        clear_lalamove_session_data();
+        echo '<script>sessionStorage.removeItem("SessionData");</script>';
+    }
+}
+
+/**
+ * Process free shipping orders
+ */
+function process_lalamove_free_order($order_id) {
+    $order = wc_get_order($order_id);
+    if (!$order) return;
+
+    foreach ($order->get_shipping_methods() as $item) {
+        if ($item->get_method_id() === 'free_shipping') {
+            set_lalamove_free_shipping_order($order_id, $order);
+            return;
+        }
+    }
+}
+
+/**
+ * 
+ */
+function set_lalamove_free_shipping_order( $order_id, $order) {
+    global $wpdb;
+    
+    start_secure_session(); 
+    $session = load_lalamove_session_data();
+
+    $table = (object) [
+        'orders'       => $wpdb->prefix . 'wc_lalamove_orders',
+        'transactions' => $wpdb->prefix . 'wc_lalamove_transaction',
+        'cost_details' => $wpdb->prefix . 'wc_lalamove_cost_details',
+    ];
+    $current_user = wp_get_current_user();
+    
+    $remarks = $order->get_customer_note();
+    
+
+    $shippingContact = [
+    'name'  => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
+    'phone' => $order->get_billing_phone(), 
+    'email' => $order->get_billing_email()
+    ];
+    $dropOffLocation = json_encode($shippingContact);
+
+    $orderedBy = $current_user->exists()
+    ? $current_user->display_name . "(" . $current_user->roles[0] . ")"
+    : $session['customerFName'] . " " . $session['customerLName'] . "(Guest)";
+
+
+    try {
+        $wpdb->query('START TRANSACTION');
+
+        // Add this check before processing
+        if (empty($session['quotationBody']) || $session['quotationBody'] === '{}') {
+            throw new Exception('Invalid quotation body in session data');
+        }
+
+
+        $wpdb->insert($table->cost_details, [
+            'currency'       =>  '',
+            'base'           =>  0,
+            'extra_mileage'  =>  0,
+            'surcharge'      =>  0,
+            'total'          =>  0,
+            'priority_fee'   =>  0,
+        ]);
+
+        $cost_id = $wpdb->insert_id;
+        if (!$cost_id) {
             throw new Exception("Cost details insert failed.");
         }
 
         $wpdb->insert($table->transactions, [
             'cost_details_id' => $cost_id,
             'ordered_by'     => $orderedBy,
-            'service_type'   => $session['serviceType'],
+            'service_type'   => '',
         ]);
 
         $txn_id = $wpdb->insert_id;
         if (!$txn_id) {
             throw new Exception("Transaction insert failed.");
         }
+        $dropOffLocation = format_shipping_address($order->get_address('shipping'));
 
         $wpdb->insert($table->orders, [
             'transaction_id'     => $txn_id,
             'wc_order_id'        => $order_id,
             'status_id'          => 1,
-            'lalamove_order_id'  => $lalamove_order_id,
+            'lalamove_order_id'  => 0,
             'ordered_on'         => current_time('mysql'),
-            'scheduled_on'       => $scheduledOn,
+            'scheduled_on'       => '',
             'drop_off_location'  => $dropOffLocation,
-            'order_json_body'    => json_encode($session['quotationBody']),
+            'remarks'              => $remarks ?? 'none',
+            'order_json_body'    => json_encode($_SESSION['quotationBody']),
         ]);
 
         $wpdb->query('COMMIT');
@@ -158,23 +315,24 @@ function set_lalamove_order($order_id, $order)
         echo '<script>sessionStorage.removeItem("SessionData");</script>';
     }
 
-    error_log("Order completed: {$order_id}");
+    clear_lalamove_session_data();
 }
+
+
 
 function start_secure_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
-        session_start([
+        session_start(options: [
             'cookie_lifetime' => 3600,
-            'read_and_close'  => false,
         ]);
     }
 }
 
 function load_lalamove_session_data(): array
 {
-    return array_map('sanitize_text_field', [
-        'quotationBody'     => $_SESSION['quotationBody'] ?? '',
+    return [
+        'quotationBody'     => $_SESSION['quotationBody'] ?? '{}' ,
         'quotationID'       => $_SESSION['quotationID'] ?? '',
         'stopId0'           => $_SESSION['stopId0'] ?? '',
         'stopId1'           => $_SESSION['stopId1'] ?? '',
@@ -182,11 +340,10 @@ function load_lalamove_session_data(): array
         'customerLName'     => $_SESSION['customerLName'] ?? '',
         'customerPhoneNo'   => $_SESSION['customerPhoneNo'] ?? '',
         'scheduledOn'       => $_SESSION['scheduledOn'] ?? '',
-        'additionalNotes'   => $_SESSION['additionalNotes'] ?? '',
         'proofOfDelivery'   => $_SESSION['proofOfDelivery'] ?? '',
         'serviceType'       => $_SESSION['serviceType'] ?? '',
         'priceBreakdown'    => json_decode($_SESSION['priceBreakdown'] ?? '{}', true),
-    ]);
+    ];
 }
 
 function format_schedule_datetime(?string $datetime): ?string
@@ -195,7 +352,7 @@ function format_schedule_datetime(?string $datetime): ?string
     try {
         $timezone = get_option('timezone_string') ?: 'Asia/Singapore';
         $date = new DateTime($datetime, new DateTimeZone('UTC'));
-        $date->setTimezone(new DateTimeZone($timezone));
+        $date->setTimezone(timezone: new DateTimeZone($timezone));
         return $date->format('Y-m-d H:i:s');
     } catch (Exception $e) {
         error_log("Invalid schedule date: {$e->getMessage()}");
@@ -216,8 +373,8 @@ function format_shipping_address(array $address): string
 function clear_lalamove_session_data(): void
 {
     $keys = [
-        'quotationID', 'stopId0', 'stopId1', 'customerFName', 'customerLName',
-        'customerPhoneNo', 'scheduledOn', 'additionalNotes', 'proofOfDelivery',
+        'quotationBody', 'quotationID', 'stopId0', 'stopId1', 'customerFName', 'customerLName',
+        'customerPhoneNo', 'scheduledOn', 'proofOfDelivery',
         'serviceType', 'priceBreakdown'
     ];
     foreach ($keys as $key) {
@@ -237,11 +394,9 @@ function set_customer_free_shipment_session(): void
         wp_die();
     }
 
-    $_SESSION['freeShipping'] = sanitize_text_field($_POST['freeShipping']);
-    $_SESSION['lat'] = sanitize_text_field($_POST['lat']);
-    $_SESSION['lng'] = sanitize_text_field($_POST['lng']);
+    $_SESSION['quotationBody'] = $_POST['quotationBody'] ?? '';
 
-    wp_send_json_success(['message' => 'Free shipping session saved.', 'LAT' => $_SESSION['lat'], 'LNG' => $_SESSION['lng']]);
+    wp_send_json_success(['message' => 'Free shipping session saved.', 'BODY' => $_SESSION['quotationBody']]);
     wp_die();
 }
 
@@ -265,12 +420,11 @@ function set_quotation_data_session(): void
     $_SESSION['customerLName'] = sanitize_text_field($_POST['customerLName']);
     $_SESSION['customerPhoneNo'] = sanitize_text_field($_POST['customerPhoneNo']);
     $_SESSION['scheduledOn'] = sanitize_text_field($_POST['scheduledOn'] ?? '');
-    $_SESSION['additionalNotes'] = sanitize_text_field($_POST['additionalNotes'] ?? '');
     $_SESSION['proofOfDelivery'] = sanitize_text_field($_POST['proofOfDelivery'] ?? '');
     $_SESSION['serviceType'] = sanitize_text_field($_POST['serviceType'] ?? '');
     $_SESSION['priceBreakdown'] = stripslashes($_POST['priceBreakdown'] ?? '{}');
     $_SESSION['expiry'] = time() + 1200;
 
-    wp_send_json_success(['message' => 'Quotation session saved.']);
+    wp_send_json_success(['message' => 'Quotation session saved.', 'body' => $_SESSION['quotationBody']]);
     wp_die();
 }

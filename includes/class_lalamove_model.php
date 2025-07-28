@@ -133,7 +133,6 @@ class Class_Lalamove_Model{
             $results['records'] = $wpdb->get_results($query, ARRAY_A);
 
 
-
             // Commit transaction
             $wpdb->query('COMMIT');
 
