@@ -59,7 +59,7 @@ const router = createRouter({
       name: 'records'
     },
     { 
-      path: '/records-details/:lala_id/:wc_id',
+      path: '/records-details/:lala_id',
       component: RecordsDetails,
       name: 'records-details',
       props: true,

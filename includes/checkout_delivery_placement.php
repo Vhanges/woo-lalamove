@@ -81,6 +81,8 @@ function validate_lalamove_api($data, $errors) {
  * Process non-free (Lalamove) orders
  */
 function process_lalamove_non_free_order($order_id) {
+    global $wpdb;
+
     $order = wc_get_order($order_id);
     if (!$order) return;
 
@@ -96,10 +98,13 @@ function process_lalamove_non_free_order($order_id) {
 
     start_secure_session();
     $session = load_lalamove_session_data();
+    $table = (object) [
+        'orders'       => $wpdb->prefix . 'wc_lalamove_orders',
+        'transactions' => $wpdb->prefix . 'wc_lalamove_transaction',
+        'cost_details' => $wpdb->prefix . 'wc_lalamove_cost_details',
+    ];
 
     try {
-        global $wpdb;
-
         // Verify critical session data
         if (empty($session['quotationID']) || empty($session['stopId0']) || empty($session['stopId1'])) {
             throw new Exception('Required Lalamove session data missing');
@@ -116,16 +121,29 @@ function process_lalamove_non_free_order($order_id) {
 
         $lalamove_api = new Class_Lalamove_Api();
 
+        $body = [
+            "data" => [
+                "quotationId" => $session['quotationID'],
+                "sender" => [
+                    "stopId" => $session['stopId0'],
+                    "name"    => get_bloginfo('name'),
+                    "phone"   => get_option("lalamove_phone_number", "+634315873"),
+                ],
+                "recipients" => [
+                    [
+                        "stopId"  => $session['stopId1'],
+                        "name"    => $session['customerFName'] . " " . $session['customerLName'],
+                        "phone"   => $session['customerPhoneNo'],
+                        "remarks" => $remarks,
+                    ]
+                ],
+                "isPODEnabled" => !empty($session['proofOfDelivery']),
+                "partner"      => get_bloginfo('name'),
+            ]
+        ];
+
         $lalamove_order = $lalamove_api->place_order(
-            $session['quotationID'],
-            $session['stopId0'],
-            $session['stopId1'],
-            get_bloginfo('name'),
-            get_option("lalamove_phone_number", "+634315873"),
-            $session['customerFName'] . " " . $session['customerLName'],
-            $session['customerPhoneNo'],
-            $remarks,
-            !empty($session['proofOfDelivery'])
+            $body             
         );
             
         $lalamove_order_id = $lalamove_order['data']['orderId'] ?? null;
@@ -134,11 +152,6 @@ function process_lalamove_non_free_order($order_id) {
             throw new Exception('Lalamove order creation failed: No order ID returned');
         }
 
-        $table = (object) [
-            'orders'       => $wpdb->prefix . 'wc_lalamove_orders',
-            'transactions' => $wpdb->prefix . 'wc_lalamove_transaction',
-            'cost_details' => $wpdb->prefix . 'wc_lalamove_cost_details',
-        ];
 
         // Check for existing order
         if ((int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table->orders} WHERE wc_order_id = %d", $order_id))) {
@@ -175,6 +188,7 @@ function process_lalamove_non_free_order($order_id) {
         if (!$txn_id) {
             throw new Exception("Transaction insert failed");
         }
+        
 
         // Insert order
         $wpdb->insert($table->orders, [
@@ -206,10 +220,53 @@ function process_lalamove_non_free_order($order_id) {
             $e->getMessage()
         );
         wp_mail(get_option('admin_email'), __('Lalamove Order Failed', 'your-textdomain'), $message);
+
+        
+        // Insert cost details
+        $wpdb->insert($table->cost_details, [
+            'currency'       => '',
+            'base'           => 0,
+            'extra_mileage'  => 0,
+            'surcharge'      => 0,
+            'total'          => 0,
+            'priority_fee'   => 0,
+        ]);
+
+        $cost_id = $wpdb->insert_id;
+        if (!$cost_id) {
+            throw new Exception("Cost details insert failed");
+        }
+
+        // Insert transaction
+        $wpdb->insert($table->transactions, [
+            'cost_details_id' => $cost_id,
+            'ordered_by'     => $orderedBy,
+            'service_type'   => $session['serviceType'] ?? '',
+        ]);
+
+        $txn_id = $wpdb->insert_id;
+        if (!$txn_id) {
+            throw new Exception("Transaction insert failed");
+        }
+
+        // Insert order
+        $wpdb->insert($table->orders, [
+            'transaction_id'     => $txn_id,
+            'wc_order_id'        => $order_id,
+            'status_id'          => 9,
+            'lalamove_order_id'  => 0,
+            'ordered_on'         => current_time('mysql'),
+            'scheduled_on'       => $scheduledOn,
+            'drop_off_location'  => $dropOffLocation,
+            'remarks'            => $remarks ?? 'none',
+            'order_json_body'    => json_encode($session['quotationBody'] ?? []),
+        ]);
     } finally {
         // Clear session regardless of outcome
-        clear_lalamove_session_data();
         echo '<script>sessionStorage.removeItem("SessionData");</script>';
+
+        WC()->session->__unset('shipment_cost');
+        clear_lalamove_session_data();
     }
 }
 
@@ -268,22 +325,22 @@ function set_lalamove_free_shipping_order( $order_id, $order) {
         }
 
 
-        $wpdb->insert($table->cost_details, [
-            'currency'       =>  '',
-            'base'           =>  0,
-            'extra_mileage'  =>  0,
-            'surcharge'      =>  0,
-            'total'          =>  0,
-            'priority_fee'   =>  0,
-        ]);
+        // $wpdb->insert($table->cost_details, [
+        //     'currency'       =>  '',
+        //     'base'           =>  0,
+        //     'extra_mileage'  =>  0,
+        //     'surcharge'      =>  0,
+        //     'total'          =>  0,
+        //     'priority_fee'   =>  0,
+        // ]);
 
-        $cost_id = $wpdb->insert_id;
-        if (!$cost_id) {
-            throw new Exception("Cost details insert failed.");
-        }
+        // $cost_id = $wpdb->insert_id;
+        // if (!$cost_id) {
+        //     throw new Exception("Cost details insert failed.");
+        // }
 
         $wpdb->insert($table->transactions, [
-            'cost_details_id' => $cost_id,
+            'cost_details_id' => null,
             'ordered_by'     => $orderedBy,
             'service_type'   => '',
         ]);
@@ -297,7 +354,7 @@ function set_lalamove_free_shipping_order( $order_id, $order) {
         $wpdb->insert($table->orders, [
             'transaction_id'     => $txn_id,
             'wc_order_id'        => $order_id,
-            'status_id'          => 1,
+            'status_id'          => 0,
             'lalamove_order_id'  => 0,
             'ordered_on'         => current_time('mysql'),
             'scheduled_on'       => '',
@@ -312,10 +369,12 @@ function set_lalamove_free_shipping_order( $order_id, $order) {
     } catch (Exception $e) {
         $wpdb->query('ROLLBACK');
         error_log("Transaction failed: {$e->getMessage()}");
+    } finally {
         echo '<script>sessionStorage.removeItem("SessionData");</script>';
+        WC()->session->__unset('shipment_cost');
+        clear_lalamove_session_data();
     }
 
-    clear_lalamove_session_data();
 }
 
 

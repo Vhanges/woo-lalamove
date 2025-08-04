@@ -293,51 +293,19 @@ class Class_Lalamove_Api
     /** 
      * Place Order
      * Set quotation on order.
-     * @return array of order details.
-     *
+     * @return array
      **/
-    public function place_order(
-        $quotationID,
-        $stopId0,
-        $stopId1,
-        $senderName,
-        $senderPhone,
-        $recipientName,
-        $recipientPhone,
-        $remarks,
-        $isPODEnabled
-    ) {
+    public function place_order($body) {
         $timestamp = round(microtime(true) * 1000);
 
-        $order_payload = [
-            "data" => [
-                "quotationId" => $quotationID,
-                "sender" => [
-                    "stopId" => $stopId0,
-                    "name"    => $senderName,
-                    "phone"   => $senderPhone,
-                ],
-                "recipients" => [
-                    [
-                        "stopId"  => $stopId1,
-                        "name"    => $recipientName,
-                        "phone"   => $recipientPhone,
-                        "remarks" => $remarks,
-                    ]
-                ],
-                "isPODEnabled" => $isPODEnabled,
-                "partner"      => $senderName
-            ]
-        ];
-
-        $order_body = json_encode($order_payload, JSON_UNESCAPED_SLASHES);
+        $order_body = json_encode($body, JSON_UNESCAPED_SLASHES);
 
         $rawSignature = "{$timestamp}\r\nPOST\r\n/v3/orders\r\n\r\n{$order_body}";
 
         $signature = hash_hmac("sha256", $rawSignature, $this->api_secret);
 
         $token = "{$this->api_key}:{$timestamp}:{$signature}";
-        error_log("Order Body" . $order_body);
+        // error_log("Order Body" . $order_body);
         error_log("Token" . $token);
 
         $curl = curl_init();

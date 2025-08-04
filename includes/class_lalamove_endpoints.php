@@ -38,6 +38,18 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
             'permission_callback' => '__return_true'
         ]); 
 
+        register_rest_route('woo-lalamove/v1', '/place-order', [
+            'methods' => ['GET', 'POST'],
+            'callback' => [$this, 'place_order'],
+            'permission_callback' => '__return_true'
+        ]); 
+
+        register_rest_route('woo-lalamove/v1', '/store-order', [
+            'methods' => ['GET', 'POST'],
+            'callback' => [$this, 'store_order'],
+            'permission_callback' => '__return_true'
+        ]); 
+
         // Get Quotation Details
         register_rest_route('woo-lalamove/v1', '/get-quotation-details', [
             'methods' => ['GET', 'POST'],
@@ -333,6 +345,28 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
 
         $response = $this->lalamove_api->get_quotation($body);
         return rest_ensure_response($response);
+    }
+
+    /**
+     * Callback for place_order route
+     * 
+     * @return $res
+     */
+    public function place_order(WP_REST_Request $request)
+    {   
+
+        $body = $request->get_json_params();
+
+        $response = $this->lalamove_api->place_order($body);
+        return rest_ensure_response($response);
+
+    }
+    public function store_order(WP_REST_Request $request)
+    {   
+
+        $body = $request->get_body();
+
+        $this->model->set_order($body);
     }
     public function get_quotation_details($data)
     {   

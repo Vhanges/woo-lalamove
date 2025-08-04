@@ -2,7 +2,7 @@
   <div class="orders-wrapper">
     <header>
       <h2>ORDERS</h2>
-      <EditLocation />
+      <!-- <EditLocation /> -->
     </header>
     <div class="utility-header">
       <UtilityHeader />
@@ -10,6 +10,7 @@
     <main>
       <WooOrderTable :orders="WooLalamoveOrders" />
     </main>
+    <SelectedOrdersFooter/>
   </div>
 </template>
 
@@ -18,39 +19,31 @@
 @use "@/css/scss/_variables.scss" as *;
 
   .orders-wrapper {
+    position: relative;
     display: flex; 
     flex-direction: column;
     gap: 2vh;
     height: 100%;
-    margin: 2rem;
+    padding-bottom: 10rem;
 
     header {
       display: flex;
       justify-content: space-between;
       height: 10vh;
-      width: 100%;
       align-items: center;
+      margin: 2rem 2rem 0 2rem;
     }
 
     .utility-header {
       height: fit-content;
-      width: 100%;
+      margin: 0 2rem;
     }
 
     main {
-      height: 60vh;
-      max-height: 60vh;
-      width: 100%;
+      height: fit-content;
+      margin: 0 2rem 5rem 2rem;
     }
   }
-
-  h2 {
-    font-size: $font-size-xxl;
-    font-weight: $font-weight-regular;
-  }
-
-
-
 
 </style>
 
@@ -60,7 +53,9 @@ import axios from 'axios';
 
 import EditLocation from '../components/Orders/EditLocation.vue';
 import WooOrderTable from '../components/Orders/WooOrderTable.vue';
+import SelectedOrdersFooter from '../components/Orders/SelectedOrdersFooter.vue';
 import UtilityHeader from '../components/Utilities/UtilityHeader.vue';
+
 
 const WooLalamoveOrders = ref([]);
 

@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Sevhen\WooLalamove;
 
@@ -10,24 +10,136 @@ if (!defined('ABSPATH'))
 use WP_REST_Request;
 use WP_REST_Response;
 
-class Class_Lalamove_Model{
+class Class_Lalamove_Model
+{
     private $order_table;
     private $status_table;
     private $transaction_table;
-    private $cost_details_table ;
+    private $cost_details_table;
     private $balance_table;
 
-    public function __construct(){
+    public function __construct()
+    {
         global $wpdb;
 
         $this->order_table = $wpdb->prefix . 'wc_lalamove_orders';
         $this->status_table = $wpdb->prefix . 'wc_lalamove_status';
-        $this->transaction_table = $wpdb->prefix . 'wc_lalamove_transaction'; 
+        $this->transaction_table = $wpdb->prefix . 'wc_lalamove_transaction';
         $this->cost_details_table = $wpdb->prefix . 'wc_lalamove_cost_details';
         $this->balance_table = $wpdb->prefix . 'wc_lalamove_balance';
     }
 
-    protected function get_orders($wpdb){
+    protected function set_order($data)
+    {
+        global $wpdb;
+
+        $wpdb->query('START TRANSACTION');
+
+        $order = json_decode($data, true);
+
+        $order_id = $order['orderId'];
+        $service_type = $order['serviceType'];
+        $schedule_at = $order['scheduleAt'];
+        $price_breakdown = $order['priceBreakdown'];
+        $addresses = $order['addresses'];
+        $ordered_by = $addresses[0]['name'];
+        $quotation_body = is_array($order['quotationBody']) ? wp_json_encode($order['quotationBody']) : $order['quotationBody'];
+         
+
+        try {
+            $wpdb->query('COMMIT');
+
+            if (empty($order_id)) {
+                throw new Exception('[Lalalmove] Invalid order ID in session data');
+            }
+
+
+            $wpdb->insert($this->cost_details_table, [
+                'currency'       => $price_breakdown['currency'] ?? '',
+                'base'           => $price_breakdown['base'] ?? 0,
+                'extra_mileage'  => $price_breakdown['extraMileage'] ?? 0,
+                'surcharge'      => $price_breakdown['surcharge'] ?? 0,
+                'total'          => $price_breakdown['total'] ?? 0,
+                'priority_fee'   => $price_breakdown['priorityFee'] ?? 0,
+                'subsidy'        => $price_breakdown['total'] ?? 0,
+            ]);
+
+            $cost_id = $wpdb->insert_id;
+            if (!$cost_id) {
+                throw new Exception("Cost details insert failed.");
+            }
+
+            $wpdb->insert($this->transaction_table, [
+                'cost_details_id' => $cost_id,
+                'ordered_by'     => $ordered_by,
+                'service_type'   => $service_type,
+            ]);
+
+            $txn_id = $wpdb->insert_id;
+            if (!$txn_id) {
+                throw new Exception("[Lalalmove] Transaction insert failed.");
+            }
+
+            foreach ($addresses as $address) {
+
+                if (empty($address['wooId'])) {
+                    continue;
+                }
+
+                $updated = $wpdb->update(
+                    $this->order_table,
+                    // data to update
+                    [
+                        'transaction_id'    => $txn_id,
+                        'wc_order_id'       => $address['wooId'],
+                        'status_id'         => 1,
+                        'lalamove_order_id' => $order_id,
+                        'ordered_on'        => current_time('mysql'),
+                        'scheduled_on'      => $schedule_at,
+                        'drop_off_location' => $address['address'],
+                        'remarks'           => $address['remarks'] ?? 'none',
+                        'order_json_body'   => $quotation_body,
+                    ],
+
+                    // WHERE clause
+                    [
+                        'wc_order_id' => $address['wooId'],
+                    ],
+
+                    // formats for each value in data
+                    [
+                        '%d',
+                        '%d',
+                        '%d',
+                        '%d',
+                        '%s',
+                        '%s',
+                        '%s',
+                        '%s',
+                        '%s',
+
+                    ],
+
+                    // formats for each value in WHERE
+                    [
+                        '%d',
+                    ]
+                );
+
+                if ( false === $updated ) {
+                    error_log("[Lalalmove] Update failed for stop with wooId {$address['wooId']}");
+                } else {
+                    error_log("[Lalalmove] Update complete for stop with wooId {$address['wooId']}");
+                }
+            }
+        } catch (Exception $e) {
+            $wpdb->query('ROLLBACK');
+        }
+    }
+
+
+    protected function get_orders($wpdb)
+    {
         $wpdb->query('START TRANSACTION');
 
         try {
@@ -36,6 +148,8 @@ class Class_Lalamove_Model{
                      o.ordered_on,
                      o.scheduled_on,
                      o.drop_off_location,
+                     o.remarks,
+                     o.order_json_body,
                      s.status_name,
                      t.ordered_by,
                      t.service_type
@@ -43,18 +157,19 @@ class Class_Lalamove_Model{
                     INNER JOIN $this->status_table AS s 
                     ON o.status_id = s.status_id
                     INNER JOIN $this->transaction_table AS t 
-                    ON o.transaction_id = t.transaction_id";
-                    
+                    ON o.transaction_id = t.transaction_id
+                    WHERE s.status_id IN ('0', '9')
+                    ORDER BY o.ordered_on DESC";
+
             $results = $wpdb->get_results($query, ARRAY_A);
 
             foreach ($results as &$result) {
-                    
+
                 $orderedOn = new \DateTime($result['ordered_on']);
                 $scheduledOn = new \DateTime($result['scheduled_on']);
 
                 $result['ordered_on'] = $orderedOn->format('F j, Y') . '<br>' . $orderedOn->format('g:i A');
                 $result['scheduled_on'] = $scheduledOn->format('F j, Y') . '<br>' . $scheduledOn->format('g:i A');
-
 
                 $wc_order = \wc_get_order($result['wc_order_id']);
                 if ($wc_order) {
@@ -80,40 +195,46 @@ class Class_Lalamove_Model{
             return new WP_REST_Response(['message' => 'An error occurred while fetching orders.'], 500);
         }
     }
-    protected function get_records_data($wpdb, $data){
-        $wpdb->query('START TRANSACTION');  
 
-        try{
+    protected function get_records_data($wpdb, $data)
+    {
+        $wpdb->query('START TRANSACTION');
+
+        try {
 
             $from = $data['from'];
             $to = $data['to'];
             $status = isset($data['status']) ? $data['status'] : null;
             $search_input = isset($data['search_input']) ? $data['search_input'] : null;
             $results = [];
-            
-            $query = "SELECT
-                        o.wc_order_id,
-                        o.lalamove_order_id,
-                        o.ordered_on,
-                        o.scheduled_on,
-                        o.drop_off_location,
-                        o.order_json_body,
-                        s.status_name,
-                        t.ordered_by,
-                        t.service_type
-                    FROM $this->order_table AS o
-                    INNER JOIN $this->status_table AS s 
-                        ON o.status_id = s.status_id
-                    INNER JOIN $this->transaction_table AS t 
-                        ON o.transaction_id = t.transaction_id
-                    WHERE o.ordered_on BETWEEN '$from' AND '$to'";
-            
+
+          $query = "SELECT
+                    o.wc_order_id,
+                    o.lalamove_order_id,
+                    o.ordered_on,
+                    o.scheduled_on,
+                    o.drop_off_location,
+                    o.order_json_body,
+                    s.status_name,
+                    t.ordered_by,
+                    t.service_type
+                FROM {$this->order_table} AS o
+                    INNER JOIN {$this->status_table} AS s 
+                    ON o.status_id = s.status_id
+                    INNER JOIN {$this->transaction_table} AS t 
+                    ON o.transaction_id = t.transaction_id
+                WHERE 
+                    o.ordered_on BETWEEN '$from' AND '$to'
+                    AND o.lalamove_order_id IS NOT NULL
+                    AND o.lalamove_order_id <> ''
+                    AND o.lalamove_order_id <> '0'
+                ";
             // **Conditionally apply status filtering**
             if (isset($status) && $status !== 'ALL' && $status !== '') {
                 $query .= " AND s.status_name = '$status'";
             }
-            
-            
+
+
             // **Conditionally apply search filtering**
             if (isset($search_input)) {
                 $like = '%' . $wpdb->esc_like($search_input) . '%';
@@ -124,12 +245,15 @@ class Class_Lalamove_Model{
                         o.wc_order_id LIKE %s OR
                         t.service_type LIKE %s
                     )",
-                    $like, $like, $like, $like
+                    $like,
+                    $like,
+                    $like,
+                    $like
                 );
             }
 
             $query .= " ORDER BY o.ordered_on DESC";
-            
+
             $results['records'] = $wpdb->get_results($query, ARRAY_A);
 
 
@@ -138,7 +262,6 @@ class Class_Lalamove_Model{
 
             wp_send_json($wpdb->get_results($query, ARRAY_A));
             exit;
-            
         } catch (\Exception $e) {
             // Rollback transaction on error
             $wpdb->query('ROLLBACK');
@@ -149,10 +272,11 @@ class Class_Lalamove_Model{
     }
 
 
-    protected function get_dashboard_orders_data($wpdb, $data){
-        $wpdb->query('START TRANSACTION');  
+    protected function get_dashboard_orders_data($wpdb, $data)
+    {
+        $wpdb->query('START TRANSACTION');
 
-        try{
+        try {
 
             $from = $data['from'];
             $to = $data['to'];
@@ -284,10 +408,11 @@ class Class_Lalamove_Model{
         }
     }
 
-    protected function get_dashboard_spending_data($wpdb, $data){
-        $wpdb->query('START TRANSACTION');  
+    protected function get_dashboard_spending_data($wpdb, $data)
+    {
+        $wpdb->query('START TRANSACTION');
 
-        try{
+        try {
 
             $from = $data['from'];
             $to = $data['to'];
@@ -315,13 +440,12 @@ class Class_Lalamove_Model{
 
             foreach ($results['table'] as &$row) {
                 $order = \wc_get_order($row['wc_order_id']);
-            
-                $row['payment_method'] = $order ? $order->get_payment_method_title() : 'Unknown';
 
+                $row['payment_method'] = $order ? $order->get_payment_method_title() : 'Unknown';
             }
 
             unset($row);
-            
+
             $query = "SELECT
                         SUM(c.total) + SUM(c.subsidy) + SUM(c.priority_fee) AS total_spending,
                         SUM(c.subsidy) + SUM(c.priority_fee) AS net_spending,
@@ -374,14 +498,15 @@ class Class_Lalamove_Model{
                 WHERE o.ordered_on BETWEEN %s AND %s
                 GROUP BY chart_label
                 ORDER BY o.ordered_on ASC",
-                $from, $to
+                $from,
+                $to
             );
-            
-            
+
+
 
             $chartData = $wpdb->get_results($query, ARRAY_A);
             $results['chart_data'] = $chartData;
-            
+
 
 
             // Commit transaction
@@ -394,20 +519,21 @@ class Class_Lalamove_Model{
             // Log the error
             error_log('Error fetching dashboard data ' . $e->getMessage());
             return new WP_REST_Response(['message' => 'An error occurred while fetching data.'], 500);
-        } 
+        }
     }
 
-    protected function get_lalamove_order_body ($wpdb, $data){
-        
-        
-        $wpdb->query('START TRANSACTION');  
-        
-        try{
-            
+    protected function get_lalamove_order_body($wpdb, $data)
+    {
+
+
+        $wpdb->query('START TRANSACTION');
+
+        try {
+
             $lala_id = $data['lala_id'];
-            
+
             $results = [];
-            
+
             $query = "SELECT
                         o.scheduled_on,
                         o.order_json_body,
@@ -418,13 +544,12 @@ class Class_Lalamove_Model{
                     INNER JOIN $this->transaction_table AS t 
                         ON o.transaction_id = t.transaction_id
                     WHERE o.lalamove_order_id = $lala_id";
-            
+
             // Commit transaction
             $wpdb->query('COMMIT');
 
             wp_send_json($wpdb->get_results($query, ARRAY_A));
             exit;
-            
         } catch (\Exception $e) {
             // Rollback transaction on error
             $wpdb->query('ROLLBACK');
@@ -432,27 +557,26 @@ class Class_Lalamove_Model{
             error_log('Error fetching records data ' . $e->getMessage());
             return new WP_REST_Response(['message' => 'An error occurred while fetching data.'], 500);
         }
+    }
 
+    protected function handle_webhook($wpdb, $request)
+    {
 
-    } 
-
-    protected function handle_webhook($wpdb, $request){
-          
         // Fetch secret from options
         $environment = get_option('lalamove_environment', 'sandbox');
         $secret = ($environment === 'production')
-                  ? get_option('lalamove_production_api_secret', '')
-                  : get_option('lalamove_sandbox_api_secret');
-    
+            ? get_option('lalamove_production_api_secret', '')
+            : get_option('lalamove_sandbox_api_secret');
+
         if (empty($secret)) {
             error_log('Invalid secret configuration');
             return;
         }
-    
+
         // Parse and validate payload
         $payload = $request->get_body();
         $requestBody = json_decode($payload, true);
-    
+
         if (json_last_error() !== JSON_ERROR_NONE || !isset($requestBody['signature'], $requestBody['timestamp'])) {
             error_log('Invalid or incomplete webhook payload received: ' . $payload);
             return;
@@ -465,39 +589,39 @@ class Class_Lalamove_Model{
         $path = '/wp-json/woo-lalamove/v1/lalamove-webhook';
         $rawSignature = "{$timestamp}\r\n{$httpVerb}\r\n{$path}\r\n\r\n{$body}";
         $computedSignature = hash_hmac('sha256', $rawSignature, $secret);
-    
+
         if ($signature !== $computedSignature) {
             error_log('Signature mismatch detected. Provided: ' . $signature . ' | Computed: ' . $computedSignature);
             return;
         }
-    
+
         error_log("Webhook validated successfully: " . print_r($requestBody, true));
-    
+
         // Process eventType dynamically
         $eventType = $requestBody['eventType'] ?? 'UNKNOWN';
         $data = $requestBody['data'] ?? [];
-    
+
         switch ($eventType) {
             case "ORDER_STATUS_CHANGED":
                 $this->handle_order_status_changed($wpdb, $data);
                 break;
-    
+
             case "DRIVER_ASSIGNED":
                 $this->handle_driver_assigned($data);
                 break;
-    
+
             case "ORDER_AMOUNT_CHANGED":
                 $this->handle_order_amount_changed($data);
                 break;
-    
+
             case "ORDER_REPLACED":
                 $this->handle_order_replaced($data);
                 break;
-    
+
             case "WALLET_BALANCE_CHANGED":
                 $this->handle_wallet_balance_changed($wpdb, $data);
                 break;
-    
+
             default:
                 error_log('Unhandled event type: ' . $eventType);
                 break;
@@ -510,10 +634,10 @@ class Class_Lalamove_Model{
         $currency = $data['balance']['currency'] ?? 'Unknown';
         $balance = $data['balance']['amount'] ?? 0;
         $updated_on = $data['updatedAt'] ?? current_time('mysql');
-    
+
         try {
             $wpdb->query('START TRANSACTION');
-    
+
             $wpdb->insert(
                 $this->balance_table,
                 [
@@ -522,13 +646,13 @@ class Class_Lalamove_Model{
                     'updated_on' => $updated_on,
                 ]
             );
-    
+
             $balance_id = $wpdb->insert_id;
-    
+
             if (!$balance_id) {
                 throw new Exception("Failed to insert balance data.");
             }
-    
+
             $wpdb->query('COMMIT');
             error_log('Wallet balance updated successfully.');
         } catch (Exception $e) {
@@ -537,7 +661,7 @@ class Class_Lalamove_Model{
         }
     }
 
-    
+
     private function handle_order_status_changed($wpdb, $data)
     {
 
@@ -546,32 +670,31 @@ class Class_Lalamove_Model{
         $status = $data['order']['status'];
         $allow_update = true;
 
-        switch($status){
+        switch ($status) {
 
             case 'ASSIGNING_DRIVER':
                 $status_id = 2;
-             break;
+                break;
             case 'ON_GOING':
                 $status_id = 3;
-             break;
+                break;
             case 'PICKED_UP':
                 $status_id = 4;
-             break;
+                break;
             case 'COMPLETED':
                 $status_id = 5;
-             break;
+                break;
             case 'REJECTED':
                 $status_id = 6;
-             break;
+                break;
             case 'CANCELED':
                 $status_id = 7;
-             break;
+                break;
             case 'EXPIRED':
                 $status_id = 8;
-             break;
+                break;
             default:
                 $allow_update = false;
-
         }
 
 
@@ -580,8 +703,8 @@ class Class_Lalamove_Model{
 
             $wpdb->query('START TRANSACTION');
 
-            if(!$allow_update){
-                throw new Exception("Unknown status received: ". $status);
+            if (!$allow_update) {
+                throw new Exception("Unknown status received: " . $status);
             }
 
             $wpdb->update(
@@ -601,30 +724,26 @@ class Class_Lalamove_Model{
             );
 
             $wpdb->query('COMMIT');
-
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $wpdb->query('ROLLBACK');
             error_log('LALAMOVE: ' . $e->getMessage());
         }
 
         error_log(message: 'Processing ORDER_STATUS_CHANGED event: ' . print_r($data, true));
     }
-    
+
     private function handle_driver_assigned($data)
     {
         error_log('Processing DRIVER_ASSIGNED event: ' . print_r($data, true));
     }
-    
+
     private function handle_order_amount_changed($data)
     {
         error_log('Processing ORDER_AMOUNT_CHANGED event: ' . print_r($data, true));
     }
-    
+
     private function handle_order_replaced($data)
     {
         error_log('Processing ORDER_REPLACED event: ' . print_r($data, true));
     }
-    
-
 }
-

@@ -388,10 +388,9 @@ const driverContactNo = ref();
 
 const props = defineProps({
     lala_id: String,
-    wc_id: String,
 });
 
-const fetchLalaOrderData = async (lala_id, wc_id) => {
+const fetchLalaOrderData = async (lala_id) => {
     
     try {
         const orderResponse = await axios.get(
@@ -490,16 +489,17 @@ const fetchLalaOrderData = async (lala_id, wc_id) => {
         console.log("ORDER BODY", lalaOrderBody.data);
 
         serviceType.value = lalaOrderBody.data[0].service_type;
-        scheduleData.value = lalaOrderBody.data[0].scheduled_on;
+        scheduleData.value = new Date(
+        lalaOrderBody.data[0].scheduled_on.replace(' ', 'T')
+        ).toLocaleString('en-PH', {
+            year:   'numeric',
+            month:  'long',
+            day:    'numeric',
+            hour:   '2-digit',
+            minute: '2-digit'
+        });
+
         lalaOrderBody.value = lalaOrderBody.data[0].order_json_body;
-
-
-        console.log(serviceType.value);
-        console.log(scheduleData.value);
-        console.log(lalaOrderBody.value);
-
-
-
 
     } catch (error) {
       console.error('Error fetching Woo Lalamove Orders:', error.response?.data || error.message);

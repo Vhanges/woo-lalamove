@@ -123,11 +123,10 @@ if (!class_exists('Woo_Lalamove')) {
 
             $sql_transaction = "CREATE TABLE $transaction_table (
                 transaction_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                cost_details_id BIGINT UNSIGNED NOT NULL,
+                cost_details_id BIGINT UNSIGNED NULL,
                 ordered_by VARCHAR(200) NOT NULL,
                 service_type VARCHAR(200) NOT NULL,
-                PRIMARY KEY (transaction_id),
-                FOREIGN KEY (cost_details_id) REFERENCES $cost_details_table(cost_details_id)
+                PRIMARY KEY (transaction_id)
             ) $charset_collate;";
 
             $sql_orders = "CREATE TABLE $orders_table (
@@ -170,7 +169,8 @@ if (!class_exists('Woo_Lalamove')) {
                 ('5', 'Delivered Successfully', 'The delivery has been completed, and the item has reached its destination.'),
                 ('6', 'Rejected', 'The order was rejected by the drivers'),
                 ('7', 'Order Canceled', 'The order was canceled before the delivery process began.'),
-                ('8', 'Expired', 'The order\'s processing timeline has exceeded its limit and is no longer valid.');
+                ('8', 'Expired', 'The order\'s processing timeline has exceeded its limit and is no longer valid.'),
+                ('9', 'Needs Manual Review', 'The order encountered an error and requires admin attention.');
             ";
 
             $wpdb->query($sql_status_insert);
@@ -467,6 +467,25 @@ if (!class_exists('Woo_Lalamove')) {
         }
 
         return ! empty( $free ) ? $free : $rates;
+    }
+
+    add_action('wp_ajax_get_seller_delivery_address', 'get_seller_delivery_address');
+    add_action('wp_ajax_nopriv_get_seller_delivery_address', 'get_seller_delivery_address');
+
+    function get_seller_delivery_address(){
+        $store = array(
+            'address' => get_option('lalamove_shipping_address', ''),
+            'lat' => get_option('lalamove_shipping_lat', ''),
+            'lng' => get_option('lalamove_shipping_lng', ''),
+            'phone_number' => get_option('lalamove_phone_number', ''),
+        );
+
+        if(!empty($store['address']) && !empty($store['lat']) && !empty($store['lng'])) {
+            wp_send_json_success($store);
+        } else {
+            wp_send_json_error('Please configure the pickup address properly.');
+        }
+
     }
 
 

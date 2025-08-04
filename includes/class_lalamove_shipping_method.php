@@ -1,6 +1,6 @@
 <?php
 
-function your_shipping_method_init() {
+function init_shipping_method() {
     if (!class_exists('Class_Lalamove_Shipping_Method')) {
         class Class_Lalamove_Shipping_Method extends WC_Shipping_Method {
             /**
@@ -77,7 +77,7 @@ function your_shipping_method_init() {
     }
 }
 
-add_action('woocommerce_shipping_init', 'your_shipping_method_init');
+add_action('woocommerce_shipping_init', 'init_shipping_method');
 
 function set_shipping_method($methods) {
     $methods['your_shipping_method'] = 'Class_Lalamove_Shipping_Method';

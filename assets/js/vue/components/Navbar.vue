@@ -2,12 +2,12 @@
   <nav class="navbar">
     <div class="navbar-logo" />
 
-    <router-link 
+    <!-- <router-link 
       to="/place-order" 
       class="nav-item nav-item--order"
     >
       <span class="nav-item__label">Place Order</span>
-    </router-link>
+    </router-link> -->
 
     <router-link
       to="/orders"
