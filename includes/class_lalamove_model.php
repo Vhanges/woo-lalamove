@@ -138,28 +138,60 @@ class Class_Lalamove_Model
     }
 
 
-    protected function get_orders($wpdb)
+    protected function get_orders($wpdb, $data)
     {
+        $from = $data['from'];
+        $to = $data['to'];
+        $status = isset($data['status']) ? $data['status'] : null;
+        $search_input = isset($data['search_input']) ? $data['search_input'] : null;
         $wpdb->query('START TRANSACTION');
+
+        error_log("FROM: ". $from . " TO: ". $to);
+        
 
         try {
             $query = "SELECT
-                     o.wc_order_id,
-                     o.ordered_on,
-                     o.scheduled_on,
-                     o.drop_off_location,
-                     o.remarks,
-                     o.order_json_body,
-                     s.status_name,
-                     t.ordered_by,
-                     t.service_type
-                    FROM $this->order_table AS o
-                    INNER JOIN $this->status_table AS s 
-                    ON o.status_id = s.status_id
-                    INNER JOIN $this->transaction_table AS t 
-                    ON o.transaction_id = t.transaction_id
+                        o.wc_order_id,
+                        o.ordered_on,
+                        o.scheduled_on,
+                        o.drop_off_location,
+                        o.remarks,
+                        o.order_json_body,
+                        s.status_name,
+                        t.ordered_by,
+                        t.service_type
+                    FROM {$this->order_table} AS o
+                    INNER JOIN {$this->status_table} AS s 
+                        ON o.status_id = s.status_id
+                    INNER JOIN {$this->transaction_table} AS t 
+                        ON o.transaction_id = t.transaction_id
                     WHERE s.status_id IN ('0', '9')
-                    ORDER BY o.ordered_on DESC";
+                    AND o.ordered_on BETWEEN '$from' AND '$to'
+                    ";
+
+            if (isset($status) && $status !== 'ALL' && $status !== '') {
+                $query .= " AND s.status_name = '$status'";
+            }
+
+            if (isset($search_input)) {
+                $like = '%' . $wpdb->esc_like($search_input) . '%';
+                $query .= $wpdb->prepare(
+                    " AND (
+                        o.drop_off_location LIKE %s OR 
+                        o.lalamove_order_id LIKE %s OR 
+                        o.wc_order_id LIKE %s OR
+                        t.service_type LIKE %s OR
+                        t.ordered_by LIKE %s
+                    )",
+                    $like,
+                    $like,
+                    $like,
+                    $like,
+                    $like
+                );
+            }
+
+            $query .= " ORDER BY o.ordered_on DESC";
 
             $results = $wpdb->get_results($query, ARRAY_A);
 
@@ -243,8 +275,10 @@ class Class_Lalamove_Model
                         o.drop_off_location LIKE %s OR 
                         o.lalamove_order_id LIKE %s OR 
                         o.wc_order_id LIKE %s OR
-                        t.service_type LIKE %s
+                        t.service_type LIKE %s OR
+                        t.ordered_by LIKE %s
                     )",
+                    $like,
                     $like,
                     $like,
                     $like,

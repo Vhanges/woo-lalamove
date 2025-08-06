@@ -1,6 +1,34 @@
 <template>
-  <div class="table-wrapper">
-    <table class="woo-order-table">
+  <!-- Skeleton Loader -->
+  <div v-if="isLoading" class="skeleton-table">
+    <div class="skeleton-header">
+      <div
+        v-for="(_, index) in 7"
+        :key="`skeleton-header-${index}`"
+        class="skeleton-cell"
+      ></div>
+    </div>
+    <div class="skeleton-body">
+      <div v-for="i in 5" :key="`skeleton-row-${i}`" class="skeleton-row">
+        <div
+          v-for="(_, index) in 7"
+          :key="`skeleton-cell-${index}`"
+          class="skeleton-cell"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="table-wrapper">
+    <!-- Timeout Message -->
+    <div v-if="isTimeOut" class="timeout-message">
+      <h3>Server Timeout</h3>
+      <p>Please try refreshing the page or check your connection</p>
+      <button @click="$emit('retry')">Retry</button>
+    </div>
+
+    <!-- Actual Table Content -->
+    <table v-else class="woo-order-table">
       <thead>
         <tr>
           <th>Woo ID</th>
@@ -13,6 +41,14 @@
         </tr>
       </thead>
       <tbody>
+        <!-- Empty State -->
+        <tr v-if="!orders.length">
+          <td colspan="7" style="text-align: center; padding: 2rem">
+            No orders found
+          </td>
+        </tr>
+
+        <!-- Data Rows -->
         <tr
           v-for="order in orders"
           :key="order.wc_order_id"
@@ -71,8 +107,7 @@ function isSelected(id) {
 }
 
 function toggleRowSelection(order) {
-
-  if(ordersCount.value >= 15){
+  if (ordersCount.value >= 15) {
     toast.error("Maximum number of stops reached", { autoClose: 7000 });
     return;
   }
@@ -87,33 +122,31 @@ function toggleRowSelection(order) {
     stops = parsed?.data?.stops || [];
     item = parsed?.data?.item || [];
   } catch (error) {
-    toast.error("An error occured on our side. Please try again", { autoClose: 2000 });
+    toast.error("An error occured on our side. Please try again", {
+      autoClose: 2000,
+    });
     return;
   }
 
-  // Already selected → remove from array
   if (isSelected(id)) {
     selectedRows.value.splice(idx, 1);
     return;
   }
 
-  // Prevent selection if already processed
   if (order.status_name === "Processed") {
     toast.error("This order is already processed", { autoClose: 4000 });
     return;
   }
 
-  // Add to selection
   selectedRows.value.push({
     wooID: id,
     stopId: 0,
-    name: order.ordered_by.replace(/\s*\(.*\)$/, ''),
+    name: order.ordered_by.replace(/\s*\(.*\)$/, ""),
     phone: order.customer_phone,
     remarks: order.remarks ?? "none",
     stops: stops[stops.length - 1] || null,
-    item: item || null
+    item: item || null,
   });
-
 }
 
 defineProps({
@@ -121,17 +154,129 @@ defineProps({
     type: Array,
     default: () => [],
   },
+  isTimeOut: {
+    type: Boolean,
+    default: false,
+  },
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+defineEmits(["retry"]);
 </script>
 
 <style lang="scss" scoped>
 @use "@/css/scss/_variables.scss" as *;
 
+/* Skeleton Loader Styling */
+.skeleton-table {
+
+  .skeleton-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    background: $bg-gray;
+    border-radius: 4px 4px 0 0;
+
+    .skeleton-cell {
+      height: 20px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+    }
+  }
+
+  .skeleton-body {
+    padding: 0.5rem 1rem;
+  }
+
+  .skeleton-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1rem;
+    padding: 1rem 0;
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 25%,
+        rgba(255, 255, 255, 0.2) 50%,
+        transparent 75%
+      );
+      animation: shimmer 1.5s infinite;
+    }
+  }
+
+  .skeleton-cell {
+    height: 20px;
+    background: $bg-gray;
+    border-radius: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
 .table-wrapper {
+  position: relative;
   border: 1px solid $border-color;
   width: 100%;
   border-radius: 5px;
   background-color: $bg-high-light;
+
+  /* Timeout Message Styling */
+  .timeout-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 10;
+    text-align: center;
+    padding: 2rem;
+    color: #ff6b6b;
+    border-radius: 5px;
+
+    h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:hover {
+        background: #ff5252;
+      }
+    }
+  }
+
 
   .woo-order-table {
     width: 100%;

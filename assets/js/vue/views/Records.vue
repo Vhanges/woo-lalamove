@@ -10,7 +10,7 @@
       :total-items="apiResponse.length"
       :items-per-page="itemsPerPage"
       :data="data"
-      :filename="computedFilename"
+      :fileName="fileName"
       @searchData="handleUtilityData" 
       />
     </nav>
@@ -93,7 +93,9 @@ const itemsPerPage = ref(10);
 const currentPage = ref(1);
 const apiResponse = ref([]); 
 const isLoading = ref(true);
-const isTimeout = ref(false); // New timeout state
+const isTimeout = ref(false); 
+const from = ref();
+const to = ref();
 const headers = ref([
   'Woo ID', 
   'Lala ID',
@@ -121,9 +123,10 @@ let data = computed(() => {
   };
 });
 
-// const computedFilename = computed(() => {
-//   return 'Lalamove Records ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-// });
+
+const fileName = computed(() => {
+  return `WooCommerce Lalamove Records from ${from.value} to ${to.value} `;
+});
 
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
@@ -139,11 +142,24 @@ async function handleUtilityData({ searchQuery, selectedOption, dateRange, refre
     fetchData(); 
   }
 
+  from.value = new Date(dateRange.startDate).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    
+  to.value = new Date(dateRange.endDate).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
   // Inner function to handle API requests
   async function fetchData() {
     try {
       isLoading.value = true;
       isTimeout.value = false; // Reset timeout state on new request
+      
 
       const response = await axios.get(
         `${wooLalamoveAdmin.root}woo-lalamove/v1/records-data/?from=${dateRange.startDate}&to=${dateRange.endDate}&status=${selectedOption}&search_input=${searchQuery}`,
@@ -172,7 +188,7 @@ async function handleUtilityData({ searchQuery, selectedOption, dateRange, refre
   // Debounce logic
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
-    await fetchData(); // Calling the inner function
+    await fetchData(); 
   }, 2000);
 }
 

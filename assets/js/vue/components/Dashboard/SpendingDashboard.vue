@@ -6,7 +6,7 @@
         <div class="utility-actions">
             <ExcelExport
                 :data="data"
-                :filename="fileName"
+                :fileName="fileName"
             />
             <DateRangePicker @dateRangeSelected = "handleDateRange"/>
             <div @click = "toggleRefresh" class="action action-refresh">

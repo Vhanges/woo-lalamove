@@ -13,9 +13,9 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  filename: {
+  fileName: {
     type: String,
-    default: 'lalamove_dashboard_data.xlsx'
+    default: 'lalamove_data2.xlsx'
   }
 })
 
@@ -58,6 +58,8 @@ const columnLabelMap = {
   lalaID: 'Lalamove Order ID',
   wooID: 'Woocommerce Order ID',
   orderedBy: 'Ordered By',
+  phone: 'Phone No.',
+  email: 'Email',
   orderedOn: 'Ordered On',
   overallExpense: 'Overall Expense',
   paymentMethod: 'Payment Method',
@@ -96,9 +98,9 @@ async function exportToExcel(data) {
       addStyledTable(chartSheet, data.spendingChartData, 'Spending Chart Report');
     }
 
-    if (data.ordersKPI?.length > 0) {
-      const kpiSheet = workbook.addWorksheet('Orders KPI Report');
-      addStyledTable(kpiSheet, data.ordersKPI, 'Orders KPI Report');
+    if (data.OrdersReport?.length > 0) {
+      const kpiSheet = workbook.addWorksheet('Orders Report');
+      addStyledTable(kpiSheet, data.OrdersReport, 'Orders Report');
     }
 
     if (data.RecordsReport?.length > 0) {
@@ -130,7 +132,7 @@ async function exportToExcel(data) {
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
-    saveAs(blob, props.filename);
+    saveAs(blob, props.fileName);
   } catch (error) {
     console.error('Export error:', error);
   }

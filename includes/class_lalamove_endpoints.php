@@ -74,6 +74,28 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
         register_rest_route('woo-lalamove/v1', '/get-lalamove-orders', [
             'methods' => ['GET'],
             'callback' => [$this, 'get_lalamove_orders'],
+            'args' => [
+                    'from' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+                    'to' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                        ],
+                    'status' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+                    'search_input' => [
+                        'validate_callback' => function($param, $request, $key) {
+                            return  $param; 
+                        },
+                    ],
+            ],
             'permission_callback' => '__return_true'
         ]);
 
@@ -301,11 +323,11 @@ class Class_Lalamove_Endpoints extends Class_Lalamove_Model
      * 
      */
 
-    public function get_lalamove_orders()
+    public function get_lalamove_orders($data)
     {
         global $wpdb;
 
-        $response = $this->model->get_orders($wpdb);
+        $response = $this->model->get_orders($wpdb, $data);
         return rest_ensure_response($response);
     }
      

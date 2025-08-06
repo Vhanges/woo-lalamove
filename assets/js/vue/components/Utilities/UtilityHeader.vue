@@ -20,7 +20,7 @@
                     <span class="material-symbols-outlined">chevron_left</span>
                     </div>
                     <div class="page-indicator">
-                    Page {{ currentPage }} of {{ totalPages }}
+                    Page {{ currentPage }} of {{ totalPages > 0 ? totalPages : 1}}
                     </div>
                     <div 
                     class="action action-next"
@@ -35,7 +35,7 @@
         <div class="second-section">
             <ExcelExport
                 :data="data"
-                :filename="filename"
+                :fileName="fileName"
             />
 
             <DateRangePicker @dateRangeSelected="handleDateRange"/>
@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { defineAsyncComponent, ref, computed } from 'vue';
+import { defineAsyncComponent, ref, computed, onMounted } from 'vue';
 
 const DropDown = defineAsyncComponent(() => import('../Controls/DropDown.vue'));
 const DateRangePicker = defineAsyncComponent(() => import('../Controls/DateRangePicker.vue'));
@@ -69,10 +69,10 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  // filename: {
-  //   type: String,
-  //   default: 'lalamove_dashboard_data.xlsx'
-  // }
+  fileName: {
+    type: String,
+    default: 'lalamove_data123.xlsx'
+  }
 });
 
 
@@ -92,12 +92,7 @@ const status = [
 const searchQuery = ref('');
 const selectedOption = ref('');
 const dateRange = ref({ startDate: null, endDate: null });
-const filename = computed(() => {
-  const { startDate, endDate } = dateRange.value;
-  if (startDate && endDate) {
-    return `Lalamove Records ${startDate} to ${endDate}`;
-  }
-});
+
 
 
 const totalPages = computed(() => 
@@ -137,6 +132,10 @@ const handleDateRange = ({ startDate, endDate }) => {
 
     emit('searchData', { searchQuery: searchQuery.value, selectedOption: selectedOption.value, dateRange: dateRange.value });
 };
+
+onMounted(() => {
+  console.log('are we good')
+});
 </script>
 
 
