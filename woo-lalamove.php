@@ -474,6 +474,7 @@ if (!class_exists('Woo_Lalamove')) {
 
     function get_seller_delivery_address(){
         $store = array(
+            'name' => get_option('woocommerce_store_name', ''),
             'address' => get_option('lalamove_shipping_address', ''),
             'lat' => get_option('lalamove_shipping_lat', ''),
             'lng' => get_option('lalamove_shipping_lng', ''),

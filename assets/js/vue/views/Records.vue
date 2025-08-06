@@ -172,6 +172,7 @@ async function handleUtilityData({ searchQuery, selectedOption, dateRange, refre
         }
       );
 
+      console.log("RESPONSE: ", response.data)
       apiResponse.value = response.data;
 
 

@@ -483,8 +483,7 @@ export const useLalamoveStore = defineStore("lalamove", () => {
           lat: sellerAddress.lat,
           lng: sellerAddress.lng,
         },
-        remarks: "Seller Pickup Location",
-        name: "Seller",
+        name: sellerAddress.name,
         phone: sellerAddress.phone_number || "",
       });
     }

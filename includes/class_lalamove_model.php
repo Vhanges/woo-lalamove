@@ -200,8 +200,13 @@ class Class_Lalamove_Model
                 $orderedOn = new \DateTime($result['ordered_on']);
                 $scheduledOn = new \DateTime($result['scheduled_on']);
 
-                $result['ordered_on'] = $orderedOn->format('F j, Y') . '<br>' . $orderedOn->format('g:i A');
-                $result['scheduled_on'] = $scheduledOn->format('F j, Y') . '<br>' . $scheduledOn->format('g:i A');
+                $result['ordered_on'] = ($orderedOn && $orderedOn->format('Y') != '-0001') 
+                    ? $orderedOn->format('F j, Y - g:i A') 
+                    : 'Not scheduled';
+
+                $result['scheduled_on'] = ($scheduledOn && $scheduledOn->format('Y') != '-0001') 
+                    ? $scheduledOn->format('F j, Y - g:i A') 
+                    : 'Not scheduled';
 
                 $wc_order = \wc_get_order($result['wc_order_id']);
                 if ($wc_order) {
@@ -288,13 +293,41 @@ class Class_Lalamove_Model
 
             $query .= " ORDER BY o.ordered_on DESC";
 
-            $results['records'] = $wpdb->get_results($query, ARRAY_A);
+
+
+            $results = $wpdb->get_results($query, ARRAY_A);
+
+            foreach ($results as &$result) {
+
+                $orderedOn = new \DateTime($result['ordered_on']);
+                $scheduledOn = new \DateTime($result['scheduled_on']);
+
+                $result['ordered_on'] = ($orderedOn && $orderedOn->format('Y') != '-0001') 
+                    ? $orderedOn->format('F j, Y - g:i A') 
+                    : 'Not scheduled';
+
+                $result['scheduled_on'] = ($scheduledOn && $scheduledOn->format('Y') != '-0001') 
+                    ? $scheduledOn->format('F j, Y - g:i A') 
+                    : 'Not scheduled';
+
+                $wc_order = \wc_get_order($result['wc_order_id']);
+                if ($wc_order) {
+                    $result['customer_email'] = $wc_order->get_billing_email();
+                    $result['customer_phone'] = $wc_order->get_billing_phone();
+                    $result['quantity'] = $wc_order->get_item_count();
+                } else {
+                    $result['customer_email'] = null;
+                    $result['customer_phone'] = null;
+                    $result['quantity'] = null;
+                }
+
+            }
 
 
             // Commit transaction
             $wpdb->query('COMMIT');
 
-            wp_send_json($wpdb->get_results($query, ARRAY_A));
+            wp_send_json($results);
             exit;
         } catch (\Exception $e) {
             // Rollback transaction on error
@@ -347,8 +380,13 @@ class Class_Lalamove_Model
                 $orderedOn = new \DateTime($result['ordered_on']);
                 $scheduledOn = new \DateTime($result['scheduled_on']);
 
-                $result['ordered_on'] = $orderedOn->format('F j, Y') . '<br>' . $orderedOn->format('g:i A');
-                $result['scheduled_on'] = $scheduledOn->format('F j, Y') . '<br>' . $scheduledOn->format('g:i A');
+                $result['ordered_on'] = ($orderedOn && $orderedOn->format('Y') != '-0001') 
+                    ? $orderedOn->format('F j, Y - g:i A') 
+                    : 'Not scheduled';
+
+                $result['scheduled_on'] = ($scheduledOn && $scheduledOn->format('Y') != '-0001') 
+                    ? $scheduledOn->format('F j, Y - g:i A') 
+                    : 'Not scheduled';
 
                 $wc_order = \wc_get_order($result['wc_order_id']);
                 if ($wc_order) {

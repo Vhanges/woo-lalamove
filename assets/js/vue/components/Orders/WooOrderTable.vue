@@ -65,8 +65,8 @@
             />
             <span style="height: 16px">{{ order.wc_order_id }}</span>
           </td>
-          <td v-html="order.ordered_on"></td>
-          <td v-html="order.scheduled_on"></td>
+          <td>{{ order.ordered_on }}</td>
+          <td>{{ order.scheduled_on }}</td>
           <td>{{ order.drop_off_location }}</td>
           <td
             v-if="
