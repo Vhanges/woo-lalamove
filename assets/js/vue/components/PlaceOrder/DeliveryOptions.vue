@@ -6,6 +6,7 @@
         <input
           type="checkbox"
           id="proof_of_delivery"
+          :checked="isPodEnabled"
           v-model="isPodEnabled"
         />
       </div>
@@ -15,6 +16,7 @@
         <input
           type="checkbox"
           id="optimize_route"
+          :checked="isRouteOptimized"
           v-model="isRouteOptimized"
         />
       </div>

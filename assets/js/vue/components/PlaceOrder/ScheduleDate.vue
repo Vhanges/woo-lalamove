@@ -53,11 +53,17 @@ onMounted(() => {
   const startDate = moment().add(1, 'days').startOf('day').add(BUSINESS_HOURS.START, 'hours');
   const endDate = moment().add(30, 'days').startOf('day').add(BUSINESS_HOURS.END, 'hours');
 
+  console.log("SCHEDULE: ", scheduleAt.value);
+
   // Set ISO format in store
-  scheduleAt.value = startDate.toISOString();
+  if(scheduleAt.value !== ""){
+    localSchedule.value = scheduleAt.value.replace(' ', 'T').slice(0, 16);
+  } else {
+    console.log("WHAT IS THIS")
+    scheduleAt.value = startDate.toISOString();
+    localSchedule.value = startDate.format('YYYY-MM-DDTHH:mm');
+  }
   
-  // Set local format for input
-  localSchedule.value = startDate.format('YYYY-MM-DDTHH:mm');
   minDate.value = startDate.format('YYYY-MM-DDTHH:mm');
   maxDate.value = endDate.format('YYYY-MM-DDTHH:mm');
 });

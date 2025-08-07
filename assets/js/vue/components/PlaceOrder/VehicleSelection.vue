@@ -1,20 +1,17 @@
 <script setup>
-import { ref, useAttrs } from "vue";
+import { ref, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useLalamoveStore } from "../../store/lalamoveStore";
 
 const lalamove = useLalamoveStore();
 const { services, serviceType, isServicesLoading } = storeToRefs(lalamove);
 
-const selectedIndex = ref(null);
-
-const selectVehicle = (index) => {
-  selectedIndex.value = index;
-  serviceType.value = services.value[index].key;
-};
-
 const hoveredIndex = ref(null);
 const carouselTrack = ref(null);
+
+const selectVehicle = (key) => {
+  serviceType.value = key;
+};
 
 const scrollLeft = () => {
   carouselTrack.value?.scrollBy({ left: -300, behavior: "smooth" });
@@ -23,8 +20,6 @@ const scrollLeft = () => {
 const scrollRight = () => {
   carouselTrack.value?.scrollBy({ left: 300, behavior: "smooth" });
 };
-
-
 
 const display_name = (vehicle) => {
   switch (vehicle) {
@@ -58,35 +53,39 @@ const display_name = (vehicle) => {
       return "Unknown Vehicle";
   }
 };
+
+
 </script>
+
 <template>
   <div class="carousel-wrapper">
     <button class="nav-button left" @click="scrollLeft">
       <span class="material-symbols-outlined">chevron_left</span>
     </button>
 
-    <div class="vehicle-content" ref="carouselTrack" v-dragscroll:nochilddrag>
+    <div
+      class="vehicle-content"
+      ref="carouselTrack"
+      v-dragscroll:nochilddrag
+    >
       <!-- Skeleton while loading -->
       <div
         v-if="isServicesLoading"
-        v-for="skeleton in 5"
-        :key="skeleton"
+        v-for="s in 5"
+        :key="s"
         class="vehicle-skeleton"
       ></div>
-      <!-- The skeleton loader is not properly being displayed -->
+
+      <!-- Service items -->
       <div
         v-else
         v-for="(service, index) in services"
-        :key="index"
+        :key="service.key"
         class="vehicle"
         @mouseenter="hoveredIndex = index"
         @mouseleave="hoveredIndex = null"
-        @click="
-          () => {
-            selectVehicle(index);
-          }
-        "
-        :class="{ selected: selectedIndex === index }"
+        @click="selectVehicle(service.key)"
+        :class="{ selected: service.key === serviceType }"
         v-bind="$attrs"
         data-dragscroll
       >
@@ -257,20 +256,6 @@ const display_name = (vehicle) => {
   }
   100% {
     background-position: 200% 0;
-  }
-}
-
-@keyframes hoverLift {
-  0% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-4px);
-  }
-
-  100% {
-    transform: translateY(0);
   }
 }
 </style>

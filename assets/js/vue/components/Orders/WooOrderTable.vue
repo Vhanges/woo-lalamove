@@ -117,10 +117,16 @@ function toggleRowSelection(order) {
 
   let stops;
   let item;
+  let serviceType;
+  let isRouteOptimized;
+  let scheduleAt;
   try {
     const parsed = JSON.parse(order.order_json_body);
     stops = parsed?.data?.stops || [];
     item = parsed?.data?.item || [];
+    serviceType = parsed?.data?.serviceType || null;
+    isRouteOptimized = parsed?.data?.isRouteOptimized || false;
+    scheduleAt = parsed?.data?.scheduleAt || '';
   } catch (error) {
     toast.error("An error occured on our side. Please try again", {
       autoClose: 2000,
@@ -146,6 +152,9 @@ function toggleRowSelection(order) {
     remarks: order.remarks ?? "none",
     stops: stops[stops.length - 1] || null,
     item: item || null,
+    serviceType: serviceType || null,
+    isRouteOptimized: isRouteOptimized || false,
+    scheduleAt: scheduleAt,
   });
 }
 

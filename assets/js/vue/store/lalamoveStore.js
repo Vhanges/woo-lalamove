@@ -22,18 +22,7 @@ export const useLalamoveStore = defineStore("lalamove", () => {
   const quotation = ref(null);
 
   // Address-related state
-  const addresses = reactive([
-    {
-      id: "stop-1",
-      address: "Club Manila East, Taytay",
-      coordinates: { lat: "14.5586", lng: "121.1362" },
-    },
-    {
-      id: "stop-2",
-      address: "Angono Municipal Hall, Angono",
-      coordinates: { lat: "14.5259", lng: "121.1551" },
-    },
-  ]);
+  const addresses = reactive([]);
 
   const selectedAddress = ref(null);
   const addressSuggestions = ref([]);
@@ -59,7 +48,7 @@ export const useLalamoveStore = defineStore("lalamove", () => {
         address,
         coordinates,
       })),
-      isRouteOptimized: isRouteOptimized.value,
+      isRouteOptimized: Boolean(isRouteOptimized.value),
       item: {
         quantity:  String(item.value.quantity),
         weight: String(item.value.weight),
@@ -507,6 +496,15 @@ export const useLalamoveStore = defineStore("lalamove", () => {
 
       item.value.quantity += qty;
       item.value.weight += weight * qty;
+
+      if(selectedRows.value.length >= 1) {
+        serviceType.value = row.serviceType;
+        isRouteOptimized.value = row.isRouteOptimized;
+        scheduleAt.value = row.scheduleAt;
+        additionalNotes.value = row.remarks;
+      }
+
+
     });
 
     console.log("ADDRESSES MOUNTED", addresses);

@@ -22,13 +22,24 @@ const lalamove = useLalamoveStore();
 const {additionalNotes} = storeToRefs(lalamove);
 const notes = ref('');
 
-watch(notes, (newVal) => {
+// push back to store on user edit, debounced
+watch(notes, (val) => {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    additionalNotes.value = newVal;
-    console.log('Debounced update:', newVal);
-  }, 5000); // 5 Seconds delay
+    additionalNotes.value = val;
+    console.log("Debounced update:", val);
+  }, 5000);
 });
+
+// keep notes in sync if store ever changes
+watch(
+  additionalNotes,
+  (val) => {
+    notes.value = val;
+    console.log("Store pushed update:", val);
+  },
+  { immediate: true }
+);
 
 </script>
 
