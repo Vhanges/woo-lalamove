@@ -62,8 +62,9 @@ import EditLocation from '../components/Orders/EditLocation.vue';
 import WooOrderTable from '../components/Orders/WooOrderTable.vue';
 import SelectedOrdersFooter from '../components/Orders/SelectedOrdersFooter.vue';
 import UtilityHeader from '../components/Utilities/UtilityHeader.vue';
+import { useWooOrderStore } from '../store/wooOrderStore.js';
 
-let debounceTimer;
+const wooOrder = useWooOrderStore();
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 const apiResponse = ref([]); 
@@ -77,7 +78,7 @@ let data = computed(() => {
   return {
     OrdersReport: apiResponse.value.map(apiResponse => ({
       wcOrderId: apiResponse.wc_order_id,
-      lalamoveOrderId: apiResponse.lalamove_order_id,
+      wooOrderOrderId: apiResponse.lalamove_order_id,
       dropOffLocation: apiResponse.drop_off_location,
       orderedBy: apiResponse.ordered_by || 'N/A',
       phone: apiResponse.customer_phone || 'N/A',
@@ -145,8 +146,7 @@ const fetchOrders = async ({ searchQuery, selectedOption, dateRange, refreshData
 };
 
 
-// onMounted(() => {
-
-//   fetchOrders();
-// });
+onMounted(() => {
+  wooOrder.clearSelectedRows();
+});
 </script>

@@ -98,7 +98,9 @@ import { toast, ToastifyContainer } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 import { useWooOrderStore } from "../../store/wooOrderStore";
 import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
 const wooOrder = useWooOrderStore();
 const { selectedRows, ordersCount } = storeToRefs(wooOrder);
 
@@ -126,7 +128,7 @@ function toggleRowSelection(order) {
     item = parsed?.data?.item || [];
     serviceType = parsed?.data?.serviceType || null;
     isRouteOptimized = parsed?.data?.isRouteOptimized || false;
-    scheduleAt = parsed?.data?.scheduleAt || '';
+    scheduleAt = parsed?.data?.scheduleAt || "";
   } catch (error) {
     toast.error("An error occured on our side. Please try again", {
       autoClose: 2000,
@@ -143,19 +145,42 @@ function toggleRowSelection(order) {
     toast.error("This order is already processed", { autoClose: 4000 });
     return;
   }
+  
+  const pushRows = () =>
+    selectedRows.value.push({
+      wooID: id,
+      stopId: 0,
+      name: order.ordered_by.replace(/\s*\(.*\)$/, ""),
+      phone: order.customer_phone,
+      remarks: order.remarks ?? "none",
+      stops: stops[stops.length - 1] || null,
+      item: item || null,
+      serviceType: serviceType || null,
+      isRouteOptimized: isRouteOptimized || false,
+      scheduleAt: scheduleAt,
+    });
 
-  selectedRows.value.push({
-    wooID: id,
-    stopId: 0,
-    name: order.ordered_by.replace(/\s*\(.*\)$/, ""),
-    phone: order.customer_phone,
-    remarks: order.remarks ?? "none",
-    stops: stops[stops.length - 1] || null,
-    item: item || null,
-    serviceType: serviceType || null,
-    isRouteOptimized: isRouteOptimized || false,
-    scheduleAt: scheduleAt,
-  });
+  if(selectedRows.value.length >= 1 && order.status_name !== "Pending"){
+    toast.info(
+      "This order supports only single-stop. Please pick a different order.",
+      { autoClose: 4000 }
+    )
+    return;
+  }
+
+  if (
+    order.status_name === "Rejected" ||
+    order.status_name === "Order Canceled" || 
+    order.status_name === "Expired" ||
+    order.status_name === "Needs Manual Review"
+  ) {
+    pushRows();
+    router.push({ name: "place-order" });
+    return;
+  }
+
+  pushRows();
+
 }
 
 defineProps({
@@ -181,7 +206,6 @@ defineEmits(["retry"]);
 
 /* Skeleton Loader Styling */
 .skeleton-table {
-
   .skeleton-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -285,7 +309,6 @@ defineEmits(["retry"]);
       }
     }
   }
-
 
   .woo-order-table {
     width: 100%;

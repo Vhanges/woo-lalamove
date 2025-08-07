@@ -5,20 +5,20 @@ import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 
 export const useWooOrderStore = defineStore("wooOrders", () => {
-    // ====================
-    // State Definitions
-    // ====================
-    const selectedRows = reactive([])
+  const selectedRows = reactive([])
 
-    const ordersCount = computed(() => selectedRows.length);
+  const ordersCount = computed(() => selectedRows.length)
 
+  // Turn this into a method
+  function clearSelectedRows() {
+    // Remove all items without reassigning
+    selectedRows.splice(0, selectedRows.length)
+    console.log("CLEARR", selectedRows)
+  }
 
-
-    return {
-        // States
-        selectedRows,
-        // Getters 
-        ordersCount
-    }
-  
-});
+  return {
+    selectedRows,
+    ordersCount,
+    clearSelectedRows
+  }
+})

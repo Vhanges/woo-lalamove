@@ -1,16 +1,17 @@
 <template>
-    <footer>
-        <p class="note">
-            Maximum of <strong>15</strong> stops only
-        </p>
-        <h2 class="count">
-             {{ ordersCount ? ordersCount : '' }} 
-        </h2>
-        <button class="process" @click="toPlaceOrder()">
-            Process
-        </button>
+  <transition name="slide-up">
+    <footer v-if="ordersCount" class="order-footer">
+      <p class="note">
+        Maximum of <strong>15</strong> stops only
+      </p>
+      <h2 class="count">{{ ordersCount }}</h2>
+      <button class="process" @click="toPlaceOrder()">
+        Process
+      </button>
     </footer>
+  </transition>
 </template>
+
 
 <script setup>
 import { storeToRefs } from 'pinia';
@@ -23,7 +24,6 @@ const {ordersCount} = storeToRefs(wooOrders);
 const router = useRouter();
 
 const toPlaceOrder = () => {
-
     router.push({name: 'place-order'});
 };
 
@@ -33,40 +33,53 @@ router
 <style lang="scss" scoped>
 @use "@/css/scss/_variables.scss" as *;
 
-footer {
-  position: fixed; 
+.order-footer {
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   height: 100px;
-  max-width: 100%;
-  border: $border-color 1px solid;
   background-color: $bg-light;
-  padding: 1rem;
-  z-index: 1000;
+  border-top: $border-color 1px solid;
   display: flex;
   align-items: center;
-  justify-content: end;
+  justify-content: flex-end;
   gap: 2rem;
   padding: 0 2rem;
-
-  .process {
-    padding: .5rem 2rem;
-    border-radius: 5px;
-    border: none;
-    background-color: $bg-primary;
-    color: $txt-light;
-    font-size: $font-size-md;
-  }
+  z-index: 1000;
 }
 
-strong {
-    color: $txt-orange;
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.slide-up-enter-to,
+.slide-up-leave-from {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.note strong {
+  color: $txt-orange;
 }
 
 .count {
-    color: $txt-orange;
+  color: $txt-orange;
 }
 
-
+.process {
+  padding: 0.5rem 2rem;
+  border: none;
+  border-radius: 5px;
+  background-color: $bg-primary;
+  color: $txt-light;
+  font-size: $font-size-md;
+}
 </style>
