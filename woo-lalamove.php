@@ -13,6 +13,7 @@ if (!defined('ABSPATH'))
 
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 require_once plugin_dir_path(__FILE__) . 'includes/utility-functions.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class_lalamove_analytics.php';
 require_once plugin_dir_path(__FILE__) . 'cors.php';
 
 use Sevhen\WooLalamove\Class_Lalamove_Model;
@@ -20,12 +21,14 @@ use Sevhen\WooLalamove\Class_Lalamove_Settings;
 use Sevhen\WooLalamove\Class_Lalamove_Api;
 use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
 use Sevhen\WooLalamove\Class_Lalamove_Shortcode;
+use Sevhen\WooLalamove\Class_Lalamove_Analytics;
 
 new Class_Lalamove_Model();
 new Class_Lalamove_Settings();
 new Class_Lalamove_Api();
 new Class_Lalamove_Endpoints();
 new Class_Lalamove_Shortcode();
+new Class_Lalamove_Analytics();
 
 if (!class_exists('Woo_Lalamove')) {
     class Woo_Lalamove
