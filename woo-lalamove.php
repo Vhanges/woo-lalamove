@@ -49,7 +49,8 @@ if (!class_exists('Woo_Lalamove')) {
 
                 require_once plugin_dir_path(__FILE__) . 'includes/Class_Lalamove_Shipping_Method.php';
 
-
+                // Initialize the column hooks after WooCommerce is loaded
+                add_action('init', [$this, 'init_column_hooks']);
 
                 register_activation_hook(__FILE__, callback: [$this, 'create_lalamove_tables']);
 
@@ -59,15 +60,48 @@ if (!class_exists('Woo_Lalamove')) {
                 add_filter('woocommerce_checkout_fields', [$this, 'modify_checkout_phone_field'], 10, 1);
 
                 add_action('add_meta_boxes', [$this, 'register_meta_box_push_order_to_lalamove']);
-                
-                // Add shipping payment status column to orders list
-                add_filter('manage_woocommerce_page_wc-orders_columns', [$this, 'add_shipping_payment_column']);
-                add_action('manage_woocommerce_page_wc-orders_custom_column', [$this, 'display_shipping_payment_column'], 10, 2);
 
             }
         }
-
-         /**
+        
+        /**
+         * Initialize column hooks after WooCommerce is loaded
+         */
+        public function init_column_hooks() {
+            if (is_admin() && class_exists('WooCommerce')) {
+                // Add shipping payment status column to orders list
+                add_filter('manage_woocommerce_page_wc-orders_columns', [$this, 'add_shipping_payment_column']);
+                add_action('manage_woocommerce_page_wc-orders_custom_column', [$this, 'display_shipping_payment_column'], 10, 2);
+                
+                // Also add for legacy order pages
+                add_filter('manage_edit-shop_order_columns', [$this, 'add_shipping_payment_column']);
+                add_action('manage_shop_order_posts_custom_column', [$this, 'display_shipping_payment_column'], 10, 2);
+                
+                // Add for the newer HPOS (High Performance Order Storage) system
+                add_filter('woocommerce_shop_order_list_table_columns', [$this, 'add_shipping_payment_column']);
+                add_action('woocommerce_shop_order_list_table_custom_column', [$this, 'display_shipping_payment_column'], 10, 2);
+                
+                // Debug: Log that hooks have been added
+                error_log('Lalamove: Column hooks initialized');
+                
+                // Add admin notice to confirm plugin is active
+                add_action('admin_notices', [$this, 'column_debug_notice']);
+            }
+        }
+        
+        /**
+         * Debug notice to confirm plugin functionality
+         */
+        public function column_debug_notice() {
+            if (isset($_GET['page']) && $_GET['page'] === 'wc-orders') {
+                echo '<div class="notice notice-info is-dismissible">
+                    <p><strong>Lalamove Plugin:</strong> Column hooks have been initialized. If you don\'t see the "Shipping Payment" column, try refreshing the page or clearing cache.</p>
+                </div>';
+            }
+        }
+        
+        
+        /**
          * Registers the custom meta box in WooCommerce admin order page.
          */
         public function register_meta_box_push_order_to_lalamove() {
@@ -1106,6 +1140,9 @@ if (!class_exists('Woo_Lalamove')) {
          * Add shipping payment status column to orders list
          */
         public function add_shipping_payment_column($columns) {
+            // Debug: Log when this function is called
+            error_log('Lalamove: add_shipping_payment_column called with columns: ' . print_r(array_keys($columns), true));
+            
             // Insert the new column after the 'order_status' column
             $new_columns = [];
             foreach ($columns as $key => $value) {
@@ -1114,13 +1151,31 @@ if (!class_exists('Woo_Lalamove')) {
                     $new_columns['lalamove_payment_status'] = 'Shipping Payment';
                 }
             }
+            
+            // Debug: Log the new columns
+            error_log('Lalamove: New columns added: ' . print_r(array_keys($new_columns), true));
+            
             return $new_columns;
         }
         
         /**
-         * Display shipping payment status in orders list
+         * Display shipping payment status in admin order list with detailed analytics
+         * @param string $column
+         * @param int $order_id
          */
         public function display_shipping_payment_column($column, $order_id) {
+            // Debug: Log when this function is called
+            if ($column === 'lalamove_payment_status') {
+                error_log("Lalamove: display_shipping_payment_column called for order {$order_id}");
+            }
+            
+            // Ensure we have the utility functions loaded
+            if (!function_exists('get_shipping_payment_details')) {
+                error_log('Lalamove: get_shipping_payment_details function not found');
+                return;
+            }
+            
+            // Call the utility function
             display_shipping_payment_column($column, $order_id);
         }
 
