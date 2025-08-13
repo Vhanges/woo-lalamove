@@ -583,3 +583,237 @@ function get_order_object($post) {
 	return is_a($post, 'WP_Post') ? wc_get_order($post->ID) : $post;
 }
 
+/**
+ * Set who paid for shipping on an order
+ * @param int $order_id WooCommerce order ID
+ * @param string $paid_by 'customer' or 'admin'
+ * @param float $shipping_cost The actual shipping cost paid
+ * @param string $payment_method How payment was made (e.g., 'wallet', 'card', 'cash')
+ */
+function set_shipping_payment_details($order_id, $paid_by, $shipping_cost, $payment_method = '') {
+    $order = wc_get_order($order_id);
+    if (!$order) return false;
+    
+    // Store payment responsibility
+    $order->update_meta_data('_lalamove_shipping_paid_by', $paid_by);
+    $order->update_meta_data('_lalamove_actual_shipping_cost', $shipping_cost);
+    $order->update_meta_data('_lalamove_shipping_payment_method', $payment_method);
+    $order->update_meta_data('_lalamove_shipping_payment_date', current_time('mysql'));
+    
+    // Calculate profit/loss if admin paid
+    if ($paid_by === 'admin') {
+        $customer_paid = $order->get_shipping_total();
+        $profit_loss = $customer_paid - $shipping_cost;
+        $order->update_meta_data('_lalamove_shipping_profit_loss', $profit_loss);
+    }
+    
+    $order->save_meta_data();
+    
+    // Add order note
+    $note_text = sprintf(
+        'Shipping payment: %s paid %s%s for Lalamove delivery%s',
+        $paid_by === 'admin' ? 'Store admin' : 'Customer',
+        get_woocommerce_currency_symbol(),
+        number_format($shipping_cost, 2),
+        $payment_method ? ' via ' . $payment_method : ''
+    );
+    $order->add_order_note($note_text);
+    
+    return true;
+}
+
+/**
+ * Get shipping payment details for an order
+ * @param int $order_id
+ * @return array|null
+ */
+function get_shipping_payment_details($order_id) {
+    $order = wc_get_order($order_id);
+    if (!$order) return null;
+    
+    return [
+        'paid_by' => $order->get_meta('_lalamove_shipping_paid_by', true),
+        'actual_cost' => $order->get_meta('_lalamove_actual_shipping_cost', true),
+        'payment_method' => $order->get_meta('_lalamove_shipping_payment_method', true),
+        'payment_date' => $order->get_meta('_lalamove_shipping_payment_date', true),
+        'profit_loss' => $order->get_meta('_lalamove_shipping_profit_loss', true),
+        'customer_paid' => $order->get_shipping_total(),
+    ];
+}
+
+/**
+ * Check if shipping was paid by admin
+ * @param int $order_id
+ * @return bool
+ */
+function is_shipping_admin_paid($order_id) {
+    $order = wc_get_order($order_id);
+    if (!$order) return false;
+    
+    return $order->get_meta('_lalamove_shipping_paid_by', true) === 'admin';
+}
+
+/**
+ * Get shipping analytics for a date range
+ * @param string $start_date Y-m-d format
+ * @param string $end_date Y-m-d format
+ * @return array
+ */
+function get_shipping_analytics($start_date = null, $end_date = null) {
+    global $wpdb;
+    
+    if (!$start_date) $start_date = date('Y-m-01'); // First day of current month
+    if (!$end_date) $end_date = date('Y-m-d'); // Today
+    
+    // Get orders with Lalamove shipping in date range
+    $orders = $wpdb->get_results($wpdb->prepare("
+        SELECT p.ID as order_id, p.post_date
+        FROM {$wpdb->posts} p
+        WHERE p.post_type = 'shop_order'
+        AND p.post_status IN ('wc-processing', 'wc-completed', 'wc-shipped')
+        AND DATE(p.post_date) BETWEEN %s AND %s
+        AND EXISTS (
+            SELECT 1 FROM {$wpdb->prefix}wc_lalamove_orders lo 
+            WHERE lo.wc_order_id = p.ID
+        )
+    ", $start_date, $end_date));
+    
+    $analytics = [
+        'total_orders' => 0,
+        'admin_paid_orders' => 0,
+        'customer_paid_orders' => 0,
+        'free_shipping_orders' => 0,
+        'total_admin_cost' => 0,
+        'total_customer_revenue' => 0,
+        'total_profit_loss' => 0,
+        'average_shipping_cost' => 0,
+        'orders_breakdown' => []
+    ];
+    
+    foreach ($orders as $order_data) {
+        $order = wc_get_order($order_data->order_id);
+        if (!$order) continue;
+        
+        $analytics['total_orders']++;
+        
+        $payment_details = get_shipping_payment_details($order_data->order_id);
+        $shipping_total = $order->get_shipping_total();
+        
+        // Determine payment type
+        if ($shipping_total == 0) {
+            $analytics['free_shipping_orders']++;
+            $payment_type = 'free';
+        } elseif ($payment_details && $payment_details['paid_by'] === 'admin') {
+            $analytics['admin_paid_orders']++;
+            $analytics['total_admin_cost'] += floatval($payment_details['actual_cost']);
+            $analytics['total_profit_loss'] += floatval($payment_details['profit_loss']);
+            $payment_type = 'admin';
+        } else {
+            $analytics['customer_paid_orders']++;
+            $payment_type = 'customer';
+        }
+        
+        $analytics['total_customer_revenue'] += $shipping_total;
+        
+        // Store order breakdown
+        $analytics['orders_breakdown'][] = [
+            'order_id' => $order_data->order_id,
+            'date' => $order_data->post_date,
+            'payment_type' => $payment_type,
+            'customer_paid' => $shipping_total,
+            'actual_cost' => $payment_details ? floatval($payment_details['actual_cost']) : 0,
+            'profit_loss' => $payment_details ? floatval($payment_details['profit_loss']) : 0,
+        ];
+    }
+    
+    // Calculate averages
+    if ($analytics['total_orders'] > 0) {
+        $total_costs = $analytics['total_admin_cost'] + $analytics['total_customer_revenue'];
+        $analytics['average_shipping_cost'] = $total_costs / $analytics['total_orders'];
+    }
+    
+    return $analytics;
+}
+
+/**
+ * Display shipping payment status in admin order list
+ * @param string $column
+ * @param int $order_id
+ */
+function display_shipping_payment_column($column, $order_id) {
+    if ($column !== 'lalamove_payment_status') return;
+    
+    // Check if this order has Lalamove shipping
+    $lalamove_id = get_lala_id($order_id);
+    if (!$lalamove_id) {
+        echo '<span style="color: #999; font-size: 12px;">No Lalamove</span>';
+        return;
+    }
+    
+    $payment_details = get_shipping_payment_details($order_id);
+    $order = wc_get_order($order_id);
+    
+    if (!$order) {
+        echo '<span style="color: #666;">-</span>';
+        return;
+    }
+    
+    $shipping_total = $order->get_shipping_total();
+    
+    // Free shipping
+    if ($shipping_total == 0) {
+        echo '<div style="text-align: center;">';
+        echo '<span style="color: #00a32a; font-weight: bold; font-size: 11px; background: #e7f5e7; padding: 2px 6px; border-radius: 3px;">FREE</span>';
+        echo '</div>';
+        return;
+    }
+    
+    // Admin paid
+    if ($payment_details && $payment_details['paid_by'] === 'admin') {
+        $profit_loss = floatval($payment_details['profit_loss']);
+        $actual_cost = floatval($payment_details['actual_cost']);
+        
+        if ($profit_loss >= 0) {
+            $bg_color = '#e7f5e7';
+            $text_color = '#00a32a';
+            $status_text = 'ADMIN PAID ✓';
+        } else {
+            $bg_color = '#fce8e8';
+            $text_color = '#d63638';
+            $status_text = 'ADMIN PAID ⚠';
+        }
+        
+        echo '<div style="text-align: center; font-size: 11px;">';
+        echo '<span style="color: ' . $text_color . '; font-weight: bold; background: ' . $bg_color . '; padding: 2px 6px; border-radius: 3px; display: block; margin-bottom: 3px;">' . $status_text . '</span>';
+        echo '<div style="color: #666; line-height: 1.2;">';
+        echo '<div>Cost: ' . get_woocommerce_currency_symbol() . number_format($actual_cost, 0) . '</div>';
+        echo '<div style="color: ' . $text_color . '; font-weight: bold;">P/L: ' . get_woocommerce_currency_symbol() . number_format($profit_loss, 0) . '</div>';
+        echo '</div>';
+        echo '</div>';
+        return;
+    }
+    
+    // Customer paid
+    if ($payment_details && $payment_details['paid_by'] === 'customer') {
+        $actual_cost = floatval($payment_details['actual_cost']);
+        echo '<div style="text-align: center; font-size: 11px;">';
+        echo '<span style="color: #0073aa; font-weight: bold; background: #e8f4f8; padding: 2px 6px; border-radius: 3px; display: block; margin-bottom: 3px;">CUSTOMER</span>';
+        echo '<div style="color: #666; line-height: 1.2;">';
+        echo '<div>Paid: ' . get_woocommerce_currency_symbol() . number_format($shipping_total, 0) . '</div>';
+        if ($actual_cost > 0 && $actual_cost != $shipping_total) {
+            $diff = $shipping_total - $actual_cost;
+            $diff_color = $diff >= 0 ? '#00a32a' : '#d63638';
+            echo '<div style="color: ' . $diff_color . ';">Net: ' . get_woocommerce_currency_symbol() . number_format($diff, 0) . '</div>';
+        }
+        echo '</div>';
+        echo '</div>';
+        return;
+    }
+    
+    // Unknown status
+    echo '<div style="text-align: center; font-size: 11px;">';
+    echo '<span style="color: #996633; font-weight: bold; background: #fff3cd; padding: 2px 6px; border-radius: 3px;">UNKNOWN</span>';
+    echo '<div style="color: #666; margin-top: 2px;">Needs Review</div>';
+    echo '</div>';
+}
+
