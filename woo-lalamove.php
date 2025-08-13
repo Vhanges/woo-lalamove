@@ -41,6 +41,7 @@ if (!class_exists('Woo_Lalamove')) {
                 add_action('admin_enqueue_scripts', [$this, 'enqueue_vue_assets']);
                 add_action('admin_enqueue_scripts', [$this, 'enqueue_lalamove_metabox']);
                 add_action('admin_menu', [$this, 'woo_lalamove_add_admin_page']);
+                add_action('admin_menu', [$this, 'woo_lalamove_add_shipping_analytics_page']);
 
 
                 add_action('wp_enqueue_scripts', [$this, 'enqueue_custom_plugin_scripts']);
@@ -59,6 +60,8 @@ if (!class_exists('Woo_Lalamove')) {
                 add_filter('woocommerce_checkout_fields', [$this, 'modify_checkout_phone_field'], 10, 1);
 
                 add_action('add_meta_boxes', [$this, 'register_meta_box_push_order_to_lalamove']);
+                add_action('woocommerce_checkout_order_processed', [$this, 'save_shipping_cost_breakdown'], 10, 3);
+                add_action('woocommerce_admin_order_data_after_shipping_address', [$this, 'display_shipping_cost_breakdown']);
 
             }
         }
@@ -76,6 +79,20 @@ if (!class_exists('Woo_Lalamove')) {
                 $screen,
                 'normal',
                 'core'
+            );
+        }
+        
+        /**
+         * Adds the shipping analytics admin page.
+         */
+        public function woo_lalamove_add_shipping_analytics_page() {
+            add_submenu_page(
+                'woocommerce',
+                __('Lalamove Shipping Analytics', 'woocommerce-lalamove-extension'),
+                __('Lalamove Analytics', 'woocommerce-lalamove-extension'),
+                'manage_woocommerce',
+                'lalamove-shipping-analytics',
+                [$this, 'render_shipping_analytics_page']
             );
         }
         
@@ -158,6 +175,8 @@ if (!class_exists('Woo_Lalamove')) {
                 $wpdb->get_var("SHOW TABLES LIKE '$transaction_table'") == $transaction_table &&
                 $wpdb->get_var("SHOW TABLES LIKE '$orders_table'") == $orders_table
             ) {
+                // Check if we need to add new columns to existing orders table
+                $this->migrate_orders_table($orders_table);
                 return;
             }
 
@@ -209,6 +228,11 @@ if (!class_exists('Woo_Lalamove')) {
                 remarks TEXT NOT NULL,
                 free_shipping INT,
                 order_json_body JSON NOT NULL,
+                shipping_cost_customer DOUBLE DEFAULT 0.00,
+                shipping_cost_admin DOUBLE DEFAULT 0.00,
+                shipping_paid_by ENUM('customer', 'admin', 'split') DEFAULT 'customer',
+                lalamove_actual_cost DOUBLE DEFAULT 0.00,
+                profit_loss DOUBLE DEFAULT 0.00,
                 PRIMARY KEY (integration_id),
                 FOREIGN KEY (transaction_id) REFERENCES $transaction_table(transaction_id)
             ) $charset_collate;";
@@ -247,6 +271,30 @@ if (!class_exists('Woo_Lalamove')) {
                 set_transient('wc_lalamove_table_created', true, 5); // Notify admin
             } else {
                 error_log('Some tables were not created successfully.');
+            }
+        }
+
+        function migrate_orders_table($orders_table)
+        {
+            global $wpdb;
+            
+            // Add new columns if they don't exist
+            $columns = $wpdb->get_col("SHOW COLUMNS FROM $orders_table");
+            
+            if (!in_array('shipping_cost_customer', $columns)) {
+                $wpdb->query("ALTER TABLE $orders_table ADD COLUMN shipping_cost_customer DOUBLE DEFAULT 0.00");
+            }
+            if (!in_array('shipping_cost_admin', $columns)) {
+                $wpdb->query("ALTER TABLE $orders_table ADD COLUMN shipping_cost_admin DOUBLE DEFAULT 0.00");
+            }
+            if (!in_array('shipping_paid_by', $columns)) {
+                $wpdb->query("ALTER TABLE $orders_table ADD COLUMN shipping_paid_by ENUM('customer', 'admin', 'split') DEFAULT 'customer'");
+            }
+            if (!in_array('lalamove_actual_cost', $columns)) {
+                $wpdb->query("ALTER TABLE $orders_table ADD COLUMN lalamove_actual_cost DOUBLE DEFAULT 0.00");
+            }
+            if (!in_array('profit_loss', $columns)) {
+                $wpdb->query("ALTER TABLE $orders_table ADD COLUMN profit_loss DOUBLE DEFAULT 0.00");
             }
         }
 
@@ -507,6 +555,298 @@ if (!class_exists('Woo_Lalamove')) {
                 wp_dequeue_style('daterangepicker-css');
                 wp_dequeue_style('leaflet-js');
                 wp_dequeue_style('leaflet-css');
+            }
+        }
+
+        /**
+         * Renders the shipping analytics page.
+         */
+        public function render_shipping_analytics_page() {
+            global $wpdb;
+            
+            // Get analytics data
+            $table = $wpdb->prefix . 'wc_lalamove_orders';
+            
+            // Total orders
+            $total_orders = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+            
+            // Total shipping costs
+            $total_customer_shipping = $wpdb->get_var("SELECT SUM(shipping_cost_customer) FROM $table");
+            $total_admin_shipping = $wpdb->get_var("SELECT SUM(shipping_cost_admin) FROM $table");
+            $total_lalamove_cost = $wpdb->get_var("SELECT SUM(lalamove_actual_cost) FROM $table");
+            $total_profit_loss = $wpdb->get_var("SELECT SUM(profit_loss) FROM $table");
+            
+            // Orders by payment responsibility
+            $customer_paid_orders = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE shipping_paid_by = 'customer'");
+            $admin_paid_orders = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE shipping_paid_by = 'admin'");
+            $split_paid_orders = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE shipping_paid_by = 'split'");
+            
+            // Recent orders with shipping details
+            $recent_orders = $wpdb->get_results("
+                SELECT o.*, t.ordered_by 
+                FROM $table o 
+                LEFT JOIN {$wpdb->prefix}wc_lalamove_transaction t ON o.transaction_id = t.transaction_id
+                ORDER BY o.ordered_on DESC 
+                LIMIT 20
+            ");
+            
+            ?>
+            <div class="wrap">
+                <h1><?php _e('Lalamove Shipping Analytics', 'woocommerce-lalamove-extension'); ?></h1>
+                
+                <!-- Summary Cards -->
+                <div class="lalamove-analytics-summary">
+                    <div class="analytics-card">
+                        <h3><?php _e('Total Orders', 'woocommerce-lalamove-extension'); ?></h3>
+                        <p class="analytics-number"><?php echo number_format($total_orders); ?></p>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3><?php _e('Customer Shipping Revenue', 'woocommerce-lalamove-extension'); ?></h3>
+                        <p class="analytics-number">₱<?php echo number_format($total_customer_shipping, 2); ?></p>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3><?php _e('Admin Shipping Costs', 'woocommerce-lalamove-extension'); ?></h3>
+                        <p class="analytics-number">₱<?php echo number_format($total_admin_shipping, 2); ?></p>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3><?php _e('Total Lalamove Costs', 'woocommerce-lalamove-extension'); ?></h3>
+                        <p class="analytics-number">₱<?php echo number_format($total_lalamove_cost, 2); ?></p>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3><?php _e('Net Profit/Loss', 'woocommerce-lalamove-extension'); ?></h3>
+                        <p class="analytics-number <?php echo $total_profit_loss >= 0 ? 'positive' : 'negative'; ?>">
+                            ₱<?php echo number_format($total_profit_loss, 2); ?>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Payment Responsibility Breakdown -->
+                <div class="lalamove-analytics-section">
+                    <h2><?php _e('Shipping Payment Responsibility', 'woocommerce-lalamove-extension'); ?></h2>
+                    <div class="payment-breakdown">
+                        <div class="breakdown-item">
+                            <span class="label"><?php _e('Customer Paid:', 'woocommerce-lalamove-extension'); ?></span>
+                            <span class="value"><?php echo number_format($customer_paid_orders); ?> orders</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="label"><?php _e('Admin Paid:', 'woocommerce-lalamove-extension'); ?></span>
+                            <span class="value"><?php echo number_format($admin_paid_orders); ?> orders</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="label"><?php _e('Split Payment:', 'woocommerce-lalamove-extension'); ?></span>
+                            <span class="value"><?php echo number_format($split_paid_orders); ?> orders</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Orders Table -->
+                <div class="lalamove-analytics-section">
+                    <h2><?php _e('Recent Orders', 'woocommerce-lalamove-extension'); ?></h2>
+                    <table class="wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th><?php _e('Order ID', 'woocommerce-lalamove-extension'); ?></th>
+                                <th><?php _e('Date', 'woocommerce-lalamove-extension'); ?></th>
+                                <th><?php _e('Customer', 'woocommerce-lalamove-extension'); ?></th>
+                                <th><?php _e('Payment Responsibility', 'woocommerce-lalamove-extension'); ?></th>
+                                <th><?php _e('Customer Cost', 'woocommerce-lalamove-extension'); ?></th>
+                                <th><?php _e('Admin Cost', 'woocommerce-lalamove-extension'); ?></th>
+                                <th><?php _e('Lalamove Cost', 'woocommerce-lalamove-extension'); ?></th>
+                                <th><?php _e('Profit/Loss', 'woocommerce-lalamove-extension'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_orders as $order): ?>
+                                <tr>
+                                    <td>
+                                        <a href="<?php echo admin_url('post.php?post=' . $order->wc_order_id . '&action=edit'); ?>">
+                                            #<?php echo $order->wc_order_id; ?>
+                                        </a>
+                                    </td>
+                                    <td><?php echo date('M j, Y', strtotime($order->ordered_on)); ?></td>
+                                    <td><?php echo esc_html($order->ordered_by); ?></td>
+                                    <td>
+                                        <span class="payment-badge payment-<?php echo $order->shipping_paid_by; ?>">
+                                            <?php echo ucfirst($order->shipping_paid_by); ?>
+                                        </span>
+                                    </td>
+                                    <td>₱<?php echo number_format($order->shipping_cost_customer, 2); ?></td>
+                                    <td>₱<?php echo number_format($order->shipping_cost_admin, 2); ?></td>
+                                    <td>₱<?php echo number_format($order->lalamove_actual_cost, 2); ?></td>
+                                    <td class="<?php echo $order->profit_loss >= 0 ? 'positive' : 'negative'; ?>">
+                                        ₱<?php echo number_format($order->profit_loss, 2); ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <style>
+                    .lalamove-analytics-summary {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 20px;
+                        margin: 20px 0;
+                    }
+                    
+                    .analytics-card {
+                        background: #fff;
+                        padding: 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        text-align: center;
+                    }
+                    
+                    .analytics-card h3 {
+                        margin: 0 0 10px 0;
+                        color: #23282d;
+                        font-size: 14px;
+                    }
+                    
+                    .analytics-number {
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin: 0;
+                        color: #0073aa;
+                    }
+                    
+                    .analytics-number.positive { color: #46b450; }
+                    .analytics-number.negative { color: #dc3232; }
+                    
+                    .lalamove-analytics-section {
+                        background: #fff;
+                        padding: 20px;
+                        margin: 20px 0;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    }
+                    
+                    .payment-breakdown {
+                        display: flex;
+                        gap: 30px;
+                        margin-top: 15px;
+                    }
+                    
+                    .breakdown-item {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    
+                    .breakdown-item .label {
+                        font-size: 12px;
+                        color: #666;
+                        margin-bottom: 5px;
+                    }
+                    
+                    .breakdown-item .value {
+                        font-size: 18px;
+                        font-weight: bold;
+                        color: #0073aa;
+                    }
+                    
+                    .payment-badge {
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 11px;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                    }
+                    
+                    .payment-customer { background: #e7f5ff; color: #0066cc; }
+                    .payment-admin { background: #fff3cd; color: #856404; }
+                    .payment-split { background: #d4edda; color: #155724; }
+                    
+                    .positive { color: #46b450; }
+                    .negative { color: #dc3232; }
+                </style>
+            </div>
+            <?php
+        }
+
+        /**
+         * Saves shipping cost breakdown to order meta.
+         */
+        public function save_shipping_cost_breakdown($order_id, $posted_data, $order) {
+            $cost_breakdown = WC()->session->get('lalamove_cost_breakdown', array());
+            
+            if (!empty($cost_breakdown)) {
+                update_post_meta($order_id, '_lalamove_shipping_cost_breakdown', $cost_breakdown);
+                update_post_meta($order_id, '_lalamove_shipping_paid_by', $cost_breakdown['strategy'] ?? 'customer');
+                update_post_meta($order_id, '_lalamove_actual_cost', $cost_breakdown['lalamove_actual_cost'] ?? 0);
+                update_post_meta($order_id, '_lalamove_admin_cost', $cost_breakdown['admin_cost'] ?? 0);
+                update_post_meta($order_id, '_lalamove_customer_cost', $cost_breakdown['customer_cost'] ?? 0);
+            }
+        }
+        
+        /**
+         * Displays shipping cost breakdown in admin order page.
+         */
+        public function display_shipping_cost_breakdown($order) {
+            $cost_breakdown = get_post_meta($order->get_id(), '_lalamove_shipping_cost_breakdown', true);
+            
+            if (!empty($cost_breakdown)) {
+                echo '<div class="lalamove-shipping-breakdown">';
+                echo '<h3>' . __('Lalamove Shipping Cost Breakdown', 'woocommerce-lalamove-extension') . '</h3>';
+                echo '<table class="widefat">';
+                echo '<tr>';
+                echo '<td><strong>' . __('Payment Responsibility:', 'woocommerce-lalamove-extension') . '</strong></td>';
+                echo '<td>' . ucfirst($cost_breakdown['strategy']) . '</td>';
+                echo '</tr>';
+                echo '<tr>';
+                echo '<td><strong>' . __('Lalamove Actual Cost:', 'woocommerce-lalamove-extension') . '</strong></td>';
+                echo '<td>₱' . number_format($cost_breakdown['lalamove_actual_cost'], 2) . '</td>';
+                echo '</tr>';
+                echo '<tr>';
+                echo '<td><strong>' . __('Customer Paid:', 'woocommerce-lalamove-extension') . '</strong></td>';
+                echo '<td>₱' . number_format($cost_breakdown['customer_cost'], 2) . '</td>';
+                echo '</tr>';
+                echo '<tr>';
+                echo '<td><strong>' . __('Admin Paid:', 'woocommerce-lalamove-extension') . '</strong></td>';
+                echo '<td>₱' . number_format($cost_breakdown['admin_cost'], 2) . '</td>';
+                echo '</tr>';
+                echo '<tr>';
+                echo '<td><strong>' . __('Profit/Loss:', 'woocommerce-lalamove-extension') . '</strong></td>';
+                $profit_loss = $cost_breakdown['customer_cost'] - $cost_breakdown['lalamove_actual_cost'];
+                $profit_class = $profit_loss >= 0 ? 'positive' : 'negative';
+                echo '<td class="' . $profit_class . '">₱' . number_format($profit_loss, 2) . '</td>';
+                echo '</tr>';
+                echo '</table>';
+                echo '</div>';
+                
+                echo '<style>
+                    .lalamove-shipping-breakdown {
+                        background: #f9f9f9;
+                        padding: 15px;
+                        margin: 15px 0;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                    }
+                    .lalamove-shipping-breakdown h3 {
+                        margin-top: 0;
+                        color: #23282d;
+                    }
+                    .lalamove-shipping-breakdown table {
+                        margin: 0;
+                    }
+                    .lalamove-shipping-breakdown td {
+                        padding: 8px;
+                        border: none;
+                    }
+                    .lalamove-shipping-breakdown .positive {
+                        color: #46b450;
+                        font-weight: bold;
+                    }
+                    .lalamove-shipping-breakdown .negative {
+                        color: #dc3232;
+                        font-weight: bold;
+                    }
+                </style>';
             }
         }
     }
