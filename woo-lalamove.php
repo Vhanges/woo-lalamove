@@ -59,6 +59,10 @@ if (!class_exists('Woo_Lalamove')) {
                 add_filter('woocommerce_checkout_fields', [$this, 'modify_checkout_phone_field'], 10, 1);
 
                 add_action('add_meta_boxes', [$this, 'register_meta_box_push_order_to_lalamove']);
+                
+                // Add shipping payment status column to orders list
+                add_filter('manage_woocommerce_page_wc-orders_columns', [$this, 'add_shipping_payment_column']);
+                add_action('manage_woocommerce_page_wc-orders_custom_column', [$this, 'display_shipping_payment_column'], 10, 2);
 
             }
         }
@@ -104,7 +108,43 @@ if (!class_exists('Woo_Lalamove')) {
             }
 
             $order_id = $order->get_id();
-            $nonce    = wp_create_nonce("send_to_lalamove_nonce_{$order_id}");
+            $nonce = wp_create_nonce("send_to_lalamove_nonce_{$order_id}");
+            
+            // Get shipping payment details
+            $payment_details = get_shipping_payment_details($order_id);
+            $shipping_total = $order->get_shipping_total();
+            
+            echo '<div style="margin-bottom: 15px;">';
+            echo '<h4>Shipping Payment Status</h4>';
+            
+            if ($shipping_total == 0) {
+                echo '<p><span style="color: #00a32a; font-weight: bold;">FREE SHIPPING</span> - Order qualifies for free shipping</p>';
+            } elseif ($payment_details && $payment_details['paid_by'] === 'admin') {
+                $profit_loss = floatval($payment_details['profit_loss']);
+                $color = $profit_loss >= 0 ? '#00a32a' : '#d63638';
+                echo '<p><span style="color: ' . $color . '; font-weight: bold;">ADMIN PAID</span></p>';
+                echo '<p><strong>Actual Cost:</strong> ' . get_woocommerce_currency_symbol() . number_format($payment_details['actual_cost'], 2) . '</p>';
+                echo '<p><strong>Customer Paid:</strong> ' . get_woocommerce_currency_symbol() . number_format($shipping_total, 2) . '</p>';
+                echo '<p><strong>Profit/Loss:</strong> <span style="color: ' . $color . ';">' . get_woocommerce_currency_symbol() . number_format($profit_loss, 2) . '</span></p>';
+                echo '<p><small>Payment Method: ' . esc_html($payment_details['payment_method']) . '</small></p>';
+            } elseif ($payment_details && $payment_details['paid_by'] === 'customer') {
+                echo '<p><span style="color: #0073aa; font-weight: bold;">CUSTOMER PAID</span></p>';
+                echo '<p><strong>Amount:</strong> ' . get_woocommerce_currency_symbol() . number_format($payment_details['actual_cost'], 2) . '</p>';
+            } else {
+                echo '<p><span style="color: #ffb900; font-weight: bold;">PAYMENT STATUS UNKNOWN</span></p>';
+                echo '<div style="margin-top: 10px;">
+                        <label for="admin_shipping_cost">Mark as Admin Paid:</label><br>
+                        <input type="number" id="admin_shipping_cost" step="0.01" placeholder="Actual cost paid" style="width: 120px; margin-right: 10px;">
+                        <select id="admin_payment_method" style="margin-right: 10px;">
+                            <option value="wallet">Wallet</option>
+                            <option value="card">Credit Card</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                        <button type="button" class="button mark-admin-paid-btn" data-order_id="' . $order_id . '" data-nonce="' . wp_create_nonce("mark_admin_paid_nonce_{$order_id}") . '">Mark as Paid</button>
+                      </div>';
+            }
+            echo '</div><hr style="margin: 15px 0;">';
 
             echo '<button type="button" 
                     class="button transfer-to-lalamove-btn" 
@@ -304,6 +344,7 @@ if (!class_exists('Woo_Lalamove')) {
                 [
                     'ajax_url' => admin_url( 'admin-ajax.php' ),
                     'nonce'    => wp_create_nonce( 'custom_plugin_nonce' ),
+                    'mark_admin_paid_action' => 'mark_admin_shipping_paid',
                 ]
             );
 
@@ -423,6 +464,16 @@ if (!class_exists('Woo_Lalamove')) {
                 'dashicons-admin-site',
                 25
             );
+            
+            // Add submenu for shipping analytics
+            add_submenu_page(
+                'woo-lalamove',
+                'Shipping Analytics',
+                'Shipping Analytics',
+                'manage_woocommerce',
+                'lalamove-shipping-analytics',
+                [$this, 'render_shipping_analytics_page']
+            );
         }
 
         public function woo_lalamove_render_admin_page()
@@ -435,6 +486,139 @@ if (!class_exists('Woo_Lalamove')) {
             <!-- Add this hidden nonce field -->
             <input type="hidden" id="woo_lalamove_form_nonce" value="<?php echo wp_create_nonce('woo_lalamove_form_action'); ?>">
 <?php
+        }
+        
+        /**
+         * Render shipping analytics page
+         */
+        public function render_shipping_analytics_page() {
+            // Handle date range from GET parameters
+            $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date']) : date('Y-m-01');
+            $end_date = isset($_GET['end_date']) ? sanitize_text_field($_GET['end_date']) : date('Y-m-d');
+            
+            // Get analytics data
+            $analytics = get_shipping_analytics($start_date, $end_date);
+            
+            ?>
+            <div class="wrap">
+                <h1>Lalamove Shipping Analytics</h1>
+                
+                <form method="get" action="">
+                    <input type="hidden" name="page" value="lalamove-shipping-analytics">
+                    <table class="form-table">
+                        <tr>
+                            <th>Date Range:</th>
+                            <td>
+                                <input type="date" name="start_date" value="<?php echo esc_attr($start_date); ?>" required>
+                                to
+                                <input type="date" name="end_date" value="<?php echo esc_attr($end_date); ?>" required>
+                                <input type="submit" class="button" value="Update">
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+                
+                <div class="analytics-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+                    <div class="analytics-card" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                        <h3>Total Orders</h3>
+                        <p style="font-size: 24px; font-weight: bold; color: #0073aa;"><?php echo $analytics['total_orders']; ?></p>
+                    </div>
+                    
+                    <div class="analytics-card" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                        <h3>Customer Paid</h3>
+                        <p style="font-size: 18px; font-weight: bold; color: #0073aa;"><?php echo $analytics['customer_paid_orders']; ?> orders</p>
+                        <p>Revenue: <?php echo get_woocommerce_currency_symbol() . number_format($analytics['total_customer_revenue'], 2); ?></p>
+                    </div>
+                    
+                    <div class="analytics-card" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                        <h3>Admin Paid</h3>
+                        <p style="font-size: 18px; font-weight: bold; color: #d63638;"><?php echo $analytics['admin_paid_orders']; ?> orders</p>
+                        <p>Cost: <?php echo get_woocommerce_currency_symbol() . number_format($analytics['total_admin_cost'], 2); ?></p>
+                    </div>
+                    
+                    <div class="analytics-card" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                        <h3>Free Shipping</h3>
+                        <p style="font-size: 18px; font-weight: bold; color: #00a32a;"><?php echo $analytics['free_shipping_orders']; ?> orders</p>
+                    </div>
+                    
+                    <div class="analytics-card" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                        <h3>Net Profit/Loss</h3>
+                        <?php 
+                        $profit_loss = $analytics['total_profit_loss'];
+                        $color = $profit_loss >= 0 ? '#00a32a' : '#d63638';
+                        ?>
+                        <p style="font-size: 20px; font-weight: bold; color: <?php echo $color; ?>;">
+                            <?php echo get_woocommerce_currency_symbol() . number_format($profit_loss, 2); ?>
+                        </p>
+                    </div>
+                    
+                    <div class="analytics-card" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                        <h3>Average Shipping</h3>
+                        <p style="font-size: 18px; font-weight: bold; color: #666;">
+                            <?php echo get_woocommerce_currency_symbol() . number_format($analytics['average_shipping_cost'], 2); ?>
+                        </p>
+                    </div>
+                </div>
+                
+                <?php if (!empty($analytics['orders_breakdown'])): ?>
+                <h2>Order Breakdown</h2>
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Payment Type</th>
+                            <th>Customer Paid</th>
+                            <th>Actual Cost</th>
+                            <th>Profit/Loss</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($analytics['orders_breakdown'] as $order): ?>
+                        <tr>
+                            <td>
+                                <a href="<?php echo admin_url('post.php?post=' . $order['order_id'] . '&action=edit'); ?>">
+                                    #<?php echo $order['order_id']; ?>
+                                </a>
+                            </td>
+                            <td><?php echo date('M j, Y', strtotime($order['date'])); ?></td>
+                            <td>
+                                <?php 
+                                switch($order['payment_type']) {
+                                    case 'free':
+                                        echo '<span style="color: #00a32a; font-weight: bold;">FREE</span>';
+                                        break;
+                                    case 'admin':
+                                        echo '<span style="color: #d63638; font-weight: bold;">ADMIN PAID</span>';
+                                        break;
+                                    case 'customer':
+                                        echo '<span style="color: #0073aa; font-weight: bold;">CUSTOMER PAID</span>';
+                                        break;
+                                    default:
+                                        echo '<span style="color: #666;">Unknown</span>';
+                                }
+                                ?>
+                            </td>
+                            <td><?php echo get_woocommerce_currency_symbol() . number_format($order['customer_paid'], 2); ?></td>
+                            <td><?php echo get_woocommerce_currency_symbol() . number_format($order['actual_cost'], 2); ?></td>
+                            <td>
+                                <?php 
+                                $pl = $order['profit_loss'];
+                                $color = $pl >= 0 ? '#00a32a' : '#d63638';
+                                ?>
+                                <span style="color: <?php echo $color; ?>; font-weight: bold;">
+                                    <?php echo get_woocommerce_currency_symbol() . number_format($pl, 2); ?>
+                                </span>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php else: ?>
+                <p>No Lalamove orders found for the selected date range.</p>
+                <?php endif; ?>
+            </div>
+            <?php
         }
 
 
@@ -605,6 +789,42 @@ if (!class_exists('Woo_Lalamove')) {
 
         // Everything went fine
         wp_send_json_success( "Order #{$order_id} queued for Lalamove." );
+    }
+
+    // AJAX handler for marking admin shipping payment
+    add_action('wp_ajax_mark_admin_shipping_paid', 'mark_admin_shipping_paid_handler');
+    
+    /**
+     * Handle marking shipping as paid by admin
+     */
+    function mark_admin_shipping_paid_handler() {
+        // Verify nonce and capabilities
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions.');
+        }
+        
+        $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+        $shipping_cost = isset($_POST['shipping_cost']) ? floatval($_POST['shipping_cost']) : 0;
+        $payment_method = isset($_POST['payment_method']) ? sanitize_text_field($_POST['payment_method']) : '';
+        
+        if (!$order_id || $shipping_cost <= 0) {
+            wp_send_json_error('Invalid order ID or shipping cost.');
+        }
+        
+        // Verify nonce
+        $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : '';
+        if (!wp_verify_nonce($nonce, "mark_admin_paid_nonce_{$order_id}")) {
+            wp_send_json_error('Invalid nonce.');
+        }
+        
+        // Mark as admin paid
+        $result = set_shipping_payment_details($order_id, 'admin', $shipping_cost, $payment_method);
+        
+        if ($result) {
+            wp_send_json_success("Shipping payment marked as admin paid: " . get_woocommerce_currency_symbol() . number_format($shipping_cost, 2));
+        } else {
+            wp_send_json_error('Failed to update shipping payment details.');
+        }
     }
 
 
@@ -881,6 +1101,28 @@ if (!class_exists('Woo_Lalamove')) {
             wc_add_notice(__('Please enter a valid phone number in E.164 format, e.g., +6312345678.'), 'error');
         }
     }
+        
+        /**
+         * Add shipping payment status column to orders list
+         */
+        public function add_shipping_payment_column($columns) {
+            // Insert the new column after the 'order_status' column
+            $new_columns = [];
+            foreach ($columns as $key => $value) {
+                $new_columns[$key] = $value;
+                if ($key === 'order_status') {
+                    $new_columns['lalamove_payment_status'] = 'Shipping Payment';
+                }
+            }
+            return $new_columns;
+        }
+        
+        /**
+         * Display shipping payment status in orders list
+         */
+        public function display_shipping_payment_column($column, $order_id) {
+            display_shipping_payment_column($column, $order_id);
+        }
 
 
     add_action('wp_ajax_my_webhook', 'log_webhook_data'); // For logged-in users

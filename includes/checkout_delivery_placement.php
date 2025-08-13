@@ -206,6 +206,14 @@ function process_lalamove_non_free_order($order_id) {
         $wpdb->query('COMMIT');
         error_log("Lalamove order created: {$lalamove_order_id} for WC order: {$order_id}");
         
+        // Track shipping payment details - customer paid for shipping
+        $customer_shipping_cost = $order->get_shipping_total();
+        $actual_lalamove_cost = $breakdown['total'] ?? 0;
+        
+        if ($customer_shipping_cost > 0) {
+            set_shipping_payment_details($order_id, 'customer', $actual_lalamove_cost, 'checkout');
+        }
+        
     } catch (Exception $e) {
         $wpdb->query('ROLLBACK');
         
@@ -280,6 +288,8 @@ function process_lalamove_free_order($order_id) {
     foreach ($order->get_shipping_methods() as $item) {
         if ($item->get_method_id() === 'free_shipping') {
             set_lalamove_free_shipping_order($order_id, $order);
+            // Track that this is free shipping (no payment by admin or customer for delivery)
+            set_shipping_payment_details($order_id, 'free', 0, 'free_shipping_threshold');
             return;
         }
     }
