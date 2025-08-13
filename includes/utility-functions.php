@@ -22,47 +22,63 @@ function get_shop_logo(){
 	}
 }
 
-function get_delivery_details($order_id){
-
-	global $wpdb;
-
-
+function get_delivery_details($order_id) {
+    global $wpdb;
 
     $orders_table = $wpdb->prefix . 'wc_lalamove_orders';
-	$transaction_table = "{$wpdb->prefix}wc_lalamove_transaction";
+    $transaction_table = "{$wpdb->prefix}wc_lalamove_transaction";
 
-	// Use INNER JOIN to fetch data from both tables
-	$delivery_data = $wpdb->get_row($wpdb->prepare(
-		"SELECT orders.*, transactions.* 
-		FROM {$orders_table} orders 
-		INNER JOIN {$transaction_table} transactions
-		ON orders.transaction_id = transactions.transaction_id
-		WHERE orders.wc_order_id = %d",
-		intval($order_id)
-	));
+    try {
+        // Start "transaction" — not real SQL transaction, but logical grouping
+        $wpdb->query('START TRANSACTION');
 
-	$order_id = $delivery_data->wc_order_id;
-	$customer_name = $delivery_data->ordered_by;
-	$delivery_id = $delivery_data->lalamove_order_id;
-	$ordered_on = $delivery_data->ordered_on;
+        // Prepare and execute query
+        $delivery_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT orders.*, transactions.* 
+            FROM {$orders_table} orders 
+            INNER JOIN {$transaction_table} transactions
+            ON orders.transaction_id = transactions.transaction_id
+            WHERE orders.wc_order_id = %d",
+            intval($order_id)
+        ));
 
-	// Create a DateTime object
-	$date = new DateTime($ordered_on);
-	$ordered_on = $date->format('F j, Y');
+        if (!$delivery_data) {
+            throw new Exception("No delivery data found for order ID: $order_id");
+        }
 
-	$drop_off_location = $delivery_data->drop_off_location;
+        // Extract and format fields
+        $order_id = $delivery_data->wc_order_id;
+        $raw_name = $delivery_data->ordered_by;
+        preg_match('/^([^\(]+)/', $raw_name, $matches);
+        $customer_name = trim($matches[1]);
 
-	$delivery_details = [
-		"order_id" => $order_id,
-		"customer_name" => $customer_name,
-		"delivery_id" => $delivery_id,
-		"ordered_on" => $ordered_on,
-		"drop_off_location" => $drop_off_location,
-	];
+        $delivery_id = $delivery_data->lalamove_order_id;
+        $ordered_on = (new DateTime($delivery_data->ordered_on))->format('F j, Y');
+        $drop_off_location = $delivery_data->drop_off_location;
 
-	return $delivery_details;
+        // Commit "transaction"
+        $wpdb->query('COMMIT');
 
+        return [
+            "order_id" => $order_id,
+            "customer_name" => $customer_name,
+            "delivery_id" => $delivery_id,
+            "ordered_on" => $ordered_on,
+            "drop_off_location" => $drop_off_location,
+        ];
+
+    } catch (Exception $e) {
+        // Rollback "transaction"
+        $wpdb->query('ROLLBACK');
+
+        // Log error
+        error_log("Delivery details error: " . $e->getMessage());
+
+        // Return fallback or null
+        return null;
+    }
 }
+
 
 function get_weight_unit() {
     // Fetch weight unit from WooCommerce settings
@@ -73,47 +89,71 @@ function get_weight_unit() {
 
 
 function get_order_details($order_id) {
-    $order = wc_get_order($order_id);
+    global $wpdb;
 
-    if (!$order) {
-        return "Invalid Order ID";
-    }
+    try {
+        $wpdb->query('START TRANSACTION');
 
-    // Initialize arrays and variables
-    $product_details = [];
-    $total_weight = 0;
-    $total_quantity = 0;
+        $order = wc_get_order($order_id);
 
-    // Loop through the order items
-    foreach ($order->get_items() as $item) {
-        $product = $item->get_product();
-
-        if ($product) {
-            // Fetch quantity and weight
-            $quantity = $item->get_quantity();
-            $weight = $product->get_weight();
-
-            // Accumulate totals
-            $total_weight += floatval($weight) * $quantity;
-            $total_quantity += $quantity;
-
-            // Store individual product details
-            $product_details[] = [
-                'product_name' => $product->get_name(),
-                'quantity' => $quantity,
-                'weight' => $weight,
-            ];
+        if (!$order) {
+            throw new Exception("Invalid Order ID: $order_id");
         }
+
+        // Initialize arrays and variables
+        $product_details = [];
+        $total_weight = 0;
+        $total_quantity = 0;
+
+        // Loop through the order items
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+
+            if ($product) {
+                $quantity = $item->get_quantity();
+                $weight = $product->get_weight();
+
+                $total_weight += floatval($weight) * $quantity;
+                $total_quantity += $quantity;
+
+                $product_details[] = [
+                    'product_name' => $product->get_name(),
+                    'quantity' => $quantity,
+                    'weight' => $weight,
+                ];
+            }
+        }
+
+        // Add total details to the result
+        $product_details['totals'] = [
+            'total_quantity' => $total_quantity,
+            'total_weight' => $total_weight,
+        ];
+
+        // Commit "transaction"
+        $wpdb->query('COMMIT');
+
+        return $product_details;
+
+    } catch (Exception $e) {
+        // Rollback "transaction"
+        $wpdb->query('ROLLBACK');
+
+        // Log error
+        error_log("Order details error: " . $e->getMessage());
+
+        // Return fallback
+        return [
+            'error' => true,
+            'message' => $e->getMessage(),
+            'totals' => [
+                'total_quantity' => 0,
+                'total_weight' => 0,
+            ]
+        ];
     }
-
-    // Add total details to the result
-    $product_details['totals'] = [
-        'total_quantity' => $total_quantity,
-        'total_weight' => $total_weight,
-    ];
-
-    return $product_details;
 }
+
 
 function format_address($text, $max_length = 45) {
     return wordwrap(htmlspecialchars($text), $max_length, "<br>", true);
@@ -140,18 +180,21 @@ function print_waybill($order_ids, $bulk_printing = false) {
 
 	foreach($order_ids as $order_id){
 
-		// QR code generation
-		$qrData = get_site_url().'/waybill-qr/?order_id='. $order_id;
-		$qrCode = new Mpdf\QrCode\QrCode($qrData);
-		$output = new Mpdf\QrCode\Output\Png();
-		$qrCodePng = $output->output($qrCode, 100, [255, 255, 255], [0, 0, 0]);
-		$qrCodeBase64 = base64_encode($qrCodePng);
-		error_log("Order ID: " . print_r($order_id, true));
-		$delivery_data = get_delivery_details($order_id);
-		$order_details = get_order_details($order_id);
-		$wc_order_id = (int)$order_id;
+	// QR code generation
+	$qrData = get_site_url().'/waybill-qr/?order_id='. $order_id;
+	$qrCode = new Mpdf\QrCode\QrCode($qrData);
+	$output = new Mpdf\QrCode\Output\Png();
+	$qrCodePng = $output->output($qrCode, 100, [255, 255, 255], [0, 0, 0]);
+	$qrCodeBase64 = base64_encode($qrCodePng);
+	error_log("Order ID: " . print_r($order_id, true));
+	$delivery_data = get_delivery_details($order_id);
+	$order_details = get_order_details($order_id);
+	$wc_order_id = (int)$order_id;
 
-
+	// Skip if either is empty or contains an error
+    if (empty($delivery_data) || empty($order_details) || !empty($order_details['error'])) {
+        continue;
+    }
 
 	// HTML content
 	$html = '
@@ -244,7 +287,7 @@ function print_waybill($order_ids, $bulk_printing = false) {
 				<td colspan="1" class="rotate">BUYER</td>
 				<td colspan="3" class="content-cell">
 					<div style="max-height: 33mm; overflow: hidden;">
-						<strong>buyer123</strong><br><br>
+						<strong>'. $delivery_data['customer_name'] .'</strong><br><br>
 						'. wordwrap($delivery_data['drop_off_location'], 45, "<br>", true) .'
 					</div>
 				</td>
