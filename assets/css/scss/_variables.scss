@@ -1,20 +1,33 @@
 // Font Variables
 $font-primary: 'Noto Sans', sans-serif !important;
 
-// Font Size Variables
-$font-size-xs: clamp(10px, 12px, 14px);
-$font-size-sm: clamp(12px, 14px, 16px);
-$font-size-md: clamp(14px, 16px, 18px);
-$font-size-lg: clamp(16px, 20px, 20px);
-$font-size-xl: clamp(18px, 22px, 22px);
-$font-size-xxl: clamp(20px, 24px, 28px);
-
+// Enhanced Font Size Variables with better responsive scaling
+$font-size-xs: clamp(10px, 1vw + 8px, 12px);
+$font-size-sm: clamp(12px, 1.2vw + 10px, 14px);
+$font-size-md: clamp(14px, 1.4vw + 12px, 16px);
+$font-size-lg: clamp(16px, 1.6vw + 14px, 18px);
+$font-size-xl: clamp(18px, 1.8vw + 16px, 22px);
+$font-size-xxl: clamp(20px, 2.2vw + 18px, 28px);
+$font-size-xxxl: clamp(24px, 2.8vw + 20px, 36px);
 
 // Font Weight Variables
 $font-weight-light: 300;
 $font-weight-regular: 400;
 $font-weight-medium: 500;
+$font-weight-semibold: 600;
 $font-weight-bold: 700;
+
+// Line Height Variables for better readability
+$line-height-tight: 1.1;
+$line-height-normal: 1.4;
+$line-height-relaxed: 1.6;
+$line-height-loose: 1.8;
+
+// Letter Spacing Variables
+$letter-spacing-tight: -0.025em;
+$letter-spacing-normal: 0;
+$letter-spacing-wide: 0.025em;
+$letter-spacing-wider: 0.05em;
 
 /* Colors */
 
@@ -31,7 +44,6 @@ $bg-hovered: #EDEDED;
 //Background Color State
 $bg-success: #DBFFE3;
 $bg-error: #FFEEEF;
-
 
 // Header Color
 $header: #4C4C4C;
@@ -67,3 +79,34 @@ $border-orange: #f16622;
 
 // Hover Color
 $x-hover: #EDEDED;
+
+// Spacing Variables for consistent spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-xxl: 3rem;
+$spacing-xxxl: 4rem;
+
+// Border Radius Variables
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-full: 9999px;
+
+// Box Shadow Variables
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+// Z-index Variables
+$z-dropdown: 1000;
+$z-sticky: 1020;
+$z-fixed: 1030;
+$z-modal-backdrop: 1040;
+$z-modal: 1050;
+$z-popover: 1060;
+$z-tooltip: 1070;

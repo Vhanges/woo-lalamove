@@ -1,15 +1,27 @@
 <template>
-  <div class="schedule-container">
-    <p class="header">SCHEDULE DATE</p>
-    <input 
-      type="datetime-local"
-      name="schedule"
-      id="schedule-date"
-      :min="minDate"
-      :max="maxDate"
-      v-model="localSchedule"
-      @change="validateScheduleDate"
-    />
+  <div class="schedule-wrapper">
+    <div class="schedule-input-group">
+      <label for="schedule-date" class="schedule-label">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="schedule-icon">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+          <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/>
+          <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/>
+          <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Preferred Delivery Time
+      </label>
+      <input 
+        type="datetime-local"
+        name="schedule"
+        id="schedule-date"
+        :min="minDate"
+        :max="maxDate"
+        v-model="localSchedule"
+        @change="validateScheduleDate"
+        class="schedule-input"
+      />
+      <p class="schedule-hint">Available: 8:00 AM - 4:00 PM (Next 30 days)</p>
+    </div>
   </div>
 </template>
 
@@ -81,40 +93,91 @@ watch(scheduleAt, (newValue) => {
 </script>
 
 <style lang="scss" scoped>
-/* Existing styles remain unchanged */
-</style>
-
-<style lang="scss" scoped>
 @use "@/css/scss/_variables.scss" as *;
+@use "@/css/scss/_mixins.scss" as *;
 
-.schedule-container {
+.schedule-wrapper {
+  width: 100%;
+}
+
+.schedule-input-group {
+  width: 100%;
+}
+
+.schedule-label {
+  @include small-text;
+  font-weight: $font-weight-medium;
+  color: $txt-secondary;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
 
-  #schedule-date {
-    width: 100%;
-    padding: 7px 14px;
-    border: 1px solid $border-color;
-    border-radius: 5px;
-    font-size: $font-size-sm;
-    background: $bg-high-light;
-    color: $txt-secondary;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    margin-bottom: 8px;
-    box-sizing: border-box;
+.schedule-icon {
+  color: $bg-primary;
+}
+
+.schedule-input {
+  @include form-input;
+  width: 100%;
+  font-family: $font-primary;
+  
+  &::-webkit-calendar-picker-indicator {
+    background: transparent;
+    color: $bg-primary;
+    cursor: pointer;
+    filter: brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(1376%) hue-rotate(345deg) brightness(96%) contrast(96%);
   }
-
-  #schedule-date:focus {
-    border-color: $border-orange;
-    outline: none;
-    background: #fff;
-    box-shadow: 0 0 0 2px rgba(241, 102, 34, 0.15);
+  
+  &::-webkit-datetime-edit {
+    color: $txt-secondary;
+  }
+  
+  &::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+  
+  &::-webkit-datetime-edit-text {
+    color: rgba($txt-primary, 0.6);
+  }
+  
+  &::-webkit-datetime-edit-month-field,
+  &::-webkit-datetime-edit-day-field,
+  &::-webkit-datetime-edit-year-field,
+  &::-webkit-datetime-edit-hour-field,
+  &::-webkit-datetime-edit-minute-field {
+    color: $txt-secondary;
   }
 }
 
-.header {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-bold;
+.schedule-hint {
+  @include small-text;
+  color: rgba($txt-primary, 0.6);
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
+}
+
+// Mobile adjustments
+@media (max-width: 767px) {
+  .schedule-input {
+    padding: 0.75rem;
+    font-size: $font-size-sm;
+  }
+  
+  .schedule-label {
+    margin-bottom: 0.5rem;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .schedule-input {
+    border: 2px solid $border-color;
+    
+    &:focus {
+      border: 2px solid $bg-primary;
+    }
+  }
 }
 </style>

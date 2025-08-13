@@ -145,72 +145,155 @@ const handleDelete = (index) => {
 </script>
 
 <template>
-  <div class="address-wrapper">
-    <p class="header">ROUTE (Max. 20 STOPS)</p>
-    <div class="address-content">
+  <div class="shipping-address-wrapper">
+    <!-- Empty State -->
+    <div v-if="!addresses || addresses.length === 0" class="empty-state">
+      <div class="empty-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L14.09 8.26L20 6.27L17.91 12.53L20 18.8L14.09 16.81L12 23L9.91 16.81L4 18.8L6.09 12.53L4 6.27L9.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3 class="empty-title">Add Your Route</h3>
+      <p class="empty-description">Start by adding pickup and delivery locations for your order</p>
+      <button class="empty-action-btn" @click="addStop(0)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Add First Location
+      </button>
+    </div>
+
+    <!-- Address List -->
+    <div v-else class="address-list">
+      <!-- Header -->
+      <div class="list-header">
+        <h3 class="list-title">Delivery Route</h3>
+        <span class="stops-counter">{{ addresses.length }}/20 stops</span>
+      </div>
+
+      <!-- Route Items -->
       <Sortable
         v-model:list="addresses"
         item-key="id"
         handle=".drag-handle"
         tag="div"
-        class="drag-area"
+        class="route-container"
         :options="sortableOptions"
         dragClass="dragging"
         @end="onEnd"
       >
         <template #item="{ element, index }">
-          <div class="text-container">
-            <span class="drag-handle">{{ index + 1 }}</span>
-            <div class="input-group" @click="handleAddressClick(index)">
-              <input
-                v-model="element.address"
-                class="text-box"
-                :placeholder="`Stop ${index + 1}`"
-                @input="geocodeClicked(index, $event.target.value)"
-              />
+          <div class="address-item" :class="{ 'address-item--first': index === 0, 'address-item--last': index === addresses.length - 1 }">
+            <!-- Route Indicator -->
+            <div class="route-indicator">
+              <div class="route-number">{{ index + 1 }}</div>
+              <div class="route-line" v-if="index < addresses.length - 1"></div>
+            </div>
 
-              <!-- Loading indicator -->
-              <div v-if="isLoading[index]" class="loading">
-                Searching...
+            <!-- Address Input -->
+            <div class="address-input-section" @click="handleAddressClick(index)">
+              <div class="input-header">
+                <span class="address-label">
+                  {{ index === 0 ? 'Pickup Location' : index === addresses.length - 1 ? 'Delivery Location' : `Stop ${index}` }}
+                </span>
+                <button 
+                  v-if="addresses.length > 2" 
+                  class="drag-handle" 
+                  :aria-label="`Reorder ${index === 0 ? 'pickup' : 'stop ' + index}`"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 6H16M8 12H16M8 18H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
               </div>
 
-              <!-- Suggestions dropdown -->
-              <ul 
-                class="suggestions" 
-                v-if="suggestionsMap[index]?.length && !isLoading[index]"
-              >
-                <li
-                  v-for="(suggestion, i) in suggestionsMap[index]"
-                  :key="i"
-                  @click="selectSuggestion(index, suggestion)"
-                >
-                  {{ suggestion.name }}
-                </li>
-              </ul>
+              <div class="input-group">
+                <input
+                  v-model="element.address"
+                  class="address-input"
+                  :placeholder="index === 0 ? 'Enter pickup address...' : index === addresses.length - 1 ? 'Enter delivery address...' : `Enter stop ${index} address...`"
+                  @input="geocodeClicked(index, $event.target.value)"
+                  :class="{ 'input-loading': isLoading[index] }"
+                />
 
-              <!-- No results message -->
-              <div 
-                v-if="hasSearched[index] && suggestionsMap[index]?.length === 0 && element.address.length >= 3 && !isLoading[index]" 
-                class="no-results"
-              >
-                No results found
+                <!-- Input Status Icons -->
+                <div class="input-status">
+                  <!-- Loading -->
+                  <div v-if="isLoading[index]" class="loading-spinner">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  
+                  <!-- Success -->
+                  <div v-else-if="element.coordinates?.lat && element.coordinates?.lng" class="success-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- Suggestions Dropdown -->
+                <div v-if="suggestionsMap[index]?.length && !isLoading[index]" class="suggestions-dropdown">
+                  <ul class="suggestions-list">
+                    <li
+                      v-for="(suggestion, i) in suggestionsMap[index]"
+                      :key="i"
+                      class="suggestion-item"
+                      @click="selectSuggestion(index, suggestion)"
+                    >
+                      <div class="suggestion-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M21 10C21 17 12 23 12 23S3 17 3 10C3 5.03 7.03 1 12 1S21 5.03 21 10Z" stroke="currentColor" stroke-width="2"/>
+                          <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <span class="suggestion-text">{{ suggestion.name }}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- No Results -->
+                <div 
+                  v-if="hasSearched[index] && suggestionsMap[index]?.length === 0 && element.address.length >= 3 && !isLoading[index]" 
+                  class="no-results"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  <span>No locations found. Try a different search term.</span>
+                </div>
               </div>
             </div>
 
-            <button class="delete-button" @click.prevent="handleDelete(index)">
-              <span class="material-symbols-outlined">close</span>
+            <!-- Delete Button -->
+            <button 
+              v-if="addresses.length > 2" 
+              class="delete-button" 
+              @click.prevent="handleDelete(index)"
+              :aria-label="`Remove ${index === 0 ? 'pickup location' : 'stop ' + index}`"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </button>
           </div>
         </template>
       </Sortable>
 
-      <button
-        class="add-stop"
-        @click.prevent="addStop(addresses.length)"
-      >
-        <span class="material-symbols-outlined">add</span>
-        Add Stop
-      </button>
+      <!-- Add Stop Button -->
+      <div class="add-stop-section" v-if="addresses.length < 20">
+        <button class="add-stop-btn" @click.prevent="addStop(addresses.length)">
+          <div class="add-stop-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span>Add Another Stop</span>
+        </button>
+        <p class="add-stop-hint">You can add up to {{ 20 - addresses.length }} more stops</p>
+      </div>
     </div>
   </div>
 </template>
@@ -218,144 +301,439 @@ const handleDelete = (index) => {
 
 <style scoped lang="scss">
 @use '@/css/scss/_variables.scss' as *;
+@use '@/css/scss/_mixins.scss' as *;
 
-.address-wrapper {
+.shipping-address-wrapper {
   width: 100%;
-  max-width: inherit;
-  height: fit-content;
+}
 
-  .header {
-    font-size: $font-size-xs;
-    font-weight: $font-weight-bold;
-    color: $header;
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  
+  @include respond-above('md') {
+    padding: 4rem 2rem;
   }
+}
 
-  .address-content {
-    box-sizing: border-box;
-    width: 100%;
-    height: fit-content;
-    border: 1px solid $border-color;
-    background-color: $bg-high-light;
-    border-radius: 5px;
-    padding: 0 3%;
-
-    .drag-area {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .add-stop {
-      border: none;
-      outline: none;
-      background-color: inherit;
-      height: 3rem;
-      font-size: $font-size-sm;
-      color: $header-active;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-
-      &:hover,
-      &:focus {
-        cursor: pointer;
-        border: none;
-        outline: none;
-      }
-    }
-
-    .material-symbols-outlined {
-      font-size: $font-size-sm;
+.empty-icon {
+  color: rgba($txt-primary, 0.4);
+  margin-bottom: 1.5rem;
+  
+  svg {
+    width: 48px;
+    height: 48px;
+    
+    @include respond-above('md') {
+      width: 64px;
+      height: 64px;
     }
   }
 }
 
-.text-container {
+.empty-title {
+  @include heading-3;
+  color: $txt-secondary;
+  margin-bottom: 0.5rem;
+}
+
+.empty-description {
+  @include body-text;
+  color: rgba($txt-primary, 0.8);
+  margin-bottom: 2rem;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.empty-action-btn {
+  @include btn-primary;
+  gap: 0.5rem;
+}
+
+.address-list {
+  width: 100%;
+}
+
+.list-header {
+  @include flex-between;
+  margin-bottom: 1.5rem;
+  
+  @include respond-above('md') {
+    margin-bottom: 2rem;
+  }
+}
+
+.list-title {
+  @include heading-3;
+  margin: 0;
+}
+
+.stops-counter {
+  @include small-text;
+  background: rgba($bg-primary, 0.1);
+  color: $bg-primary;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: $font-weight-medium;
+}
+
+.route-container {
+  position: relative;
+}
+
+.address-item {
+  position: relative;
   display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  
+  @include respond-above('md') {
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &.dragging {
+    opacity: 0.7;
+    transform: rotate(2deg);
+  }
+}
+
+.route-indicator {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  box-sizing: border-box;
+  flex-shrink: 0;
+  position: relative;
+}
 
-  .text-box {
-    font-size: $font-size-sm;
-    color: $txt-secondary;
-    width: 100%;
-    height: 3rem;
-    border: none;
-    border-bottom: 1px solid $border-color;
-
-    &:focus {
-      outline: none;
-      border: none;
-      box-shadow: none;
-      border-bottom: 1px solid $border-color;
-    }
+.route-number {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  background: $bg-primary;
+  color: $txt-light;
+  border-radius: 50%;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-sm;
+  z-index: 2;
+  
+  .address-item--first & {
+    background: $bg-success;
   }
-
-  .drag-handle {
-    cursor: grab;
-    padding: 0 0.5rem;
+  
+  .address-item--last & {
+    background: $txt-error;
   }
+  
+  @include respond-above('md') {
+    width: 36px;
+    height: 36px;
+    font-size: $font-size-md;
+  }
+}
 
-  .delete-button {
-    background: none;
-    border: none;
+.route-line {
+  width: 2px;
+  flex: 1;
+  background: linear-gradient(to bottom, $bg-primary 0%, rgba($bg-primary, 0.3) 100%);
+  margin-top: 0.5rem;
+  min-height: 40px;
+}
+
+.address-input-section {
+  flex: 1;
+  background: $bg-high-light;
+  border: 2px solid $border-color;
+  border-radius: 12px;
+  padding: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    border-color: rgba($bg-primary, 0.5);
+  }
+  
+  &:focus-within {
+    border-color: $bg-primary;
+    box-shadow: 0 0 0 3px rgba($bg-primary, 0.1);
+  }
+  
+  @include respond-above('md') {
+    padding: 1.25rem;
+  }
+}
+
+.input-header {
+  @include flex-between;
+  margin-bottom: 0.75rem;
+}
+
+.address-label {
+  @include small-text;
+  font-weight: $font-weight-medium;
+  color: $txt-secondary;
+}
+
+.drag-handle {
+  @include btn-base;
+  background: transparent;
+  color: rgba($txt-primary, 0.5);
+  padding: 0.25rem;
+  border-radius: 4px;
+  cursor: grab;
+  
+  &:hover {
     color: $txt-primary;
-    cursor: pointer;
-    height: 1.625rem;
-    width: 1.625rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      border-radius: 100%;
-      background-color: $x-hover;
-    }
-
-    &:focus {
-      outline: none;
-    }
+    background: rgba($bg-primary, 0.1);
   }
-
-  .material-symbols-outlined {
-    font-size: $font-size-sm;
+  
+  &:active {
+    cursor: grabbing;
   }
 }
 
 .input-group {
   position: relative;
-  width: 100%;
 }
 
-.suggestions {
+.address-input {
+  @include form-input;
+  border: none;
+  padding: 0.75rem 2.5rem 0.75rem 0;
+  background: transparent;
+  font-size: $font-size-md;
+  
+  &::placeholder {
+    color: rgba($txt-primary, 0.5);
+  }
+  
+  &:focus {
+    box-shadow: none;
+    border: none;
+  }
+  
+  &.input-loading {
+    background: rgba($bg-primary, 0.02);
+  }
+}
+
+.input-status {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.loading-spinner {
+  color: $bg-primary;
+  animation: spin 1s linear infinite;
+}
+
+.success-icon {
+  color: $txt-success;
+}
+
+@keyframes spin {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.suggestions-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid $border-color;
-  border-top: none;
   z-index: 1000;
+  margin-top: 0.25rem;
+  background: $bg-high-light;
+  border: 2px solid $border-color;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.suggestions-list {
+  list-style: none;
   margin: 0;
   padding: 0;
-  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
 
-  li {
-  padding: 8px;
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
-  font-size: $font-size-sm;
-  font-family: $font-primary;
-  font-weight: $font-weight-regular;
-  transition: background-color 0.2s ease, color 0.2s ease, font-weight 0.2s ease;
-
-    &:hover {
-    background-color: $header-active;
-    color: $txt-light;
-    font-weight: $font-weight-bold;
-    }
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid rgba($border-color, 0.5);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:hover {
+    background: rgba($bg-primary, 0.05);
+  }
+  
+  &:active {
+    background: rgba($bg-primary, 0.1);
   }
 }
 
+.suggestion-icon {
+  color: rgba($txt-primary, 0.6);
+  flex-shrink: 0;
+}
 
+.suggestion-text {
+  @include body-text;
+  flex: 1;
+  line-height: 1.4;
+}
 
+.no-results {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: rgba($txt-primary, 0.6);
+  font-size: $font-size-sm;
+  border: 1px solid rgba($border-color, 0.5);
+  border-radius: 8px;
+  margin-top: 0.25rem;
+  background: rgba($bg-gray, 0.3);
+}
+
+.delete-button {
+  @include btn-base;
+  background: transparent;
+  color: rgba($txt-error, 0.7);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1rem;
+  
+  &:hover {
+    background: rgba($txt-error, 0.1);
+    color: $txt-error;
+  }
+  
+  @include respond-above('md') {
+    width: 36px;
+    height: 36px;
+    margin-top: 1.25rem;
+  }
+}
+
+.add-stop-section {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px dashed rgba($border-color, 0.5);
+}
+
+.add-stop-btn {
+  @include btn-secondary;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  
+  &:hover {
+    background: rgba($bg-primary, 0.05);
+    border-color: $bg-primary;
+    color: $bg-primary;
+  }
+}
+
+.add-stop-icon {
+  @include flex-center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba($bg-primary, 0.1);
+  color: $bg-primary;
+}
+
+.add-stop-hint {
+  @include small-text;
+  color: rgba($txt-primary, 0.6);
+  margin: 0;
+  font-style: italic;
+}
+
+// Mobile adjustments
+@media (max-width: 767px) {
+  .address-item {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .route-number {
+    width: 28px;
+    height: 28px;
+    font-size: $font-size-xs;
+  }
+  
+  .address-input-section {
+    padding: 0.75rem;
+  }
+  
+  .input-header {
+    margin-bottom: 0.5rem;
+  }
+  
+  .address-input {
+    padding: 0.5rem 2rem 0.5rem 0;
+    font-size: $font-size-sm;
+  }
+  
+  .delete-button {
+    width: 28px;
+    height: 28px;
+    margin-top: 0.75rem;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .address-input-section {
+    border: 3px solid $border-color;
+    
+    &:focus-within {
+      border-color: $bg-primary;
+    }
+  }
+  
+  .route-number {
+    border: 2px solid $txt-light;
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .address-item.dragging {
+    transform: none;
+  }
+  
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+// Sortable specific styles
+.sortable-ghost {
+  opacity: 0.4;
+}
+
+.sortable-chosen {
+  cursor: grabbing;
+}
 </style>
