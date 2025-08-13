@@ -1,7 +1,7 @@
 <template>
   <main class="wrapper">
     <div class="content">
-      <div class="message">Message</div>
+      <!-- <div class="message">Message</div> -->
       <div class="content-1">
         <AddressInput class="address" />
 
@@ -135,12 +135,12 @@ onMounted(() => {
   height: 80%;
   width: 90%;
 
-  .message {
-    grid-area: 1 / 1 / 2 / 3;
-  }
+  // .message {
+  //   grid-area: 1 / 1 / 2 / 3;
+  // }
 
   .content-1 {
-    grid-area: 2 / 1 / 3 / 2;
+    grid-area: 1 / 1 / 2 / 2;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -149,7 +149,7 @@ onMounted(() => {
   }
 
   .content-2 {
-    grid-area: 2 / 2 / 3 / 3;
+    grid-area: 1 / 2 / 2 / 3;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -188,7 +188,7 @@ onMounted(() => {
   .content {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 10% auto;
+    grid-template-rows: auto;
     grid-column-gap: 50px;
     grid-row-gap: 15px;
   }

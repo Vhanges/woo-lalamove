@@ -435,7 +435,7 @@ public function render_qr_content() {
                     }
                 }
             </style>
-        <div class="delivery-details w-100 h-100 d-flex flex-column justify-content-center " style="background-color: #FCFCFC; padding: 12rem; border: 1px solid #D9D9D9; margin-bottom: 20px;">
+        <div class="delivery-details w-100 h-100 d-flex flex-column justify-content-center " style="background-color: #FCFCFC; padding: 1rem; border: 1px solid #D9D9D9; margin-bottom: 20px;">
 
         <button onclick="window.history.back();" 
             onmouseover="this.style.border="1px solid black";" 

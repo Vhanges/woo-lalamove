@@ -29,6 +29,13 @@ class Class_Lalamove_Model
         $this->balance_table = $wpdb->prefix . 'wc_lalamove_balance';
     }
 
+    /**
+     * Updates the unproccessed lalamove order into a processed order
+     * 
+     * @param mixed $data
+     * @throws \Exception
+     * @return void
+     */
     protected function set_order($data)
     {
         global $wpdb;
@@ -134,6 +141,158 @@ class Class_Lalamove_Model
             }
         } catch (Exception $e) {
             $wpdb->query('ROLLBACK');
+        }
+    }
+
+    /**
+     * Pushes a WooCommerce order into the Lalamove tables.
+     *
+     * @param int   $order_id    WooCommerce order ID.
+     * @param array $coordinates Optional coordinates ['lat' => x, 'lng' => y].
+     * @return int               Inserted Lalamove order ID.
+     * @throws Exception         On missing order, invalid details, or DB failure.
+     */
+    function push_pos_order_to_lalamove( int $order_id ) {
+        global $wpdb;
+
+        // Load order
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            throw new Exception( "Order not found: {$order_id}" );
+        }
+
+        // Fetch totals via helper
+        $details = get_order_details( $order_id );
+        if ( is_string( $details ) ) {
+            throw new Exception( $details );
+        }
+        $totals = $details['totals'];
+
+        // Prepare stop address
+        $address = array_filter([
+            $order->get_shipping_address_1(),
+            $order->get_shipping_address_2(),
+            $order->get_shipping_city(),
+            $order->get_shipping_state(),
+            $order->get_shipping_postcode(),
+            $order->get_shipping_country()
+        ]);
+
+        $raw_address = implode(', ', $address);
+        
+        $address       = preg_replace( '/\s+/', ' ', trim( $raw_address ) );
+        $lat           = '12.8797';
+        $lng           = '121.7740';
+
+        // Build quotationBody structure
+        $quotation_body_array = [
+            'data' => [
+                'scheduleAt'       => '',
+                'serviceType'      => '',
+                'language'         => '',
+                'stops'            => [
+                    [
+                        'coordinates' => [
+                            'lat' => (string)$lat,
+                            'lng' => (string)$lng,
+                        ],
+                        'address'     => $address,
+                    ],
+                ],
+                'isRouteOptimized' => '',
+                'item'             => [
+                    'quantity' => (string) $totals['total_quantity'],
+                    'weight'   => (string) $totals['total_weight'],
+                ],
+            ],
+        ];
+        $quotation_body = wp_json_encode( $quotation_body_array );
+
+        // Other fields
+        $ordered_by = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
+        $remarks          = $order->get_customer_note() ?: 'none';
+        $scheduled_on     = ''; 
+        
+
+
+        $wpdb->query('START TRANSACTION');
+
+        try {
+            // Check if order exists
+            $existing = $wpdb->get_row(
+                $wpdb->prepare("SELECT wc_order_id, transaction_id FROM {$this->order_table} WHERE wc_order_id = %d LIMIT 1 FOR UPDATE", $order_id),
+                ARRAY_A
+            );
+
+            if (!$existing) {
+                // Fresh Insert
+
+                // Insert cost details
+                $wpdb->insert($this->cost_details_table, [
+                    'currency'      => $order->get_currency(),
+                    'base'          => 0,
+                    'extra_mileage' => 0,
+                    'surcharge'     => 0,
+                    'total'         => 0,
+                    'priority_fee'  => 0,
+                ]);
+                $cost_id = $wpdb->insert_id;
+                if (!$cost_id) throw new Exception('Failed to insert cost details.');
+
+                // Insert transaction
+                $wpdb->insert($this->transaction_table, [
+                    'cost_details_id' => $cost_id,
+                    'ordered_by'      => $ordered_by,
+                    'service_type'    => '',
+                ]);
+                $txn_id = $wpdb->insert_id;
+                if (!$txn_id) throw new Exception('Failed to insert transaction.');
+
+                // Insert Lalamove order
+                $wpdb->insert($this->order_table, [
+                    'transaction_id'    => $txn_id,
+                    'wc_order_id'       => $order_id,
+                    'status_id'         => 9,
+                    'lalamove_order_id' => 0,
+                    'ordered_on'        => current_time('mysql'),
+                    'scheduled_on'      => $scheduled_on,
+                    'drop_off_location' => $address,
+                    'remarks'           => $remarks,
+                    'order_json_body'   => $quotation_body,
+                ]);
+                $row_id = $wpdb->insert_id;
+                if (!$row_id) throw new Exception('Failed to insert Lalamove order.');
+
+            } else {
+                // Update Path
+
+                $row_id = (int)$existing['wc_order_id'];
+                $txn_id = (int)$existing['transaction_id'];
+
+                // Optional: Update transaction (e.g., user name changed)
+                $wpdb->update($this->transaction_table, [
+                    'ordered_by' => $ordered_by,
+                ], [ 'transaction_id' => $txn_id ]);
+
+                // Update Lalamove order
+                $updated = $wpdb->update($this->order_table, [
+                    'status_id'         => 9,
+                    'ordered_on'        => current_time('mysql'),
+                    'scheduled_on'      => $scheduled_on,
+                    'drop_off_location' => $address,
+                    'remarks'           => $remarks,
+                    'order_json_body'   => $quotation_body,
+                ], [ 'wc_order_id' => $row_id ]);
+
+                if ($updated === false) throw new Exception('Failed to update Lalamove order.');
+            }
+
+            $wpdb->query('COMMIT');
+            return $row_id;
+
+        } catch (Exception $e) {
+            $wpdb->query('ROLLBACK');
+            throw $e;
         }
     }
 

@@ -12,22 +12,20 @@ if (!defined('ABSPATH'))
     exit;
 
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
-require_once plugin_dir_path(__FILE__) . 'includes/Utility-Functions.php';
+require_once plugin_dir_path(__FILE__) . 'includes/utility-functions.php';
 require_once plugin_dir_path(__FILE__) . 'cors.php';
 
-use Sevhen\WooLalamove\Class_Lalamove_Settings;
-use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
-use Sevhen\WooLalamove\Class_Lalamove_Api;
-use Sevhen\WooLalamove\Class_Lalamove_Shortcode;
 use Sevhen\WooLalamove\Class_Lalamove_Model;
+use Sevhen\WooLalamove\Class_Lalamove_Settings;
+use Sevhen\WooLalamove\Class_Lalamove_Api;
+use Sevhen\WooLalamove\Class_Lalamove_Endpoints;
+use Sevhen\WooLalamove\Class_Lalamove_Shortcode;
 
-
-new Class_Lalamove_Settings();
-new Class_Lalamove_Endpoints();
-new Class_Lalamove_Api();
-new Class_Lalamove_Shortcode();
 new Class_Lalamove_Model();
-
+new Class_Lalamove_Settings();
+new Class_Lalamove_Api();
+new Class_Lalamove_Endpoints();
+new Class_Lalamove_Shortcode();
 
 if (!class_exists('Woo_Lalamove')) {
     class Woo_Lalamove
@@ -41,6 +39,7 @@ if (!class_exists('Woo_Lalamove')) {
                     enableCORS();
                 });
                 add_action('admin_enqueue_scripts', [$this, 'enqueue_vue_assets']);
+                add_action('admin_enqueue_scripts', [$this, 'enqueue_lalamove_metabox']);
                 add_action('admin_menu', [$this, 'woo_lalamove_add_admin_page']);
 
 
@@ -50,14 +49,83 @@ if (!class_exists('Woo_Lalamove')) {
 
                 require_once plugin_dir_path(__FILE__) . 'includes/Class_Lalamove_Shipping_Method.php';
 
+
+
                 register_activation_hook(__FILE__, callback: [$this, 'create_lalamove_tables']);
 
                 add_filter('woocommerce_billing_fields', [$this, 'make_phone_field_required'], 10, 2);
 
                 add_action('woocommerce_blocks_loaded', 'register_custom_cart_update_callback');
                 add_filter('woocommerce_checkout_fields', [$this, 'modify_checkout_phone_field'], 10, 1);
+
+                add_action('add_meta_boxes', [$this, 'register_meta_box_push_order_to_lalamove']);
+
             }
         }
+
+         /**
+         * Registers the custom meta box in WooCommerce admin order page.
+         */
+        public function register_meta_box_push_order_to_lalamove() {
+            $screen = get_screen_id();
+            
+            add_meta_box(
+                'lalamove-meta-box',
+                __('Lalamove', 'woocommerce-lalamove-extension'),
+                [$this, 'render_meta_box'],
+                $screen,
+                'normal',
+                'core'
+            );
+        }
+        
+        
+        /**
+         * Renders the cancel request meta box inside WooCommerce admin order page.
+         */
+        public function render_meta_box($post) {
+            $order = get_order_object($post);
+            if (!$order) {
+                return; 
+            }
+
+            $shipping_methods = $order->get_shipping_methods();
+            $is_lalamove = false;
+
+            foreach ($shipping_methods as $method) {
+                if (strpos($method->get_method_id(), 'your_shipping_method') !== false) {
+                    $is_lalamove = true;
+                    break;
+                }
+            }
+
+            if (!$is_lalamove) {
+                return; // Don't render the box if Lalamove isn't used
+            }
+
+            $order_id = $order->get_id();
+            $nonce    = wp_create_nonce("send_to_lalamove_nonce_{$order_id}");
+
+            echo '<button type="button" 
+                    class="button transfer-to-lalamove-btn" 
+                    data-action="transfer-to-lalamove-btn"  
+                    data-order_id="' . $order_id . '" 
+                    data-nonce="' . $nonce . '" 
+                    style="
+                        background-color: #ff6600; 
+                        border-color: #ff6600; 
+                        color: #fff; 
+                        width: 100%; 
+                        padding: 6px 10px;
+                        margin: 5px auto;
+                        display: block;
+                        text-align: center;
+                    ">
+                    Send to lalamove
+                </button>';
+        }
+
+
         function modify_checkout_phone_field($fields)
         {
             $fields['billing']['billing_phone']['placeholder'] = 'Ex. +6343554325';
@@ -206,6 +274,39 @@ if (!class_exists('Woo_Lalamove')) {
             );
 
             return $actions;
+        }
+
+        function enqueue_lalamove_metabox() {
+            // Only on the WooCommerce order edit screen
+            $screen = get_current_screen();
+
+            // Only run on the Shop Order edit screen (even under admin.php?page=wc-orders…)
+            if ( ! $screen || 'shop_order' !== $screen->post_type ) {
+            error_log("NOT METABOX ENQUEUED");
+
+                return;
+            }
+
+            error_log("METABOX ENQUEUED");
+
+
+            wp_enqueue_script(
+                'lalamove-metabox',
+                plugin_dir_url( __FILE__ ) . 'assets/js/lalamove-metabox.js',
+                [ 'jquery' ],
+                '1.0.0',
+                true
+            );
+
+            wp_localize_script(
+                'lalamove-metabox',
+                'wooLalamoveMetabox',
+                [
+                    'ajax_url' => admin_url( 'admin-ajax.php' ),
+                    'nonce'    => wp_create_nonce( 'custom_plugin_nonce' ),
+                ]
+            );
+
         }
 
 
@@ -366,6 +467,20 @@ if (!class_exists('Woo_Lalamove')) {
                 // Enqueue Moment.js
                 wp_enqueue_script('moment-js', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js', array('jquery'), null, true);
 
+                wp_enqueue_style(
+                    'leaflet-geocoder-css',
+                    'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css',
+                    [],
+                    null
+                );
+                wp_enqueue_script(
+                    'leaflet-geocoder-js',
+                    'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js',
+                    ['leaflet-js'],
+                    null,
+                    true
+                );
+
                 // Enqueue Phone Number Validation JS
                 wp_enqueue_script('libphonenumber-js', 'https://cdn.jsdelivr.net/npm/libphonenumber-js@1.10.24/bundle/libphonenumber{-max.js', array(), null, true);
 
@@ -405,21 +520,20 @@ if (!class_exists('Woo_Lalamove')) {
     //     return $tag;
     // }, 10, 3);
 
-    add_action( 'woocommerce_admin_order_data_after_shipping_address', function( $order ) {
+    // add_action( 'woocommerce_admin_order_data_after_shipping_address', function( $order ) {
 
-        $lat = get_post_meta( $order->get_id(), '_lalamove_lat', true );
-        $lng = get_post_meta( $order->get_id(), '_lalamove_lng', true );
+    //     $lat = get_post_meta( $order->get_id(), '_lalamove_lat', true );
+    //     $lng = get_post_meta( $order->get_id(), '_lalamove_lng', true );
 
-        if ( $lat && $lng ) {
-            echo '<p><strong>Delivery Coordinates:</strong><br>';
-            echo 'Latitude: ' . esc_html( $lat ) . '<br>';
-            echo 'Longitude: ' . esc_html( $lng ) . '</p>';
-        } else {
-            echo '<p><strong>Delivery Coordinates:</strong> Not available</p>';
-        }
+    //     if ( $lat && $lng ) {
+    //         echo '<p><strong>Delivery Coordinates:</strong><br>';
+    //         echo 'Latitude: ' . esc_html( $lat ) . '<br>';
+    //         echo 'Longitude: ' . esc_html( $lng ) . '</p>';
+    //     } else {
+    //         echo '<p><strong>Delivery Coordinates:</strong> Not available</p>';
+    //     }
         
-    });
-
+    // });
 
     add_action('woocommerce_before_cart_totals', 'free_shipping_message');
     add_action('woocommerce_before_checkout_form', 'free_shipping_message');
@@ -469,12 +583,37 @@ if (!class_exists('Woo_Lalamove')) {
         return ! empty( $free ) ? $free : $rates;
     }
 
+    // Only for logged‐in users (admin screens)
+    add_action( 'wp_ajax_push_send_to_lalamove', 'send_to_lalamove_handler' );
+    /**
+     * Handle the AJAX request: send order to Lalamove
+     */
+    function send_to_lalamove_handler() {
+        // Sanitize inputs
+        $order_id = isset( $_POST['order_id'] ) 
+            ? absint( $_POST['order_id'] ) 
+            : wp_send_json_error( 'Missing order ID.' );
+
+        $model = new Class_Lalamove_Model();
+
+        // Your business logic: push to Lalamove, log errors, etc.
+        $result = $model->push_pos_order_to_lalamove( $order_id );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( $result->get_error_message() );
+        }
+
+        // Everything went fine
+        wp_send_json_success( "Order #{$order_id} queued for Lalamove." );
+    }
+
+
     add_action('wp_ajax_get_seller_delivery_address', 'get_seller_delivery_address');
     add_action('wp_ajax_nopriv_get_seller_delivery_address', 'get_seller_delivery_address');
 
     function get_seller_delivery_address(){
         $store = array(
-            'name' => get_option('woocommerce_store_name', ''),
+            'name' => get_bloginfo('name'),
             'address' => get_option('lalamove_shipping_address', ''),
             'lat' => get_option('lalamove_shipping_lat', ''),
             'lng' => get_option('lalamove_shipping_lng', ''),
@@ -550,6 +689,13 @@ if (!class_exists('Woo_Lalamove')) {
     add_action('wp_enqueue_scripts', 'enqueue_custom_scripts');
     function enqueue_custom_scripts()
     {
+
+        /**
+         * TODO: 
+         * 
+         * ** Make sure to add a constraint here for it to be only visible to specific page such as lalamove modal
+         * 
+         */
 
         // Localize script to pass AJAX URL and nonce to JavaScript
         wp_localize_script('custom-plugin-script', 'pluginAjax', array(

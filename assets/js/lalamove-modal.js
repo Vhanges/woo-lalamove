@@ -185,6 +185,7 @@ jq(document).ready(function ($) {
       .custom-modal {
         display: none;
         position: fixed;
+        box-sizing: border-box;
         top: 0;
         left: 0;
         width: 100%;
@@ -197,6 +198,7 @@ jq(document).ready(function ($) {
         align-items: center;
         justify-content: center;
         height: 100%;
+        padding: 2rem 0 2rem 0;
       }
       .custom-modal-content {
         background: white;
@@ -265,6 +267,22 @@ jq(document).ready(function ($) {
       color: #f16622;
       flex: 1;
       justify-content: flex-end;
+    }
+
+    .btn-find-location {
+      background: #f16622;
+      width: 100%;
+      padding: 1rem 0 1rem 0;
+      margin: 1rem 0 1rem 0;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-find-location:hover {
+      background: #d95511;
     }
 
     .custom-modal-button {
@@ -366,7 +384,7 @@ jq(document).ready(function ($) {
       background: #f9fafb;
       color: #222;
       transition: border-color 0.2s, box-shadow 0.2s;
-      margin-bottom: 8px;
+      margin-bottom: 2rem;
       box-sizing: border-box;
     }
 
@@ -594,6 +612,9 @@ jq(document).ready(function ($) {
       $("#customModal .custom-modal-body").html(`
         <!-- Map Container -->
         <div id="map"></div>
+        <button type="button" id="findLocationBtn" class="btn-find-location">
+          Find My Location
+        </button>
         
         <div class="lalamove-message">
           <p>Please drag the pin to the exact location where you want your order delivered before saving.</p>
@@ -618,7 +639,14 @@ jq(document).ready(function ($) {
 
       $("#customModal .custom-modal-body").html(`
          <!-- Map Container -->
-         <div id="map"></div>
+          <div id="map"></div>
+          <button type="button" id="findLocationBtn" class="btn-find-location">
+            Find My Location
+          </button>
+          
+          <div class="lalamove-message">
+            <p>Please drag the pin to the exact location where you want your order delivered before saving.</p>
+          </div>
       `);
 
       // Initialize the Leaflet map with enhanced geolocation accuracy
@@ -641,7 +669,7 @@ jq(document).ready(function ($) {
           <!-- Optimize Route Switch -->
           <div class="form-group">
             <div class="form-text">
-              <p>Optimize Route</p>  
+              <strong>Optimize Route</strong>  
               <p>Find the most efficient route</p>
             </div>
             <div class="switch">
@@ -653,7 +681,7 @@ jq(document).ready(function ($) {
           <!-- Proof of Delivery (POD) Switch -->
           <div class="form-group">
             <div class="form-text">
-              <p>Proof of Delivery(POD)</p>  
+              <strong>Proof of Delivery(POD)</strong>  
               <p>POD for picked up and received product</p>
             </div>
             <div class="switch">
@@ -1174,13 +1202,12 @@ jq(document).ready(function ($) {
       .trigger("change");
   }
 
+  let map;
+  let marker;
   // Initialize the Leaflet map and conditionally fetch user location
   function initMap() {
     const defaultLat = 12.8797;
     const defaultLng = 121.774;
-
-    //Verify if a service is already selected
-    var isVehicleSelected = window.serviceType ? true : false;
 
     // Use stored session data if available, otherwise fallback to defaults
     let mapLat = SessionData.lat || defaultLat;
@@ -1198,13 +1225,41 @@ jq(document).ready(function ($) {
     console.log("Using Coordinates:", mapLat, mapLng);
 
     // Initialize the map and marker
-    const map = L.map("map").setView([mapLat, mapLng], 15);
+    map = L.map("map").setView([mapLat, mapLng], 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
       attribution: "© OpenStreetMap",
     }).addTo(map);
 
-    const marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
+
+    L.Control.geocoder({
+      defaultMarkGeocode: false
+    })
+    .on('markgeocode', function(e) {
+      const center = e.geocode.center;
+
+      marker.setLatLng(center).update();
+
+      // Center the map
+      map.setView(center, 15);
+
+      // Update session data
+      SessionData.lat = center.lat;
+      SessionData.lng = center.lng;
+      sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
+
+      // Trigger your service logic
+      const allShippingInputs = document.querySelectorAll('input[name="shipping_method[0]"]');
+      const isOnlyFreeShipping = allShippingInputs.length === 1 &&
+                                allShippingInputs[0].value.startsWith("free_shipping");
+
+      triggerServiceEvents(center.lat, center.lng, isOnlyFreeShipping);
+    })
+    .addTo(map);
+
+
+
+    marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
 
     // Fix map rendering issues
     setTimeout(() => {
@@ -1217,9 +1272,7 @@ jq(document).ready(function ($) {
     // Update marker location on dragend
     marker.on("dragend", () => {
       console.log("Marker dragged to new location.");
-      if (isVehicleSelected === false) {
-        isVehicleSelected = window.serviceType ? true : false;
-      }
+      
 
       const allShippingInputs = document.querySelectorAll(
       'input[name="shipping_method[0]"]'
@@ -1238,10 +1291,17 @@ jq(document).ready(function ($) {
       SessionData.lng = mapLng;
       sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
 
-      triggerServiceEvents(mapLat, mapLng, isVehicleSelected, isOnlyFreeShipping);
+      triggerServiceEvents(mapLat, mapLng, isOnlyFreeShipping);
     });
 
-    marker.bindPopup("You").openPopup();
+    marker.bindPopup(`
+      <div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.4;">
+        <strong>📦 Delivery Location</strong><br>
+        This is where your order will be delivered.<br>
+        Please make sure the pin is placed accurately.
+      </div>
+    `).openPopup();
+
 
     // If session data exists, skip geolocation fetching
     if (SessionData.lat && SessionData.lng) {
@@ -1250,151 +1310,109 @@ jq(document).ready(function ($) {
     }
 
     console.log("Fetching user location...");
-
-    // Geolocation options for high accuracy
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 6000,
-    };
-
-    const success = (position) => {
-      mapLat = position.coords.latitude;
-      mapLng = position.coords.longitude;
-
-      // Save fetched location to session
-      SessionData.lat = mapLat;
-      SessionData.lng = mapLng;
-      sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
-
-      map.setView([mapLat, mapLng], 15);
-      marker.setLatLng([mapLat, mapLng]);
-      console.log("User Location - Latitude:", mapLat, "Longitude:", mapLng);
-
-      triggerServiceEvents(mapLat, mapLng, isVehicleSelected);
-    };
-
-    const error = (err) => {
-      console.warn(`ERROR(${err.code}): ${err.message}`);
-    };
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(success, error, options);
-      navigator.geolocation.watchPosition(success, error, options);
-    } else {
-      alert("Geolocation is not supported by this browser.");
-    }
+    getCurrentLocation();
   }
 
-  // Bind service-related events (using the provided lat and lng)
-  async function bindServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping = false) {
-
+  async function bindServiceEvents(lat, lng, isOnlyFreeShipping = false) {
+    // If free shipping toggle, enable Save Location immediately
     if (isOnlyFreeShipping) {
       $("#saveLocation").prop("disabled", false);
     }
 
-    if (isVehicleSelected) {
-      quotationAjax(lat, lng);
+    // Find users current location
+    $(document).on('click', '#findLocationBtn', function() {
+      getCurrentLocation();
+    });
 
-      $(document)
-        .off("click", "#optimizeRoute")
-        .on("click", "#optimizeRoute", function () {
-          if ($(this).is(":checked")) {
-            quotationAjax(lat, lng);
-          }
-        });
-
-      return;
-    }
-
-    // Bind the click event on the switch button
+    // 1) Optimize Route checkbox — bind once, cleanly
     $(document)
-      .off("click", "#optimizeRoute")
-      .on("click", "#optimizeRoute", function () {
-        if ($(this).is(":checked")) {
+      .off("change", "#optimizeRoute")
+      .on("change", "#optimizeRoute", function () {
+        // Recompute selection state from the global serviceType
+        const vehicleSelected = !!window.serviceType;
+        const isChecked       = this.checked;
+
+        console.log("vehicleSelected:", vehicleSelected, "checked:", isChecked);
+
+        // Only fire quotationAjax when a vehicle is selected AND checkbox is now checked
+        if (vehicleSelected && isChecked) {
           quotationAjax(lat, lng);
         }
       });
 
-    // Bind the click event on vehicle elements
+    // 2) Vehicle selector clicks
     $(document)
       .off("click", ".vehicle")
       .on("click", ".vehicle", function () {
-        $(".vehicle").css("border", "solid 2px #EDEDED");
-        $(this).css("border", "solid 2px #f16622");
-
+        $(".vehicle").css("border", "2px solid #EDEDED");
+        $(this).css("border", "2px solid #f16622");
         $(".vehicle-description").slideUp();
+        $(this).find(".vehicle-description").slideDown();
 
-        const description = $(this)
-          .closest(".vehicle")
-          .find(".vehicle-description");
-
-        description.slideDown();
-
-        window.serviceType = $(this).attr("data-index");
+        // Store serviceType globally
+        window.serviceType = $(this).data("index");
         quotationAjax(lat, lng);
       });
 
-    var startDate = null;
+    let startDateMoment;
     if (SessionData.scheduleDate) {
-      startDate = moment(SessionData.scheduleDate, moment.ISO_8601);
+      startDateMoment = moment(SessionData.scheduleDate, moment.ISO_8601);
     } else {
-      startDate = moment()
+      startDateMoment = moment()
         .utc()
         .add(1, "days")
         .startOf("day")
-        .add(8, "hours")
-        .toISOString();
-      window.scheduleDate = startDate;
-      SessionData.scheduleDate = startDate;
+        .add(8, "hours");
+      const isoStart = startDateMoment.toISOString();
+      window.scheduleDate = isoStart;
+      SessionData.scheduleDate = isoStart;
     }
 
-    var endDate = moment()
+    const startDate = startDateMoment.format("YYYY-MM-DDTHH:mm");
+    const endDate   = moment()
       .add(30, "days")
       .startOf("day")
       .add(16, "hours")
-      .format("YYYY-MM-DDTHH:00");
+      .startOf("hour")
+      .format("YYYY-MM-DDTHH:mm");
 
-    var $inputField = $("#schedule-date");
+    const $inputField = $("#schedule-date");
+    $inputField
+      .attr({ min: startDate, max: endDate })
+      .val(startDate)
+      .off("change")                         
+      .on("change", function () {            
+        const sel = moment($(this).val());
+        const ok  = sel.isBetween(
+          sel.clone().hour(8).minute(0),
+          sel.clone().hour(16).minute(0),
+          null,
+          "[)"
+        );
 
-    // Set min and max attributes with jQuery
-    $inputField.attr({
-      min: startDate,
-      max: endDate,
-    });
-
-    // Handle change event
-    $inputField.on("change", function () {
-      let selectedDate = moment($(this).val());
-      let selectedHour = selectedDate.hour();
-
-      if (selectedHour < 8 || selectedHour > 16) {
-        alert("Please select a time between 08:00 AM and 04:00 PM.");
-        $(this).val(startDate);
-        window.scheduleDate = selectedDate.startOf("hour").toISOString();
-        SessionData.scheduleDate = window.scheduleDate;
-
-        if (isVehicleSelected) {
-          quotationAjax(lat, lng);
+        if (!ok) {
+          alert("Select between 08:00 AM and 04:00 PM.");
+          $(this).val(startDate);
+          const fallback = startDateMoment.clone().startOf("hour").toISOString();
+          window.scheduleDate = fallback;
+          SessionData.scheduleDate = fallback;
+        } else {
+          const iso = sel.startOf("hour").toISOString();
+          window.scheduleDate = iso;
+          SessionData.scheduleDate = iso;
         }
 
-        console.log("HIT");
-      } else {
-        window.scheduleDate = selectedDate.startOf("hour").toISOString();
-        SessionData.scheduleDate = window.scheduleDate;
-
-        if (isVehicleSelected) {
+        // Only recalc quotation if they’ve already picked a vehicle
+        if (window.serviceType) {
           quotationAjax(lat, lng);
         }
-
-        console.log("Selected schedule date:", window.scheduleDate);
-      }
-    });
+      });
   }
 
+
   // Update the service events with the new coordinates
-  function triggerServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping = false) {
-    bindServiceEvents(lat, lng, isVehicleSelected, isOnlyFreeShipping);
+  function triggerServiceEvents(lat, lng, isOnlyFreeShipping = false) {
+    bindServiceEvents(lat, lng, isOnlyFreeShipping);
   }
 
   function filterServices(state) {
@@ -1651,6 +1669,41 @@ jq(document).ready(function ($) {
       e.preventDefault();
       e.stopImmediatePropagation();
       return false;
+    }
+  }
+
+  function getCurrentLocation() {
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 6000,
+    };
+
+    const success = (position) => {
+      mapLat = position.coords.latitude;
+      mapLng = position.coords.longitude;
+
+      // Save fetched location to session
+      SessionData.lat = mapLat;
+      SessionData.lng = mapLng;
+      sessionStorage.setItem("sessionData", JSON.stringify(SessionData));
+
+      map.setView([mapLat, mapLng], 15);
+      marker.setLatLng([mapLat, mapLng]);
+      console.log("User Location - Latitude:", mapLat, "Longitude:", mapLng);
+
+      triggerServiceEvents(mapLat, mapLng);
+    };
+
+    const error = (err) => {
+      console.warn(`ERROR(${err.code}): ${err.message}`);
+      alert("Could not get your location. Please try again or enter it manually.");
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(success, error, options);
+    } else {
+      alert("Geolocation is not supported by this browser.");
     }
   }
 });
