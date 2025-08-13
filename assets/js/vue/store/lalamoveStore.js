@@ -90,10 +90,7 @@ export const useLalamoveStore = defineStore("lalamove", () => {
           phone: senderAddress.phone,
         },
         recipients,
-        isPODEnabled: isPodEnabled.value,
-        ...(additionalNotes.value && {
-          additionalNotes: additionalNotes.value,
-        }),
+        isPODEnabled: isPodEnabled.value
       },
     };
   });
@@ -111,7 +108,6 @@ export const useLalamoveStore = defineStore("lalamove", () => {
 
   const canRequestQuote = computed(
     () =>
-      scheduleAt.value !== "" &&
       serviceType.value !== "" &&
       addresses.length >= 2 &&
       item.value.quantity !== "" &&
@@ -360,7 +356,7 @@ export const useLalamoveStore = defineStore("lalamove", () => {
         }
       }
 
-      console.log("Order Placement Response: ", response.data.data);
+      console.log("Order Placement Response: ", response.data);
       
       const { orderId, priceBreakdown } = response.data.data;
 

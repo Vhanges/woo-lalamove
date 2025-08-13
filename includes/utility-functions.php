@@ -1,4 +1,5 @@
 <?php
+use Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController;
 
 if (!defined('ABSPATH'))
     exit;
@@ -416,7 +417,7 @@ function short_code_delivery_details($lalamove_order_id, $shareLink, $podImage, 
 		</div>';
 	}
 
-	if($order_status != 'completed' ||$order_status != 'cancelled') {
+	if($order_status !== 'completed' && $order_status !== 'cancelled') {
 		$confirmation_button = '
 		<form class="mt-4" method="post">
 			<input type="hidden" name="order_id" value="'. esc_attr($order_id) .'">
@@ -517,3 +518,25 @@ function get_lala_id($order_id) {
         return null;
     }
 }
+
+
+
+/**
+ * Retrieves the correct WooCommerce screen ID based on HPOS support.
+ */
+function get_screen_id() 
+{
+
+	return class_exists('\\Automattic\\WooCommerce\\Internal\\DataStores\\Orders\\CustomOrdersTableController') &&
+	wc_get_container()->get(CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()
+	? wc_get_page_screen_id('shop-order')
+	: 'shop_order';
+}
+
+/**
+ * Retrieves the WooCommerce order object safely.
+ */
+function get_order_object($post) {
+	return is_a($post, 'WP_Post') ? wc_get_order($post->ID) : $post;
+}
+

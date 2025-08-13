@@ -48,9 +48,9 @@ Override wordpress style
 }
 
 #wpbody-content {
-    position: fixed; /* Fix the position */
-    width: 90%;
     height: auto;
     overflow: hidden; /* Prevent content from overflowing */
+    box-sizing: border-box;
+
 }
 

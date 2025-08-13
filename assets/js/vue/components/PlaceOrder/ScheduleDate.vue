@@ -40,6 +40,8 @@ function validateScheduleDate() {
   const date = moment(localSchedule.value);
   const selectedHour = date.hour();
 
+  console.log("date: ", selectedHour);
+
   if (selectedHour < BUSINESS_HOURS.START || selectedHour > BUSINESS_HOURS.END) {
     toast.error("Delivery hours are 8 AM - 4 PM. Please select a valid time.");
     localSchedule.value = minDate.value;
@@ -53,16 +55,15 @@ onMounted(() => {
   const startDate = moment().add(1, 'days').startOf('day').add(BUSINESS_HOURS.START, 'hours');
   const endDate = moment().add(30, 'days').startOf('day').add(BUSINESS_HOURS.END, 'hours');
 
-  console.log("SCHEDULE: ", scheduleAt.value);
 
   // Set ISO format in store
   if(scheduleAt.value !== ""){
     localSchedule.value = scheduleAt.value.replace(' ', 'T').slice(0, 16);
   } else {
-    console.log("WHAT IS THIS")
     scheduleAt.value = startDate.toISOString();
+    console.log("BOWM: ", scheduleAt.value);
     localSchedule.value = startDate.format('YYYY-MM-DDTHH:mm');
-  }
+}
   
   minDate.value = startDate.format('YYYY-MM-DDTHH:mm');
   maxDate.value = endDate.format('YYYY-MM-DDTHH:mm');
@@ -72,6 +73,9 @@ onMounted(() => {
 watch(scheduleAt, (newValue) => {
   if (newValue) {
     localSchedule.value = isoToLocal(newValue);
+  }
+  if (!newValue) {
+    scheduleAt.value = localToISO(localSchedule);
   }
 });
 </script>
