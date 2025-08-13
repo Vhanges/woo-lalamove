@@ -743,25 +743,77 @@ function get_shipping_analytics($start_date = null, $end_date = null) {
 function display_shipping_payment_column($column, $order_id) {
     if ($column !== 'lalamove_payment_status') return;
     
+    // Check if this order has Lalamove shipping
+    $lalamove_id = get_lala_id($order_id);
+    if (!$lalamove_id) {
+        echo '<span style="color: #999; font-size: 12px;">No Lalamove</span>';
+        return;
+    }
+    
     $payment_details = get_shipping_payment_details($order_id);
     $order = wc_get_order($order_id);
     
-    if (!$order || !$payment_details) {
+    if (!$order) {
         echo '<span style="color: #666;">-</span>';
         return;
     }
     
     $shipping_total = $order->get_shipping_total();
     
+    // Free shipping
     if ($shipping_total == 0) {
-        echo '<span style="color: #00a32a; font-weight: bold;">FREE</span>';
-    } elseif ($payment_details['paid_by'] === 'admin') {
-        $profit_loss = floatval($payment_details['profit_loss']);
-        $color = $profit_loss >= 0 ? '#00a32a' : '#d63638';
-        echo '<span style="color: ' . $color . '; font-weight: bold;">ADMIN PAID</span><br>';
-        echo '<small>P/L: ' . get_woocommerce_currency_symbol() . number_format($profit_loss, 2) . '</small>';
-    } else {
-        echo '<span style="color: #0073aa; font-weight: bold;">CUSTOMER PAID</span>';
+        echo '<div style="text-align: center;">';
+        echo '<span style="color: #00a32a; font-weight: bold; font-size: 11px; background: #e7f5e7; padding: 2px 6px; border-radius: 3px;">FREE</span>';
+        echo '</div>';
+        return;
     }
+    
+    // Admin paid
+    if ($payment_details && $payment_details['paid_by'] === 'admin') {
+        $profit_loss = floatval($payment_details['profit_loss']);
+        $actual_cost = floatval($payment_details['actual_cost']);
+        
+        if ($profit_loss >= 0) {
+            $bg_color = '#e7f5e7';
+            $text_color = '#00a32a';
+            $status_text = 'ADMIN PAID ✓';
+        } else {
+            $bg_color = '#fce8e8';
+            $text_color = '#d63638';
+            $status_text = 'ADMIN PAID ⚠';
+        }
+        
+        echo '<div style="text-align: center; font-size: 11px;">';
+        echo '<span style="color: ' . $text_color . '; font-weight: bold; background: ' . $bg_color . '; padding: 2px 6px; border-radius: 3px; display: block; margin-bottom: 3px;">' . $status_text . '</span>';
+        echo '<div style="color: #666; line-height: 1.2;">';
+        echo '<div>Cost: ' . get_woocommerce_currency_symbol() . number_format($actual_cost, 0) . '</div>';
+        echo '<div style="color: ' . $text_color . '; font-weight: bold;">P/L: ' . get_woocommerce_currency_symbol() . number_format($profit_loss, 0) . '</div>';
+        echo '</div>';
+        echo '</div>';
+        return;
+    }
+    
+    // Customer paid
+    if ($payment_details && $payment_details['paid_by'] === 'customer') {
+        $actual_cost = floatval($payment_details['actual_cost']);
+        echo '<div style="text-align: center; font-size: 11px;">';
+        echo '<span style="color: #0073aa; font-weight: bold; background: #e8f4f8; padding: 2px 6px; border-radius: 3px; display: block; margin-bottom: 3px;">CUSTOMER</span>';
+        echo '<div style="color: #666; line-height: 1.2;">';
+        echo '<div>Paid: ' . get_woocommerce_currency_symbol() . number_format($shipping_total, 0) . '</div>';
+        if ($actual_cost > 0 && $actual_cost != $shipping_total) {
+            $diff = $shipping_total - $actual_cost;
+            $diff_color = $diff >= 0 ? '#00a32a' : '#d63638';
+            echo '<div style="color: ' . $diff_color . ';">Net: ' . get_woocommerce_currency_symbol() . number_format($diff, 0) . '</div>';
+        }
+        echo '</div>';
+        echo '</div>';
+        return;
+    }
+    
+    // Unknown status
+    echo '<div style="text-align: center; font-size: 11px;">';
+    echo '<span style="color: #996633; font-weight: bold; background: #fff3cd; padding: 2px 6px; border-radius: 3px;">UNKNOWN</span>';
+    echo '<div style="color: #666; margin-top: 2px;">Needs Review</div>';
+    echo '</div>';
 }
 
