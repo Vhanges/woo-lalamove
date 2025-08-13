@@ -190,6 +190,9 @@ function process_lalamove_non_free_order($order_id) {
         }
         
 
+        // Get shipping cost breakdown from session
+        $cost_breakdown = WC()->session->get('lalamove_cost_breakdown', array());
+        
         // Insert order
         $wpdb->insert($table->orders, [
             'transaction_id'     => $txn_id,
@@ -201,6 +204,11 @@ function process_lalamove_non_free_order($order_id) {
             'drop_off_location'  => $dropOffLocation,
             'remarks'            => $remarks ?? 'none',
             'order_json_body'    => json_encode($session['quotationBody'] ?? []),
+            'shipping_cost_customer' => $cost_breakdown['customer_cost'] ?? 0,
+            'shipping_cost_admin' => $cost_breakdown['admin_cost'] ?? 0,
+            'shipping_paid_by' => $cost_breakdown['strategy'] ?? 'customer',
+            'lalamove_actual_cost' => $cost_breakdown['lalamove_actual_cost'] ?? 0,
+            'profit_loss' => ($cost_breakdown['customer_cost'] ?? 0) - ($cost_breakdown['lalamove_actual_cost'] ?? 0),
         ]);
 
         $wpdb->query('COMMIT');
@@ -249,6 +257,9 @@ function process_lalamove_non_free_order($order_id) {
             throw new Exception("Transaction insert failed");
         }
 
+        // Get shipping cost breakdown from session
+        $cost_breakdown = WC()->session->get('lalamove_cost_breakdown', array());
+        
         // Insert order
         $wpdb->insert($table->orders, [
             'transaction_id'     => $txn_id,
@@ -260,12 +271,18 @@ function process_lalamove_non_free_order($order_id) {
             'drop_off_location'  => $dropOffLocation,
             'remarks'            => $remarks ?? 'none',
             'order_json_body'    => json_encode($session['quotationBody'] ?? []),
+            'shipping_cost_customer' => $cost_breakdown['customer_cost'] ?? 0,
+            'shipping_cost_admin' => $cost_breakdown['admin_cost'] ?? 0,
+            'shipping_paid_by' => $cost_breakdown['strategy'] ?? 'customer',
+            'lalamove_actual_cost' => $cost_breakdown['lalamove_actual_cost'] ?? 0,
+            'profit_loss' => ($cost_breakdown['customer_cost'] ?? 0) - ($cost_breakdown['lalamove_actual_cost'] ?? 0),
         ]);
     } finally {
         // Clear session regardless of outcome
         echo '<script>sessionStorage.removeItem("SessionData");</script>';
 
         WC()->session->__unset('shipment_cost');
+        WC()->session->__unset('lalamove_cost_breakdown');
         clear_lalamove_session_data();
     }
 }
